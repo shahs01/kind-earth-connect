@@ -7,7 +7,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Github, Mail, Loader2 } from "lucide-react";
+import { Heart, Mail, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -64,11 +64,11 @@ const LoginForm = () => {
     }
   };
   
-  const handleSocialLogin = async (provider: 'google') => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
     
     try {
-      await signInWithProvider(provider);
+      await signInWithProvider('google');
       // The user will be redirected to Google's login page
     } catch (error) {
       // Error is already handled in the auth context
@@ -90,11 +90,11 @@ const LoginForm = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Social Login Button */}
+            {/* Google Login Button */}
             <Button 
               variant="outline" 
               className="w-full flex items-center justify-center" 
-              onClick={() => handleSocialLogin('google')}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 mr-2" aria-hidden="true">

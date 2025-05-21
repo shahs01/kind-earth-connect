@@ -70,7 +70,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const profile = await fetchUserProfile(userId);
       setUser(profile);
-      // Security fix: Since we disabled email verification, we can set this to true by default
+      // For both email/password and OAuth logins, we set emailVerified to true
+      // For OAuth providers like Google, email is already verified by the provider
       setEmailVerified(true);
     } catch (error) {
       console.error("Error handling session change:", error);

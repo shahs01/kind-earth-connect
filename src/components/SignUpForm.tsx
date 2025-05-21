@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,7 +46,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
-  const { signUp, validateField } = useAuth();
+  const { signUp, validateField, signInWithProvider } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -140,16 +139,8 @@ const SignUpForm = () => {
     }
   };
   
-  const handleSocialSignUp = (provider: string) => {
-    setIsLoading(true);
-    
-    // In a real app, this would redirect to OAuth provider
-    toast({
-      title: "Social signup not implemented",
-      description: `${provider} signup would be implemented in a production app.`,
-    });
-    
-    setIsLoading(false);
+  const handleGoogleSignUp = () => {
+    signInWithProvider('google');
   };
   
   return (
@@ -167,11 +158,11 @@ const SignUpForm = () => {
         <CardContent>
           <div className="space-y-4">
             {/* Social Signup Buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Button 
                 variant="outline" 
-                className="w-full" 
-                onClick={() => handleSocialSignUp('Google')}
+                className="w-full flex items-center justify-center" 
+                onClick={handleGoogleSignUp}
                 disabled={isLoading}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 mr-2" aria-hidden="true">
@@ -192,48 +183,7 @@ const SignUpForm = () => {
                     fill="#34A853" 
                   />
                 </svg>
-                Google
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => handleSocialSignUp('Facebook')}
-                disabled={isLoading}
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 mr-2 text-blue-600" aria-hidden="true">
-                  <path 
-                    d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" 
-                    fill="currentColor"
-                  />
-                </svg>
-                Facebook
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => handleSocialSignUp('GitHub')}
-                disabled={isLoading}
-              >
-                <Github className="h-5 w-5 mr-2" />
-                GitHub
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => handleSocialSignUp('Twitter')}
-                disabled={isLoading}
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 mr-2 text-blue-400" aria-hidden="true">
-                  <path 
-                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" 
-                    fill="currentColor"
-                  />
-                </svg>
-                Twitter
+                Continue with Google
               </Button>
             </div>
             
@@ -242,7 +192,7 @@ const SignUpForm = () => {
                 <Separator />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                <span className="bg-white px-2 text-gray-500">Or continue with email</span>
               </div>
             </div>
             
