@@ -37,6 +37,7 @@ import MonthlyGiving from "./pages/MonthlyGiving";
 import DonateGoods from "./pages/DonateGoods";
 import Careers from "./pages/Careers";
 import CreatePosting from "./pages/CreatePosting";
+import EditPosting from "./pages/EditPosting";
 
 import "./App.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -94,6 +95,7 @@ function App() {
           <Route path="/messages" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/edit-post/:postId" element={<EditPosting />} />
         </Route>
         
         {/* 404 route */}

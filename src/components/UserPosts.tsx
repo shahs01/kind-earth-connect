@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Trash2, Edit, AlertCircle, Loader2, Image } from "lucide-react";
+import { Trash2, Edit, AlertCircle, Loader2 } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -93,11 +93,6 @@ const UserPosts = ({ userId }: UserPostsProps) => {
         });
       }
     }
-  };
-
-  const handleEditPost = (postId: string) => {
-    // For now just navigate to edit page
-    window.location.href = `/edit-post/${postId}`;
   };
 
   if (isLoading) {
@@ -223,10 +218,12 @@ const UserPosts = ({ userId }: UserPostsProps) => {
                   variant="outline" 
                   size="sm" 
                   className="flex items-center gap-1"
-                  onClick={() => handleEditPost(post.id)}
+                  asChild
                 >
-                  <Edit className="h-3.5 w-3.5" />
-                  Edit
+                  <Link to={`/edit-post/${post.id}`}>
+                    <Edit className="h-3.5 w-3.5" />
+                    Edit
+                  </Link>
                 </Button>
                 <Button 
                   variant="destructive" 
