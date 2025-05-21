@@ -6,7 +6,7 @@ import { User as UserType } from "@/types";
 export function useProfileManagement(user: UserType | null) {
   async function updateUserProfile(data: Partial<UserType>): Promise<void> {
     if (!user) return;
-    
+
     try {
       const { error } = await supabase
         .from("profiles")
@@ -22,7 +22,7 @@ export function useProfileManagement(user: UserType | null) {
         toast.error("Failed to update profile");
         return;
       }
-      
+
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -34,41 +34,38 @@ export function useProfileManagement(user: UserType | null) {
     return updateUserProfile(data);
   }
 
-  // Explicitly type the parameters and return value for validateField
   async function validateField(field: string, value: string): Promise<boolean> {
     try {
-      // Field validation logic
       if (field === "username") {
-        // Check if username is already taken
         const { data, error } = await supabase
           .from("profiles")
           .select("username")
           .eq("username", value)
           .single();
-        
+
         if (error && error.code !== 'PGRST116') {
           console.error("Error validating username:", error);
           return false;
         }
-        
-        return !data; // If no data, username is available
-      } 
-      else if (field === "email") {
-        // Check if email is already taken
+
+        return !data; // Username is available if no data returned
+      }
+
+      if (field === "email") {
         const { data, error } = await supabase
           .from("profiles")
           .select("email")
           .eq("email", value)
           .single();
-        
+
         if (error && error.code !== 'PGRST116') {
           console.error("Error validating email:", error);
           return false;
         }
-        
-        return !data; // If no data, email is available
+
+        return !data; // Email is available if no data returned
       }
-      
+
       return true;
     } catch (error) {
       console.error(`Error validating ${field}:`, error);
@@ -78,9 +75,8 @@ export function useProfileManagement(user: UserType | null) {
 
   async function deleteAccount(): Promise<void> {
     try {
-      // Delete the user account
-      const { error } = await supabase.rpc('delete_user', {});
-      
+      const { error } = await supabase.rpc("delete_user", {}); // ✅ Corrected call with empty object
+
       if (error) {
         console.error("Error deleting account:", error);
         toast.error("Failed to delete account");
