@@ -34,7 +34,7 @@ export function useProfileManagement(user: UserType | null) {
     return updateUserProfile(data);
   }
 
-  // Fix the validateField function to properly type its parameters
+  // Fix the validateField function by properly typing its parameters
   async function validateField(field: string, value: string): Promise<boolean> {
     try {
       // Field validation logic
