@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -9,25 +10,36 @@ import { toast } from "sonner";
 interface AuthContextProps {
   user: UserType | null;
   session: Session | null;
-  signUp: (email: string, password: string, userData: Partial<UserType>) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (data: Partial<UserType>) => Promise<void>;
   isLoading: boolean;
   emailVerified: boolean;
 
+  // Combined function to handle both requesting a reset and setting a new password
+  resetPassword: (emailOrData: string | { email: string; token: string; newPassword: string }) => Promise<void>;
+  
+  // Aliases for better naming consistency
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
-  updateProfile: (data: any) => Promise<void>;
+  updateProfile: (data: Partial<UserType>) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   validateField: (field: string, value: string) => Promise<boolean>;
   requestPasswordReset: (email: string) => Promise<void>;
-  resetPassword: (data: { email: string; token: string; newPassword: string }) => Promise<void>;
   sendEmailVerification: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
+}
+
+// Define the SignUpData type
+interface SignUpData {
+  email: string;
+  password: string;
+  username?: string;
+  name?: string;
+  location?: string;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -121,16 +133,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function signUp(email: string, password: string, userData: Partial<UserType>) {
+  async function signUp(data: SignUpData) {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
         options: {
           data: {
-            name: userData.name,
-            location: userData.location,
+            name: data.name,
+            location: data.location,
           },
         },
       });
@@ -140,10 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (data.user) {
-        toast.success("Sign up successful! Please check your email for verification.");
-        navigate("/login");
-      }
+      toast.success("Sign up successful! Please check your email for verification.");
+      navigate("/login");
     } catch (error) {
       console.error("Error in signUp:", error);
       toast.error("An error occurred during sign up.");
@@ -198,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Combined function to handle both requesting a reset and setting a new password
   async function resetPassword(emailOrData: string | { email: string; token: string; newPassword: string }) {
     try {
       if (typeof emailOrData === 'string') {
@@ -214,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.success("Password reset link sent to your email");
       } else {
         // This is the confirm password reset path
-        const { email, token, newPassword } = emailOrData;
+        const { newPassword } = emailOrData;
         
         // For password recovery, we need to set a new password
         const { error } = await supabase.auth.updateUser({ 
@@ -269,7 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function updateProfile(data: any) {
+  async function updateProfile(data: Partial<UserType>) {
     return updateUserProfile(data);
   }
 
@@ -328,7 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function validateField(field: string, value: string) {
+  async function validateField(field: string, value: string): Promise<boolean> {
     try {
       // Field validation logic
       if (field === "username") {
