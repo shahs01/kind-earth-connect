@@ -49,12 +49,26 @@ export const useProfileManagement = () => {
         throw new Error("You must be logged in to create a post");
       }
       
+      // Map the form data to the database columns
       const post = {
-        ...postData,
+        title: postData.title,
+        description: postData.description,
+        category: postData.category,
+        location: postData.location,
+        type: postData.type,
         user_id: userData.user.id,
         created_at: new Date().toISOString(),
         status: 'active'
       };
+      
+      // Add type-specific fields
+      if (postData.type === 'offer') {
+        post.availability = postData.availability;
+      } else if (postData.type === 'request') {
+        post.timeframe = postData.timeframe;
+      }
+      
+      console.log("Creating post with data:", post);
       
       const { data, error } = await supabase
         .from('posts')
@@ -62,7 +76,10 @@ export const useProfileManagement = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating post:", error);
+        throw error;
+      }
 
       toast({
         title: "Post created",
@@ -71,6 +88,7 @@ export const useProfileManagement = () => {
 
       return data;
     } catch (error: any) {
+      console.error("Error in createPost:", error.message);
       toast({
         title: "Error creating post",
         description: error.message || "Could not create your post",

@@ -97,34 +97,40 @@ export type Database = {
       }
       posts: {
         Row: {
+          availability: string | null
           category: string | null
           created_at: string | null
           description: string | null
           id: string
           location: string | null
           status: string | null
+          timeframe: string | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
+          availability?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           location?: string | null
           status?: string | null
+          timeframe?: string | null
           title: string
           type: string
           user_id: string
         }
         Update: {
+          availability?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           location?: string | null
           status?: string | null
+          timeframe?: string | null
           title?: string
           type?: string
           user_id?: string
