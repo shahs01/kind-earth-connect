@@ -1,5 +1,5 @@
 
-import { ChevronDown, Info, Heart, HelpCircle, Bell, Handshake } from "lucide-react";
+import { ChevronDown, Info, Heart, HelpCircle, Bell, Handshake, Shield, FileText, FileShield } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -18,6 +18,9 @@ const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
     { label: "About Us", path: "/about", icon: <Info className="mr-2 h-4 w-4" /> },
     { label: "Our Values", path: "/values", icon: <Heart className="mr-2 h-4 w-4" /> },
     { label: "FAQ", path: "/faq", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
+    { label: "Safety Tips", path: "/safety-tips", icon: <Shield className="mr-2 h-4 w-4" /> },
+    { label: "Privacy Policy", path: "/privacy-policy", icon: <FileText className="mr-2 h-4 w-4" /> },
+    { label: "Terms of Service", path: "/terms-of-service", icon: <FileShield className="mr-2 h-4 w-4" /> },
     { label: "Stay Updated", path: "/subscribe", icon: <Bell className="mr-2 h-4 w-4" /> },
   ];
   

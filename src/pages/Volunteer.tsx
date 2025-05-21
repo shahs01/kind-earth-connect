@@ -184,17 +184,23 @@ const Volunteer = () => {
               </p>
             </div>
             
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto mt-4 md:mt-0">
-              <TabsList className="grid w-full md:w-auto grid-cols-2">
-                <TabsTrigger value="browse" className="flex items-center gap-1">
-                  <UsersIcon className="h-4 w-4" /> Browse Opportunities
-                </TabsTrigger>
-                <TabsTrigger value="post" className="flex items-center gap-1">
-                  <Plus className="h-4 w-4" /> Post Opportunity
-                </TabsTrigger>
-              </TabsList>
-            
-              <TabsContent value="browse" className="mt-0">
+            <div className="w-full md:w-auto mt-4 md:mt-0">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="browse" className="flex items-center gap-1">
+                    <UsersIcon className="h-4 w-4" /> Browse Opportunities
+                  </TabsTrigger>
+                  <TabsTrigger value="post" className="flex items-center gap-1">
+                    <Plus className="h-4 w-4" /> Post Opportunity
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <Tabs value={activeTab} className="w-full">
+              <TabsContent value="browse">
                 <div className="flex flex-wrap gap-3 mb-8">
                   <Button variant="outline" className="bg-thryvance-green text-white hover:bg-thryvance-green-dark">
                     All Opportunities
@@ -281,7 +287,7 @@ const Volunteer = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="post" className="mt-0">
+              <TabsContent value="post">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="mb-6">

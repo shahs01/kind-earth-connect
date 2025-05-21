@@ -62,17 +62,17 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/safety-tips" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Safety Tips
                 </Link>
               </li>
               <li>
-                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/privacy-policy" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/terms-of-service" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Terms of Service
                 </Link>
               </li>
@@ -119,12 +119,13 @@ const Footer = () => {
                   placeholder="Your email"
                   className="px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent"
                 />
-                <button 
-                  className="bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-r-md transition-colors"
-                  onClick={() => window.location.href = "/subscribe"}
-                >
-                  Subscribe
-                </button>
+                <Link to="/subscribe">
+                  <button 
+                    className="bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-r-md transition-colors"
+                  >
+                    Subscribe
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
