@@ -19,20 +19,8 @@ const UserMenu = () => {
   const { user, emailVerified, logout } = useAuth();
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex space-x-2">
-        <SearchButton />
-        <Button
-          variant="outline"
-          className="bg-thryvance-green-light text-thryvance-green hover:bg-thryvance-green hover:text-white"
-          asChild
-        >
-          <Link to="/offer-help">Offer Help</Link>
-        </Button>
-        <Button asChild>
-          <Link to="/request-help">Request Help</Link>
-        </Button>
-      </div>
+    <div className="flex items-center gap-4">
+      <SearchButton />
       
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
