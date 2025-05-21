@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { 
     isLoading: authOpLoading, 
     login, 
+    signInWithProvider,
     signUp, 
     logout, 
     sendEmailVerification: sendVerificationEmail, 
@@ -31,10 +32,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state changed:", event);
         if (session) {
-          handleSessionChange(session.user.id);
+          await handleSessionChange(session.user.id);
         } else {
           setUser(null);
           setEmailVerified(false);
@@ -83,6 +84,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const handleSignInWithProvider = async (provider: 'google') => {
+    setIsLoading(true);
+    try {
+      await signInWithProvider(provider);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSignUp = async (userData: SignUpData) => {
     setIsLoading(true);
     try {
@@ -113,6 +123,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAuthenticated: !!user,
     emailVerified,
     login: handleLogin,
+    signInWithProvider: handleSignInWithProvider,
     signUp: handleSignUp,
     logout,
     sendEmailVerification,

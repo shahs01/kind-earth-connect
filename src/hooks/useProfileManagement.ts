@@ -119,11 +119,87 @@ export function useProfileManagement() {
       setLoading(false);
     }
   };
+  
+  /**
+   * Adds a post to favorites
+   */
+  const addToFavorites = async (postId: string) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('favorites')
+        .insert([{ post_id: postId }]);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Added to favorites",
+        description: "The post has been added to your favorites."
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error adding to favorites",
+        description: error.message,
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  /**
+   * Removes a post from favorites
+   */
+  const removeFromFavorites = async (postId: string) => {
+    try {
+      setLoading(true);
+      
+      // First, find the favorite id
+      const { data: favorite, error: findError } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('post_id', postId)
+        .single();
+      
+      if (findError) throw findError;
+      
+      if (favorite) {
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('id', favorite.id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Removed from favorites",
+          description: "The post has been removed from your favorites."
+        });
+      }
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error removing from favorites",
+        description: error.message,
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     loading,
     updateUserProfile,
     updateNotificationPreferences,
-    deleteAccount: deleteUserAccount
+    deleteAccount: deleteUserAccount,
+    addToFavorites,
+    removeFromFavorites
   };
 }

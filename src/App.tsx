@@ -9,6 +9,7 @@ import SignUp from "@/pages/SignUp";
 import VerifyEmail from "@/pages/VerifyEmail";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import AuthCallback from "@/pages/AuthCallback";
 import Profile from "@/pages/Profile";
 import Community from "@/pages/Community";
 import SearchHelp from "@/pages/SearchHelp";
@@ -18,6 +19,10 @@ import NonprofitDirectory from "@/pages/NonprofitDirectory";
 import NotFound from "@/pages/NotFound";
 import About from "@/pages/About";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminDashboard from "@/pages/AdminDashboard";
+import Messages from "@/pages/Messages";
+import Favorites from "@/pages/Favorites";
+import Notifications from "@/pages/Notifications";
 
 const App = () => {
   return (
@@ -30,6 +35,7 @@ const App = () => {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
           <Route path="/about" element={<About />} />
           <Route path="/community" element={<Community />} />
           <Route path="/nonprofit-directory" element={<NonprofitDirectory />} />
@@ -45,6 +51,12 @@ const App = () => {
             <Route path="/search-help" element={<SearchHelp />} />
             <Route path="/request-help" element={<RequestHelp />} />
             <Route path="/offer-help" element={<OfferHelp />} />
+            <Route path="/messages" element={<Messages />}>
+              <Route path=":userId" element={null} />
+            </Route>
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
           </Route>
           
           {/* 404 Not Found */}

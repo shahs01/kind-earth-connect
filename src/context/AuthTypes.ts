@@ -8,6 +8,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   emailVerified: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  signInWithProvider: (provider: 'google') => Promise<void>;
   signUp: (userData: SignUpData) => Promise<void>;
   logout: () => void;
   sendEmailVerification: () => Promise<void>;

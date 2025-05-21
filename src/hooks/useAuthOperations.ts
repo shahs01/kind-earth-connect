@@ -22,7 +22,11 @@ export const useAuthOperations = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
+        options: {
+          // Set session expiry to 30 days if rememberMe is true
+          expiresIn: rememberMe ? 60 * 60 * 24 * 30 : undefined
+        }
       });
       
       if (error) throw error;
@@ -47,6 +51,39 @@ export const useAuthOperations = () => {
       
       throw error;
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Signs in with a third-party provider
+   */
+  const signInWithProvider = async (provider: 'google') => {
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth-callback`
+        }
+      });
+      
+      if (error) throw error;
+      
+      // The user will be redirected to the provider's auth page
+    } catch (error: any) {
+      let message = "Failed to sign in with provider";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      
+      toast({
+        title: "Login failed",
+        description: message,
+        variant: "destructive"
+      });
+      
       setIsLoading(false);
     }
   };
@@ -285,6 +322,7 @@ export const useAuthOperations = () => {
   return {
     isLoading,
     login,
+    signInWithProvider,
     signUp,
     logout,
     sendEmailVerification,
