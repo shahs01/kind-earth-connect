@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Menu, X, User, Search, ChevronDown, Users, Info, UserPlus,
-  Heart, PiggyBank, HandHeart, Box, Mail, MailPlus, Briefcase
+  Heart, PiggyBank, HandHeart, Box, Mail, MailPlus, Briefcase,
+  HelpCircle
 } from "lucide-react";
 import {
   DropdownMenu,

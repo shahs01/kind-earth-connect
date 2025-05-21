@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -21,6 +22,7 @@ export interface Post {
   category: string;
   location: string;
   userId: string;
+  user?: User; // Added user property that references the User who created the post
   createdAt: Date;
   status: "active" | "completed" | "archived" | "deleted";
 }
@@ -39,4 +41,16 @@ export interface Review {
 export interface RateUserFormData {
   rating: number;
   review: string;
+}
+
+// Add Nonprofit interface that's being used in NonprofitCard.tsx and NonprofitDirectory.tsx
+export interface Nonprofit {
+  id: string;
+  name: string;
+  logo: string;
+  category: string;
+  description: string;
+  location: string;
+  website: string;
+  verified: boolean;
 }
