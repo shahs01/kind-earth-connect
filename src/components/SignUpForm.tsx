@@ -1,121 +1,82 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Github, Mail } from "lucide-react";
+import { Heart, Github, Mail, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
+
+// Define form schema with Zod
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  confirmPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  location: z.string().min(2, { message: "Location must be at least 2 characters" }),
+})
+.refine(data => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    location: "",
-  });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
+  // Initialize form
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      location: "",
+    },
+  });
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Simple validation
-    const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid";
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters";
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
-    if (!formData.location.trim()) newErrors.location = "Location is required";
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     
-    // Simulate sign up
-    setTimeout(() => {
-      console.log("Form submitted:", formData);
-      
-      // Store user info in localStorage (this would be replaced with real auth)
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        name: formData.name,
-        email: formData.email,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}`,
-        bio: '',
-        location: formData.location,
-        trustScore: 5.0,
-        helpOffered: 0,
-        helpReceived: 0,
-        verifiedStatus: true
-      }));
-      
-      toast({
-        title: "Account created!",
-        description: "Welcome to Thryvance. Your account has been successfully created.",
-      });
-      
-      // Redirect to home
+    try {
+      // Remove confirmPassword before sending to auth context
+      const { confirmPassword, ...signUpData } = data;
+      await signUp(signUpData);
       navigate('/');
+    } catch (error) {
+      // Error is already handled in the auth context
       setIsLoading(false);
-    }, 1500);
+    }
   };
   
   const handleSocialSignUp = (provider: string) => {
     setIsLoading(true);
     
-    // Simulate social sign up
-    setTimeout(() => {
-      console.log(`Sign up with ${provider}`);
-      
-      // Store user info in localStorage (this would be replaced with real auth)
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        name: `${provider} User`,
-        email: `demo@${provider.toLowerCase()}.com`,
-        avatar: `https://ui-avatars.com/api/?name=${provider}+User`,
-        bio: '',
-        location: 'New York, USA',
-        trustScore: 5.0,
-        helpOffered: 0,
-        helpReceived: 0,
-        verifiedStatus: true
-      }));
-      
-      toast({
-        title: "Account created!",
-        description: `Welcome to Thryvance. Your account has been successfully created with ${provider}.`,
-      });
-      
-      // Redirect to home
-      navigate('/');
-      setIsLoading(false);
-    }, 1500);
+    // In a real app, this would redirect to OAuth provider
+    toast({
+      title: "Social signup not implemented",
+      description: `${provider} signup would be implemented in a production app.`,
+    });
+    
+    setIsLoading(false);
   };
   
   return (
@@ -211,90 +172,121 @@ const SignUpForm = () => {
               </div>
             </div>
             
-            {/* Email Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
+            {/* Email Form with React Hook Form */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
                   name="name"
-                  placeholder="Enter your name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={errors.name ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your name" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
+                
+                <FormField
+                  control={form.control}
                   name="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={errors.email ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email"
+                          placeholder="Enter your email" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
+                
+                <FormField
+                  control={form.control}
                   name="password"
-                  type="password"
-                  placeholder="Create a strong password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={errors.password ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Create a strong password" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
+                
+                <FormField
+                  control={form.control}
                   name="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={errors.confirmPassword ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Confirm your password" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="location">Your Location</Label>
-                <Input
-                  id="location"
+                
+                <FormField
+                  control={form.control}
                   name="location"
-                  placeholder="City, State"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className={errors.location ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Location</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="City, State" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.location && <p className="text-xs text-red-500">{errors.location}</p>}
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
-                disabled={isLoading}
-              >
-                <Mail className="h-4 w-4" />
-                {isLoading ? 'Creating Account...' : 'Create Account with Email'}
-              </Button>
-            </form>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4" />
+                      Create Account with Email
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">

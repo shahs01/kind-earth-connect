@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -14,52 +13,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useToast } from "@/components/ui/use-toast";
 import Logo from "./Logo";
-import { User as UserType } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  const [user, setUser] = useState<UserType | null>(null);
+  const { user, isAuthenticated, logout } = useAuth();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  // Check if user is logged in on component mount and window focus
-  useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setIsLoggedIn(true);
-        setUser(JSON.parse(storedUser));
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
-      }
-    };
-    
-    checkAuth();
-    
-    // Check auth status when window regains focus
-    window.addEventListener('focus', checkAuth);
-    
-    return () => {
-      window.removeEventListener('focus', checkAuth);
-    };
-  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
-    setUser(null);
-    
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account.",
-    });
-    
-    navigate('/');
+    logout();
+    setIsMenuOpen(false);
   };
 
   return (
@@ -209,7 +174,7 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <div className="flex items-center gap-4">
               <Button asChild variant="ghost">
                 <Link to="/profile">
@@ -428,7 +393,7 @@ const Navbar = () => {
               </Link>
             </div>
             
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <>
                 <Link 
                   to="/profile" 
@@ -441,10 +406,7 @@ const Navbar = () => {
                 <Button 
                   variant="outline" 
                   className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light flex items-center gap-2"
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
                   Log Out

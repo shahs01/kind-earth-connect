@@ -1,115 +1,78 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Github, Mail } from "lucide-react";
+import { Heart, Github, Mail, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+// Define form schema with Zod
+const formSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  rememberMe: z.boolean().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
-    
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
+  // Get the page they were trying to visit before being redirected
+  const from = location.state?.from?.pathname || "/";
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Simple validation
-    const newErrors: Record<string, string> = {};
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    
+  // Initialize form
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
+  
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      console.log("Login submitted:", formData);
-      // Store user info in localStorage (this would be replaced with real auth)
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        name: 'Demo User',
-        email: formData.email,
-        avatar: 'https://ui-avatars.com/api/?name=Demo+User',
-        bio: 'This is a demo user account',
-        location: 'New York, USA',
-        trustScore: 4.5,
-        helpOffered: 12,
-        helpReceived: 5,
-        verifiedStatus: true
-      }));
-      
-      toast({
-        title: "Login successful!",
-        description: "Welcome back to Thryvance.",
-      });
-      
-      // Redirect to home
-      navigate('/');
+    try {
+      await login(data.email, data.password);
+      // Navigate to the page they were trying to access or home
+      navigate(from, { replace: true });
+    } catch (error) {
+      // Error is already handled in the auth context
       setIsLoading(false);
-    }, 1500);
+    }
   };
   
   const handleSocialLogin = (provider: string) => {
     setIsLoading(true);
     
-    // Simulate social login
-    setTimeout(() => {
-      console.log(`Login with ${provider}`);
-      // Store user info in localStorage (this would be replaced with real auth)
-      localStorage.setItem('user', JSON.stringify({
-        id: '1',
-        name: `${provider} User`,
-        email: `demo@${provider.toLowerCase()}.com`,
-        avatar: 'https://ui-avatars.com/api/?name=' + provider + '+User',
-        bio: `This is a demo user account using ${provider}`,
-        location: 'New York, USA',
-        trustScore: 4.5,
-        helpOffered: 12,
-        helpReceived: 5,
-        verifiedStatus: true
-      }));
-      
-      toast({
-        title: "Login successful!",
-        description: `Welcome back! You're signed in with ${provider}.`,
-      });
-      
-      // Redirect to home
-      navigate('/');
-      setIsLoading(false);
-    }, 1500);
+    // In a real app, this would redirect to OAuth provider
+    toast({
+      title: "Social login not implemented",
+      description: `${provider} login would be implemented in a production app.`,
+    });
+    
+    setIsLoading(false);
   };
   
   return (
@@ -205,65 +168,89 @@ const LoginForm = () => {
               </div>
             </div>
             
-            {/* Email Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
+            {/* Email Form with React Hook Form */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
                   name="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={errors.email ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your email" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link to="/forgot-password" className="text-xs text-thryvance-blue hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
+                
+                <FormField
+                  control={form.control}
                   name="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={errors.password ? "border-red-500" : ""}
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Link to="/forgot-password" className="text-xs text-thryvance-blue hover:underline">
+                          Forgot password?
+                        </Link>
+                      </div>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter your password" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
+                
+                <FormField
+                  control={form.control}
                   name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleChange}
-                  className="rounded text-thryvance-green focus:ring-thryvance-green"
-                  disabled={isLoading}
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="rounded text-thryvance-green focus:ring-thryvance-green"
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal">Remember me</FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <Label htmlFor="rememberMe" className="text-sm">Remember me</Label>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
-                disabled={isLoading}
-              >
-                <Mail className="h-4 w-4" />
-                {isLoading ? 'Logging In...' : 'Log In with Email'}
-              </Button>
-            </form>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Logging In...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4" />
+                      Log In with Email
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">

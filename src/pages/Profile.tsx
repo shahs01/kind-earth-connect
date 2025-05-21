@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
@@ -12,23 +13,9 @@ import Reviews from "@/components/Reviews";
 import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
-// Sample user data
-const sampleUser: User = {
-  id: "user123",
-  name: "Alex Johnson",
-  email: "alex@example.com",
-  avatar: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&q=80",
-  bio: "I'm passionate about community building and helping others. Expert gardener, amateur carpenter, and always willing to lend a hand.",
-  location: "Portland, OR",
-  createdAt: new Date(2022, 5, 15),
-  trustScore: 4.9,
-  helpOffered: 18,
-  helpReceived: 7,
-  verifiedStatus: true
-};
-
-// Sample posts by this user
+// Sample posts by this user - would be fetched from API in a real app
 const samplePostsData: Post[] = [
   {
     id: "post1",
@@ -77,6 +64,7 @@ const samplePostsData: Post[] = [
 ];
 
 const Profile = () => {
+  const { user } = useAuth();
   const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>(samplePostsData);
   const [isOwnProfile] = useState(true);
@@ -102,6 +90,12 @@ const Profile = () => {
     }
   };
 
+  // If there's no user (which shouldn't happen due to ProtectedRoute)
+  // But we'll handle it just in case
+  if (!user) {
+    return <div>Loading profile...</div>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -109,7 +103,7 @@ const Profile = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
-              <ProfileCard user={sampleUser} isOwnProfile={isOwnProfile} />
+              <ProfileCard user={user} isOwnProfile={isOwnProfile} />
               
               {!isOwnProfile && (
                 <Button 
@@ -173,7 +167,7 @@ const Profile = () => {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-thryvance-green-light/50 p-6 rounded-lg text-center">
-                          <p className="text-3xl font-bold text-thryvance-green-dark">18</p>
+                          <p className="text-3xl font-bold text-thryvance-green-dark">{user.helpOffered}</p>
                           <p className="text-sm text-gray-600">People helped</p>
                         </div>
                         
@@ -259,15 +253,15 @@ const Profile = () => {
                 </TabsContent>
                 
                 <TabsContent value="reviews">
-                  <Reviews user={sampleUser} />
+                  <Reviews user={user} />
                 </TabsContent>
                 
                 <TabsContent value="reviewsgiven">
-                  <ReviewsGiven user={sampleUser} />
+                  <ReviewsGiven user={user} />
                 </TabsContent>
                 
                 <TabsContent value="settings">
-                  <SettingsForm user={sampleUser} />
+                  <SettingsForm user={user} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -278,7 +272,7 @@ const Profile = () => {
       
       {/* Rating Dialog */}
       <RateUserDialog 
-        user={sampleUser} 
+        user={user} 
         open={isRateDialogOpen} 
         onOpenChange={setIsRateDialogOpen} 
       />
