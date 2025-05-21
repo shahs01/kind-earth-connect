@@ -147,7 +147,7 @@ export const useAuthProfile = () => {
     setIsLoading(true);
     
     try {
-      // Call the delete_user RPC function with an empty object instead of a parameter
+      // Call the delete_user RPC function with an empty object
       const { error } = await supabase.rpc('delete_user', {});
       
       if (error) throw error;
