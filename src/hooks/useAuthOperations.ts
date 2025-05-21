@@ -1,0 +1,296 @@
+
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { SignUpData, PasswordResetData, User } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
+/**
+ * Hook for handling authentication operations
+ */
+export const useAuthOperations = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  /**
+   * Logs a user in
+   */
+  const login = async (email: string, password: string, rememberMe = false) => {
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Login successful!",
+        description: "Welcome back to Thryvance."
+      });
+      
+      navigate('/profile');
+    } catch (error: any) {
+      let message = "Failed to log in";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      
+      toast({
+        title: "Login failed",
+        description: message,
+        variant: "destructive"
+      });
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Signs up a new user
+   */
+  const signUp = async (userData: SignUpData) => {
+    setIsLoading(true);
+    
+    try {
+      // Sign up the user with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            username: userData.username,
+            name: userData.name,
+            location: userData.location
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Account created!",
+        description: "Please check your email to verify your account."
+      });
+      
+      // Redirect to verification page
+      navigate('/verify-email');
+    } catch (error: any) {
+      let message = "Failed to create account";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      
+      toast({
+        title: "Signup failed",
+        description: message,
+        variant: "destructive"
+      });
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Logs a user out
+   */
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+      
+      navigate('/login');
+    } catch (error: any) {
+      toast({
+        title: "Logout error",
+        description: error.message || "An error occurred during logout",
+        variant: "destructive",
+      });
+    }
+  };
+
+  /**
+   * Sends an email verification
+   */
+  const sendEmailVerification = async (user: User | null) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "No user found to send verification email",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Verification email sent",
+        description: "Please check your inbox and follow the link to verify your email.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send verification email",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  /**
+   * Verifies an email
+   */
+  const verifyEmail = async (token: string): Promise<boolean> => {
+    // For Supabase, email verification is handled by their email flow
+    // This method is kept for compatibility with the existing interfaces
+    return true;
+  };
+
+  /**
+   * Changes a user's password
+   */
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    setIsLoading(true);
+    
+    try {
+      // Verify current password by trying to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: '', // This will be replaced in AuthContext with the user's email
+        password: currentPassword
+      });
+      
+      if (signInError) {
+        throw new Error("Current password is incorrect");
+      }
+      
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully.",
+      });
+    } catch (error: any) {
+      let message = "Failed to change password";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      
+      toast({
+        title: "Password change failed",
+        description: message,
+        variant: "destructive",
+      });
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Requests a password reset
+   */
+  const requestPasswordReset = async (email: string) => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for instructions to reset your password.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Resets a user's password
+   */
+  const resetPassword = async (data: PasswordResetData) => {
+    setIsLoading(true);
+    
+    try {
+      const { newPassword } = data;
+      
+      if (!newPassword) {
+        throw new Error("New password is required");
+      }
+      
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset successful",
+        description: "Your password has been updated. You can now log in with your new password.",
+      });
+      
+      navigate('/login');
+    } catch (error: any) {
+      let message = "Failed to reset password";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      
+      toast({
+        title: "Password reset failed",
+        description: message,
+        variant: "destructive",
+      });
+      
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    isLoading,
+    login,
+    signUp,
+    logout,
+    sendEmailVerification,
+    verifyEmail,
+    changePassword,
+    requestPasswordReset,
+    resetPassword
+  };
+};
