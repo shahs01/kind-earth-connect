@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { Review, User } from "@/types";
 import { 
   Card, 
@@ -9,38 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StarIcon } from "lucide-react";
-import { useState } from "react";
-
-// Sample reviews given data
-const sampleReviewsGiven: Review[] = [
-  {
-    id: "reviewGiven1",
-    fromUserId: "user123", // Current user's ID
-    fromUserName: "Alex Johnson", // Current user's name
-    fromUserAvatar: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&q=80",
-    rating: 5,
-    text: "James was extremely helpful with his gardening advice. He really knows his plants!",
-    createdAt: new Date(2023, 4, 5)
-  },
-  {
-    id: "reviewGiven2",
-    fromUserId: "user123", // Current user's ID
-    fromUserName: "Alex Johnson", // Current user's name
-    fromUserAvatar: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&q=80",
-    rating: 4,
-    text: "Sarah was great with helping me move furniture. Very punctual and strong!",
-    createdAt: new Date(2023, 5, 12)
-  },
-  {
-    id: "reviewGiven3",
-    fromUserId: "user123", // Current user's ID
-    fromUserName: "Alex Johnson", // Current user's name
-    fromUserAvatar: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&q=80",
-    rating: 5,
-    text: "Maria's tutoring helped my son improve his grades significantly. Highly recommended!",
-    createdAt: new Date(2023, 6, 20)
-  }
-];
 
 const StarRating = ({ rating }: { rating: number }) => {
   return (
@@ -62,7 +31,36 @@ interface ReviewsGivenProps {
 }
 
 const ReviewsGiven = ({ user }: ReviewsGivenProps) => {
-  const [reviewsGiven] = useState<Review[]>(user.reviewsGiven || sampleReviewsGiven);
+  const [reviewsGiven, setReviewsGiven] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReviewsGiven = () => {
+      // In a real app, this would be an API call
+      // For now, we'll check localStorage
+      try {
+        const reviewsStr = localStorage.getItem('reviews');
+        const allReviews = reviewsStr ? JSON.parse(reviewsStr) : [];
+        
+        // Filter reviews given by this user and parse dates
+        const userReviewsGiven = allReviews
+          .filter((review: any) => review.fromUserId === user.id)
+          .map((review: any) => ({
+            ...review,
+            createdAt: new Date(review.createdAt)
+          }));
+        
+        setReviewsGiven(userReviewsGiven);
+      } catch (error) {
+        console.error("Error loading reviews given:", error);
+        setReviewsGiven([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReviewsGiven();
+  }, [user]);
 
   return (
     <Card>
@@ -73,10 +71,16 @@ const ReviewsGiven = ({ user }: ReviewsGivenProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {reviewsGiven.length === 0 ? (
-          <p className="text-gray-500 text-center py-10">
-            You haven't reviewed anyone yet. When you leave reviews for others, they'll appear here.
-          </p>
+        {isLoading ? (
+          <div className="py-8 text-center">
+            <p className="text-gray-500">Loading reviews...</p>
+          </div>
+        ) : reviewsGiven.length === 0 ? (
+          <div className="text-center py-12 px-6">
+            <p className="text-gray-500">
+              You haven't reviewed anyone yet. When you leave reviews for others, they'll appear here.
+            </p>
+          </div>
         ) : (
           <div className="space-y-6">
             {reviewsGiven.map((review) => (

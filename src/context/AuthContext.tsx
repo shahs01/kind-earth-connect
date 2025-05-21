@@ -40,6 +40,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
+          // Ensure createdAt is a Date object
+          if (parsedUser.createdAt) {
+            parsedUser.createdAt = new Date(parsedUser.createdAt);
+          }
           setUser(parsedUser);
         } catch (error) {
           console.error("Failed to parse stored user:", error);
@@ -80,6 +84,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         trustScore: userWithoutPassword.trustScore || 5.0,
         helpOffered: userWithoutPassword.helpOffered || 0,
         helpReceived: userWithoutPassword.helpReceived || 0,
+        volunteerHours: userWithoutPassword.volunteerHours || 0,
         createdAt: new Date(userWithoutPassword.createdAt || new Date()),
         verifiedStatus: userWithoutPassword.verifiedStatus || false
       };
@@ -139,6 +144,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         trustScore: 5.0,
         helpOffered: 0,
         helpReceived: 0,
+        volunteerHours: 0,
         verifiedStatus: false
       };
       
@@ -157,6 +163,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
+      
+      // Initialize empty posts and reviews array in localStorage if they don't exist
+      if (!localStorage.getItem('posts')) {
+        localStorage.setItem('posts', JSON.stringify([]));
+      }
+      
+      if (!localStorage.getItem('reviews')) {
+        localStorage.setItem('reviews', JSON.stringify([]));
+      }
       
       toast({
         title: "Account created!",

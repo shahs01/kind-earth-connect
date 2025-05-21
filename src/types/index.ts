@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -10,6 +11,7 @@ export interface User {
   helpOffered: number;
   helpReceived: number;
   verifiedStatus: boolean;
+  volunteerHours?: number;
   reviewsGiven?: Review[]; // Added reviews given by this user
 }
 
@@ -26,12 +28,13 @@ export interface Post {
   status: "active" | "completed" | "archived" | "deleted";
 }
 
-// New interfaces for reviews
+// Updated interface for reviews to include toUserId field
 export interface Review {
   id: string;
   fromUserId: string;
   fromUserName: string;
   fromUserAvatar: string;
+  toUserId?: string; // Added to identify which user received this review
   rating: number;
   text: string;
   createdAt: Date;

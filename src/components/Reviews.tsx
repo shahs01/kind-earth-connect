@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -10,37 +10,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StarIcon } from "lucide-react";
 import { User, Review } from "@/types";
-
-// Sample reviews data
-const sampleReviews: Review[] = [
-  {
-    id: "review1",
-    fromUserId: "user456",
-    fromUserName: "Emily Chen",
-    fromUserAvatar: "https://i.pravatar.cc/150?img=29",
-    rating: 5,
-    text: "Alex was incredibly helpful with the garden consultation. Their advice on sustainable practices made a huge difference in my garden. Highly recommend!",
-    createdAt: new Date(2023, 5, 20)
-  },
-  {
-    id: "review2",
-    fromUserId: "user789",
-    fromUserName: "Michael Johnson",
-    fromUserAvatar: "https://i.pravatar.cc/150?img=68",
-    rating: 4,
-    text: "Very knowledgeable and patient. Helped me install some fixtures around the house. Would definitely ask for help again!",
-    createdAt: new Date(2023, 6, 15)
-  },
-  {
-    id: "review3",
-    fromUserId: "user101",
-    fromUserName: "Sarah Williams",
-    fromUserAvatar: "https://i.pravatar.cc/150?img=47",
-    rating: 5,
-    text: "Alex went above and beyond when helping with my community project. Their dedication and expertise were truly impressive.",
-    createdAt: new Date(2023, 7, 5)
-  }
-];
 
 const StarRating = ({ rating }: { rating: number }) => {
   return (
@@ -62,7 +31,36 @@ interface ReviewsProps {
 }
 
 const Reviews = ({ user }: ReviewsProps) => {
-  const [reviews] = useState<Review[]>(sampleReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReviews = () => {
+      // In a real app, this would be an API call
+      // For now, we'll check localStorage
+      try {
+        const reviewsStr = localStorage.getItem('reviews');
+        const allReviews = reviewsStr ? JSON.parse(reviewsStr) : [];
+        
+        // Filter reviews for this user and parse dates
+        const userReviews = allReviews
+          .filter((review: any) => review.toUserId === user.id)
+          .map((review: any) => ({
+            ...review,
+            createdAt: new Date(review.createdAt)
+          }));
+        
+        setReviews(userReviews);
+      } catch (error) {
+        console.error("Error loading reviews:", error);
+        setReviews([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, [user]);
 
   return (
     <Card>
@@ -73,10 +71,16 @@ const Reviews = ({ user }: ReviewsProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {reviews.length === 0 ? (
-          <p className="text-gray-500 text-center py-10">
-            No reviews yet. When others leave reviews for {user.name}, they'll appear here.
-          </p>
+        {isLoading ? (
+          <div className="py-8 text-center">
+            <p className="text-gray-500">Loading reviews...</p>
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="text-center py-12 px-6">
+            <p className="text-gray-500">
+              No reviews yet. When others leave reviews for {user.name}, they'll appear here.
+            </p>
+          </div>
         ) : (
           <div className="space-y-6">
             {reviews.map((review) => (

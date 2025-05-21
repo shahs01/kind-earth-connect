@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import Footer from "@/components/Footer";
@@ -14,60 +14,50 @@ import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { Calendar, MapPin } from "lucide-react";
 
-// Sample posts by this user - would be fetched from API in a real app
-const samplePostsData: Post[] = [
-  {
-    id: "post1",
-    title: "Offering garden consultation and plant care advice",
-    description: "I'm an experienced gardener willing to share advice on plant care, garden design, and sustainable practices.",
-    type: "offer",
-    category: "Home & Garden",
-    location: "Portland, OR",
-    userId: "user123",
-    createdAt: new Date(2023, 4, 10),
-    status: "active"
-  },
-  {
-    id: "post2",
-    title: "Can help with basic home repairs this weekend",
-    description: "I'm handy with tools and have this weekend free. Can help with minor home repairs, installing fixtures, etc.",
-    type: "offer",
-    category: "Home Repair",
-    location: "Portland, OR",
-    userId: "user123",
-    createdAt: new Date(2023, 5, 16),
-    status: "active"
-  },
-  {
-    id: "post3",
-    title: "Need help transporting donations to shelter",
-    description: "I've collected donations for our local shelter but need help transporting them. Looking for someone with a truck or large vehicle.",
-    type: "request",
-    category: "Transportation",
-    location: "Portland, OR",
-    userId: "user123",
-    createdAt: new Date(2023, 3, 20),
-    status: "completed"
-  },
-  {
-    id: "post4",
-    title: "Need help with yard cleanup",
-    description: "Looking for some help with cleaning up my yard after the storm last week.",
-    type: "request",
-    category: "Home & Garden",
-    location: "Portland, OR",
-    userId: "user123",
-    createdAt: new Date(2023, 2, 15),
-    status: "archived"
-  },
-];
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="text-center py-12 px-6">
+    <p className="text-gray-500">{message}</p>
+  </div>
+);
 
 const Profile = () => {
   const { user } = useAuth();
   const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
-  const [posts, setPosts] = useState<Post[]>(samplePostsData);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isOwnProfile] = useState(true);
+
+  useEffect(() => {
+    const loadUserPosts = () => {
+      // In a real app, this would be an API call to get user's posts
+      // For now, we'll check localStorage for posts that belong to the current user
+      try {
+        const allPostsStr = localStorage.getItem('posts');
+        const allPosts = allPostsStr ? JSON.parse(allPostsStr) : [];
+        
+        if (user) {
+          // Filter posts for current user and parse dates
+          const userPosts = allPosts
+            .filter((post: any) => post.userId === user.id)
+            .map((post: any) => ({
+              ...post,
+              createdAt: new Date(post.createdAt)
+            }));
+          
+          setPosts(userPosts);
+        }
+      } catch (error) {
+        console.error("Error loading user posts:", error);
+        setPosts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserPosts();
+  }, [user]);
 
   const handlePostStatusChange = (post: Post, newStatus: string) => {
     setPosts(prevPosts => 
@@ -75,6 +65,21 @@ const Profile = () => {
         p.id === post.id ? { ...p, status: newStatus as any } : p
       )
     );
+    
+    // In a real app, this would update the post status in the backend
+    // For now, update in localStorage
+    try {
+      const allPostsStr = localStorage.getItem('posts');
+      const allPosts = allPostsStr ? JSON.parse(allPostsStr) : [];
+      
+      const updatedPosts = allPosts.map((p: any) => 
+        p.id === post.id ? { ...p, status: newStatus } : p
+      );
+      
+      localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    } catch (error) {
+      console.error("Error updating post status:", error);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -95,6 +100,10 @@ const Profile = () => {
   if (!user) {
     return <div>Loading profile...</div>;
   }
+
+  const activePosts = posts.filter(post => post.status !== "deleted");
+  const offerPosts = posts.filter(post => post.type === "offer" && post.status !== "deleted");
+  const requestPosts = posts.filter(post => post.type === "request" && post.status !== "deleted");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -131,10 +140,13 @@ const Profile = () => {
                     <CardContent className="p-6">
                       <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
                       
-                      <div className="space-y-4">
-                        {posts
-                          .filter(post => post.status !== "deleted")
-                          .map((post) => (
+                      {isLoading ? (
+                        <div className="py-8 text-center">
+                          <p className="text-gray-500">Loading activity...</p>
+                        </div>
+                      ) : activePosts.length > 0 ? (
+                        <div className="space-y-4">
+                          {activePosts.map((post) => (
                             <div key={post.id} className="border-b pb-4 last:border-0">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 mb-1 text-sm text-gray-500">
@@ -157,7 +169,10 @@ const Profile = () => {
                               <p className="text-gray-600 text-sm mt-1">{post.description}</p>
                             </div>
                           ))}
-                      </div>
+                        </div>
+                      ) : (
+                        <EmptyState message="You don't have any activity yet. Start by offering or requesting help!" />
+                      )}
                     </CardContent>
                   </Card>
                   
@@ -172,7 +187,9 @@ const Profile = () => {
                         </div>
                         
                         <div className="bg-thryvance-blue-light/50 p-6 rounded-lg text-center">
-                          <p className="text-3xl font-bold text-thryvance-blue-dark">24</p>
+                          <p className="text-3xl font-bold text-thryvance-blue-dark">
+                            {user.volunteerHours || 0}
+                          </p>
                           <p className="text-sm text-gray-600">Volunteer hours</p>
                         </div>
                       </div>
@@ -186,10 +203,13 @@ const Profile = () => {
                       <CardTitle className="text-xl font-semibold">My Offers</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
-                      <div className="space-y-4">
-                        {posts
-                          .filter(post => post.type === "offer" && post.status !== "deleted")
-                          .map((post) => (
+                      {isLoading ? (
+                        <div className="py-8 text-center">
+                          <p className="text-gray-500">Loading offers...</p>
+                        </div>
+                      ) : offerPosts.length > 0 ? (
+                        <div className="space-y-4">
+                          {offerPosts.map((post) => (
                             <div key={post.id} className="border-b pb-4 last:border-0">
                               <div className="flex items-center justify-between">
                                 <div>
@@ -211,7 +231,10 @@ const Profile = () => {
                               </div>
                             </div>
                           ))}
-                      </div>
+                        </div>
+                      ) : (
+                        <EmptyState message="You haven't offered any help yet. Share your skills and time with others who need it!" />
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -222,10 +245,13 @@ const Profile = () => {
                       <CardTitle className="text-xl font-semibold">My Requests</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
-                      <div className="space-y-4">
-                        {posts
-                          .filter(post => post.type === "request" && post.status !== "deleted")
-                          .map((post) => (
+                      {isLoading ? (
+                        <div className="py-8 text-center">
+                          <p className="text-gray-500">Loading requests...</p>
+                        </div>
+                      ) : requestPosts.length > 0 ? (
+                        <div className="space-y-4">
+                          {requestPosts.map((post) => (
                             <div key={post.id} className="border-b pb-4 last:border-0">
                               <div className="flex items-center justify-between">
                                 <div>
@@ -247,7 +273,10 @@ const Profile = () => {
                               </div>
                             </div>
                           ))}
-                      </div>
+                        </div>
+                      ) : (
+                        <EmptyState message="You haven't requested any help yet. Don't hesitate to ask the community when you need assistance!" />
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
