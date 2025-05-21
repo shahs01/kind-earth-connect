@@ -15,6 +15,7 @@ interface PostData {
   status: string;
   availability?: string;
   timeframe?: string;
+  photos?: string[];
 }
 
 export const useProfileManagement = () => {
@@ -53,8 +54,54 @@ export const useProfileManagement = () => {
     }
   };
 
+  // Upload photos for a post
+  const uploadPostPhotos = async (userId: string, postId: string, photos: File[]) => {
+    try {
+      if (!photos.length) return [];
+      
+      const photoUrls: string[] = [];
+      
+      for (const photo of photos) {
+        const fileExt = photo.name.split('.').pop();
+        const fileName = `${userId}/${postId}/${Date.now()}.${fileExt}`;
+        const filePath = `posts/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('post-photos')
+          .upload(filePath, photo);
+          
+        if (uploadError) {
+          console.error("Error uploading photo:", uploadError);
+          continue;
+        }
+        
+        // Get public URL for the uploaded photo
+        const { data } = supabase.storage
+          .from('post-photos')
+          .getPublicUrl(filePath);
+          
+        if (data?.publicUrl) {
+          photoUrls.push(data.publicUrl);
+        }
+      }
+      
+      // Update post with photo URLs if any were successfully uploaded
+      if (photoUrls.length > 0) {
+        await supabase
+          .from('posts')
+          .update({ photos: photoUrls })
+          .eq('id', postId);
+      }
+      
+      return photoUrls;
+    } catch (error) {
+      console.error("Error uploading post photos:", error);
+      return [];
+    }
+  };
+
   // Create a post
-  const createPost = async (postData: any) => {
+  const createPost = async (postData: any, photos?: File[]) => {
     try {
       setIsLoading(true);
       
@@ -93,6 +140,11 @@ export const useProfileManagement = () => {
       if (error) {
         console.error("Error creating post:", error);
         throw error;
+      }
+
+      // If we have photos and post was created successfully, upload them
+      if (photos && photos.length > 0 && data) {
+        await uploadPostPhotos(userData.user.id, data.id, photos);
       }
 
       toast({
@@ -147,6 +199,7 @@ export const useProfileManagement = () => {
     isLoading,
     fetchUserPosts,
     createPost,
-    deletePost
+    deletePost,
+    uploadPostPhotos
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,11 +125,9 @@ const RequestHelpForm = () => {
     };
     
     console.log("Creating request post:", postData);
-    const newPost = await createPost(postData);
+    const newPost = await createPost(postData, photos);
     
     if (newPost) {
-      // TODO: Handle photo uploads if needed
-      
       // Redirect to profile page to see their posts
       navigate("/profile");
     }
