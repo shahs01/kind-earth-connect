@@ -62,7 +62,7 @@ function App() {
         <Route path="/offer-help" element={<OfferHelp />} />
         <Route path="/request-help" element={<RequestHelp />} />
         <Route path="/nonprofit-directory" element={<NonprofitDirectory />} />
-        <Route path="/search" element={<SearchHelp />} />
+        <Route path="/search-help" element={<SearchHelp />} />
         <Route path="/donate" element={<Donate />} />
         <Route path="/partner-with-us" element={<PartnerWithUs />} />
         <Route path="/sponsor-project" element={<SponsorProject />} />
