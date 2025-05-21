@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
@@ -20,14 +21,40 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> & { 
+    sanitize?: boolean 
+  }
+>(({ className, src, sanitize = true, ...props }, ref) => {
+  // Security improvement: Simple URL sanitization for avatar images
+  const sanitizedSrc = React.useMemo(() => {
+    if (!sanitize || !src || typeof src !== 'string') return src;
+    
+    try {
+      // Only allow http/https URLs or data URLs
+      if (src.startsWith('data:image/') || 
+          src.startsWith('https://') || 
+          src.startsWith('http://')) {
+        return src;
+      }
+      
+      // Fall back to placeholder for suspicious URLs
+      console.warn('Suspicious image URL sanitized:', src);
+      return 'https://ui-avatars.com/api/?name=User';
+    } catch (e) {
+      console.error('Error sanitizing avatar URL:', e);
+      return 'https://ui-avatars.com/api/?name=User';
+    }
+  }, [src, sanitize]);
+
+  return (
+    <AvatarPrimitive.Image
+      ref={ref}
+      className={cn("aspect-square h-full w-full", className)}
+      src={sanitizedSrc}
+      {...props}
+    />
+  );
+})
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
 const AvatarFallback = React.forwardRef<

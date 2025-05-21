@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
  */
 const ProtectedRoute = ({ 
   redirectPath = "/login",
-  requireVerified = false // Security fix: Since email verification is disabled, we set this to false by default
+  requireVerified = false // Email verification is disabled by default
 }: ProtectedRouteProps) => {
   const { user, isLoading, emailVerified } = useAuth();
   const location = useLocation();
@@ -29,25 +29,32 @@ const ProtectedRoute = ({
     );
   }
 
-  // If not authenticated, redirect to login
+  // If not authenticated, redirect to login with current location for redirect back
   if (!user) {
-    // Security fix: Store current location properly for redirect after login
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
-  // If verification is required but email is not verified (shouldn't happen with verification disabled)
+  // Email verification check - should not trigger since verification is disabled
   if (requireVerified && !emailVerified) {
     return <Navigate to="/verify-email" state={{ from: location }} replace />;
   }
 
-  // Security fix: Check for session timeout
-  const sessionTimeout = localStorage.getItem('sessionTimeout');
-  if (sessionTimeout && parseInt(sessionTimeout) < Date.now()) {
-    localStorage.removeItem('sessionTimeout');
-    return <Navigate to="/login" state={{ from: location, timeout: true }} replace />;
+  // Security improvement: Check for session expiration
+  const sessionExpiry = localStorage.getItem('sessionExpiry');
+  if (sessionExpiry && parseInt(sessionExpiry) < Date.now()) {
+    // Clear expired session data
+    localStorage.removeItem('sessionExpiry');
+    
+    // Redirect to login with timeout notification
+    return <Navigate to="/login" state={{ from: location, sessionExpired: true }} replace />;
   }
 
-  // If authenticated and meets verification requirements, render the outlet (child routes)
+  // Set session expiry time if not already set - 24 hour session
+  if (!sessionExpiry) {
+    localStorage.setItem('sessionExpiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
+  }
+
+  // User is authenticated and meets verification requirements
   return <Outlet />;
 };
 

@@ -13,22 +13,23 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Security fix: Add CSRF protection by checking token origin
   useEffect(() => {
+    // Security improvement: Add token validation that only allows alphanumeric, underscore, and dash characters
     const token = new URLSearchParams(location.search).get('token');
     if (token && !token.match(/^[a-zA-Z0-9_-]+$/)) {
-      navigate('/login');
+      console.error("Invalid token format detected");
+      navigate('/login', { replace: true });
+      return;
     }
-  }, [location, navigate]);
-  
-  // Redirect to profile since email verification is disabled
-  useEffect(() => {
+    
+    // With email verification disabled, redirect authenticated users to profile
+    // and unauthenticated users to login
     if (user) {
-      navigate('/profile');
+      navigate('/profile', { replace: true });
     } else {
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location]);
   
   return (
     <div className="min-h-screen flex flex-col">
