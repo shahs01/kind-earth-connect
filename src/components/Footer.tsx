@@ -31,7 +31,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/nonprofits" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/nonprofit-directory" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Find Nonprofits
                 </Link>
               </li>
@@ -52,7 +52,7 @@ const Footer = () => {
             <h3 className="font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/guidelines" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Community Guidelines
                 </Link>
               </li>
@@ -62,17 +62,17 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/safety" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Safety Tips
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Terms of Service
                 </Link>
               </li>
@@ -119,7 +119,10 @@ const Footer = () => {
                   placeholder="Your email"
                   className="px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent"
                 />
-                <button className="bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-r-md transition-colors">
+                <button 
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-r-md transition-colors"
+                  onClick={() => window.location.href = "/subscribe"}
+                >
                   Subscribe
                 </button>
               </div>
