@@ -7,7 +7,7 @@ import Logo from "./Logo";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // This would come from auth context in a real app
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Set to true for demo purposes
 
   return (
     <nav className="bg-white py-4 shadow-sm sticky top-0 z-50">
@@ -27,7 +27,7 @@ const Navbar = () => {
               <Button asChild variant="ghost">
                 <Link to="/profile">
                   <User className="h-5 w-5 mr-1" />
-                  Profile
+                  My Profile
                 </Link>
               </Button>
               <Button 
@@ -80,10 +80,11 @@ const Navbar = () => {
               <>
                 <Link 
                   to="/profile" 
-                  className="text-gray-700 hover:text-thryvance-green transition-colors py-2"
+                  className="flex items-center gap-2 text-gray-700 hover:text-thryvance-green transition-colors py-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Profile
+                  <User className="h-5 w-5" />
+                  My Profile
                 </Link>
                 <Button 
                   variant="outline" 
