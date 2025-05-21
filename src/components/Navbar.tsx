@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
-  Menu, X, User, Search, ChevronDown, HelpCircle, Users, Info, UserPlus,
+  Menu, X, User, Search, ChevronDown, Users, Info, UserPlus,
   Heart, PiggyBank, HandHeart, Box, Mail, MailPlus, Briefcase
 } from "lucide-react";
 import {
@@ -26,23 +26,23 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
-          {/* Help Dropdown */}
+          {/* Offer/Request Dropdown - Updated from "Help" to "Offer/Request" */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors outline-none">
-              <HelpCircle className="h-5 w-5" />
-              Help
+              <HandHeart className="h-5 w-5" />
+              Offer/Request
               <ChevronDown className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white">
               <DropdownMenuItem asChild>
                 <Link to="/offer-help" className="flex items-center gap-2 cursor-pointer">
-                  <HelpCircle className="h-4 w-4" />
+                  <HandHeart className="h-4 w-4" />
                   Offer Help
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/request-help" className="flex items-center gap-2 cursor-pointer">
-                  <HelpCircle className="h-4 w-4" />
+                  <HandHeart className="h-4 w-4" />
                   Request Help
                 </Link>
               </DropdownMenuItem>
@@ -55,7 +55,7 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* Ways to Give Dropdown - NEW */}
+          {/* Ways to Give Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors outline-none">
               <Heart className="h-5 w-5" />
@@ -125,7 +125,7 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* About Dropdown - NEW */}
+          {/* About Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors outline-none">
               <Info className="h-5 w-5" />
@@ -209,11 +209,11 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white py-4 px-4 absolute top-full left-0 w-full shadow-md max-h-[80vh] overflow-y-auto">
           <div className="flex flex-col gap-4">
-            {/* Help Section */}
+            {/* Offer/Request Section - Updated from "Help" to "Offer/Request" */}
             <div className="border-b border-gray-200 pb-2">
               <h3 className="font-medium text-gray-900 mb-2 flex items-center">
-                <HelpCircle className="h-4 w-4 mr-1" />
-                Help
+                <HandHeart className="h-4 w-4 mr-1" />
+                Offer/Request
               </h3>
               <Link 
                 to="/offer-help" 
@@ -241,7 +241,7 @@ const Navbar = () => {
               </Link>
             </div>
             
-            {/* Ways to Give Section - NEW */}
+            {/* Ways to Give Section */}
             <div className="border-b border-gray-200 pb-2">
               <h3 className="font-medium text-gray-900 mb-2 flex items-center">
                 <Heart className="h-4 w-4 mr-1" />
@@ -328,7 +328,7 @@ const Navbar = () => {
               </Link>
             </div>
             
-            {/* About Section - NEW */}
+            {/* About Section */}
             <div className="border-b border-gray-200 pb-2">
               <h3 className="font-medium text-gray-900 mb-2 flex items-center">
                 <Info className="h-4 w-4 mr-1" />

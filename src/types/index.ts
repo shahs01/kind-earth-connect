@@ -1,41 +1,42 @@
 
-export type User = {
+export interface User {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
-  bio?: string;
-  location?: string;
+  avatar: string;
+  bio: string;
+  location: string;
   createdAt: Date;
   trustScore: number;
   helpOffered: number;
   helpReceived: number;
   verifiedStatus: boolean;
-};
+}
 
-export type PostType = 'offer' | 'request';
-
-export type Post = {
+export interface Post {
   id: string;
   title: string;
   description: string;
-  type: PostType;
+  type: "offer" | "request";
   category: string;
   location: string;
   userId: string;
-  user?: User;
   createdAt: Date;
-  status: 'active' | 'completed' | 'cancelled';
-};
+  status: "active" | "completed" | "archived" | "deleted";
+}
 
-export type Nonprofit = {
+// New interfaces for reviews
+export interface Review {
   id: string;
-  name: string;
-  description: string;
-  category: string;
-  location: string;
-  website?: string;
-  phoneNumber?: string;
-  email?: string;
-  logo?: string;
-};
+  fromUserId: string;
+  fromUserName: string;
+  fromUserAvatar: string;
+  rating: number;
+  text: string;
+  createdAt: Date;
+}
+
+export interface RateUserFormData {
+  rating: number;
+  review: string;
+}

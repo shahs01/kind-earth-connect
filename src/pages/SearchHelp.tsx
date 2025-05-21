@@ -108,6 +108,7 @@ const SearchHelp = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [locationFilter, setLocationFilter] = useState("");
+  const [postType, setPostType] = useState("all"); // New state for post type filter (offers/requests/all)
   
   const filterItems = (items: any[]) => {
     return items.filter(item => {
@@ -123,7 +124,13 @@ const SearchHelp = () => {
         !locationFilter || 
         item.location.toLowerCase().includes(locationFilter.toLowerCase());
       
-      return matchesSearch && matchesCategory && matchesLocation;
+      // Add post type filter
+      const matchesType = 
+        postType === "all" || 
+        (postType === "offers" && item.id.startsWith('o')) ||
+        (postType === "requests" && item.id.startsWith('r'));
+      
+      return matchesSearch && matchesCategory && matchesLocation && matchesType;
     });
   };
   
@@ -158,6 +165,7 @@ const SearchHelp = () => {
               setSearchQuery("");
               setSelectedCategory("All Categories");
               setLocationFilter("");
+              setPostType("all");
             }}
           >
             Clear filters
@@ -219,7 +227,7 @@ const SearchHelp = () => {
       <main className="flex-grow py-10 bg-thryvance-neutral-light">
         <div className="container mx-auto px-4">
           <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
               <div className="lg:col-span-2 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <Input 
@@ -251,6 +259,21 @@ const SearchHelp = () => {
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
               />
+              
+              {/* New Post Type Filter */}
+              <Select 
+                value={postType} 
+                onValueChange={setPostType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by post type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Posts</SelectItem>
+                  <SelectItem value="offers">Offers Only</SelectItem>
+                  <SelectItem value="requests">Requests Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
