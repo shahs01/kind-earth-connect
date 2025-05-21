@@ -75,6 +75,7 @@ export function useProfileManagement(user: UserType | null) {
 
   async function deleteAccount(): Promise<void> {
     try {
+      // We're calling the Supabase RPC function without parameters as it expects none
       const { error } = await supabase.rpc("delete_user");
 
       if (error) {
