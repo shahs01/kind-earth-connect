@@ -18,7 +18,9 @@ interface AuthContextProps {
   emailVerified: boolean;
 
   // Combined function to handle both requesting a reset and setting a new password
-  resetPassword: (emailOrData: string | { email: string; token: string; newPassword: string }) => Promise<void>;
+  resetPassword: (
+    emailOrData: string | { email: string; token: string; newPassword: string }
+  ) => Promise<void>;
   
   // Aliases for better naming consistency
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
@@ -209,7 +211,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Combined function to handle both requesting a reset and setting a new password
-  async function resetPassword(emailOrData: string | { email: string; token: string; newPassword: string }) {
+  async function resetPassword(
+    emailOrData: string | { email: string; token: string; newPassword: string }
+  ): Promise<void> {
     try {
       if (typeof emailOrData === 'string') {
         // This is the request password reset path
@@ -246,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function requestPasswordReset(email: string) {
-    // We need to call resetPassword with the email string
+    // Call resetPassword with the email string
     return resetPassword(email);
   }
 
