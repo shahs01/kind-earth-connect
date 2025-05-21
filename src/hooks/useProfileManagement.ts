@@ -129,7 +129,7 @@ export function useProfileManagement() {
       
       const { error } = await supabase
         .from('favorites')
-        .insert([{ post_id: postId }]);
+        .insert({ post_id: postId });
       
       if (error) throw error;
       

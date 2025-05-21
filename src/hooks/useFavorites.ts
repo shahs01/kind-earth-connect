@@ -81,9 +81,10 @@ export function useFavorites() {
   const addFavorite = async (postId: string) => {
     setLoading(true);
     try {
+      // Must include user_id in the insert
       const { data, error } = await supabase
         .from('favorites')
-        .insert([{ post_id: postId }])
+        .insert({ post_id: postId })
         .select();
       
       if (error) throw error;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpData, PasswordResetData, User } from "@/types";
@@ -20,13 +19,10 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
+      // Use correct options format for Supabase v2
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password,
-        options: {
-          // Set session expiry to 30 days if rememberMe is true
-          expiresIn: rememberMe ? 60 * 60 * 24 * 30 : undefined
-        }
+        password
       });
       
       if (error) throw error;

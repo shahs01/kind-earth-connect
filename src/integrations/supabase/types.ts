@@ -272,6 +272,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_conversations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          other_user_id: string
+          last_message_at: string
+        }[]
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
