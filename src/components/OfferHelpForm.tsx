@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart } from "lucide-react";
+import { Heart, Image, X } from "lucide-react";
 
 const categories = [
   "Home Repair",
@@ -32,6 +32,8 @@ const OfferHelpForm = () => {
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -60,6 +62,39 @@ const OfferHelpForm = () => {
     }
   };
   
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    
+    if (!fileList || photos.length + fileList.length > 3) {
+      alert("You can only upload up to 3 photos");
+      return;
+    }
+    
+    const newPhotos = [...photos];
+    const newPhotoUrls = [...photoPreviewUrls];
+    
+    Array.from(fileList).forEach((file) => {
+      if (file.type.startsWith("image/")) {
+        newPhotos.push(file);
+        newPhotoUrls.push(URL.createObjectURL(file));
+      }
+    });
+    
+    setPhotos(newPhotos);
+    setPhotoPreviewUrls(newPhotoUrls);
+    
+    // Reset the input to allow selecting the same file again
+    e.target.value = "";
+  };
+  
+  const removePhoto = (index: number) => {
+    // Release the object URL to avoid memory leaks
+    URL.revokeObjectURL(photoPreviewUrls[index]);
+    
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -77,7 +112,9 @@ const OfferHelpForm = () => {
     }
     
     // Here you would normally handle the form submission with a backend service
-    console.log("Form submitted:", formData);
+    // Including photos array for upload
+    console.log("Form submitted:", formData, { photos });
+    
     // For demo purposes, redirect to community
     window.location.href = "/community";
   };
@@ -165,6 +202,41 @@ const OfferHelpForm = () => {
               className={errors.availability ? "border-red-500" : ""}
             />
             {errors.availability && <p className="text-xs text-red-500">{errors.availability}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="photos">Photos (optional, max 3)</Label>
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                {photoPreviewUrls.map((url, index) => (
+                  <div key={index} className="relative aspect-square rounded-md overflow-hidden border bg-white">
+                    <img src={url} alt={`Preview ${index + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                
+                {photos.length < 3 && (
+                  <label htmlFor="photoUpload" className="flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
+                    <Image className="h-6 w-6 text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-500">Add Photo</span>
+                    <input
+                      id="photoUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="sr-only"
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">Upload photos related to your offer (max 3)</p>
+            </div>
           </div>
           
           <Button type="submit" className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
