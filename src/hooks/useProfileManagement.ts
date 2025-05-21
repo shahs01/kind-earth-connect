@@ -90,7 +90,8 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
-      // Call the delete_user RPC function - removing the userId parameter that was causing the error
+      // Call the delete_user RPC function without passing the userId parameter
+      // The RPC function will use the authenticated user's session
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
