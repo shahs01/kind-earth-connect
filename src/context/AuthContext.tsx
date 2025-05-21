@@ -1,10 +1,9 @@
-
 import { createContext, useContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { User as UserType } from "@/types";
 import { useAuthState } from "@/hooks/useAuthState";
-import { useAuthMethods, SignUpData } from "@/hooks/useAuthMethods";
+import { useAuthMethods } from "@/hooks/useAuthMethods";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { usePasswordManagement, ResetPasswordData } from "@/hooks/usePasswordManagement";
 import { useEmailVerification } from "@/hooks/useEmailVerification";
@@ -12,7 +11,7 @@ import { useEmailVerification } from "@/hooks/useEmailVerification";
 interface AuthContextProps {
   user: UserType | null;
   session: Session | null;
-  signUp: (data: SignUpData) => Promise<void>;
+  signUp: (data: import("@/types").SignUpData) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (data: Partial<UserType>) => Promise<void>;
