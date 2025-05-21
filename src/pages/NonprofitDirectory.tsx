@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -22,6 +23,7 @@ const sampleNonprofits: Nonprofit[] = [
     phoneNumber: "(503) 555-1234",
     email: "info@portlandfoodbank.org",
     logo: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&q=80",
+    verified: true, // Added verified property
   },
   {
     id: "2",
@@ -32,6 +34,8 @@ const sampleNonprofits: Nonprofit[] = [
     website: "https://example.com/shelter",
     phoneNumber: "(503) 555-5678",
     email: "contact@safeharbor.org",
+    logo: "", // Added empty logo property
+    verified: false, // Added verified property
   },
   {
     id: "3",
@@ -42,6 +46,8 @@ const sampleNonprofits: Nonprofit[] = [
     website: "https://example.com/clinic",
     phoneNumber: "(503) 555-9876",
     email: "info@carelinic.org",
+    logo: "", // Added empty logo property
+    verified: true, // Added verified property
   },
   {
     id: "4",
@@ -53,6 +59,7 @@ const sampleNonprofits: Nonprofit[] = [
     phoneNumber: "(503) 555-4321",
     email: "info@youthmentorship.org",
     logo: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&q=80",
+    verified: true, // Added verified property
   },
   {
     id: "5",
@@ -63,6 +70,8 @@ const sampleNonprofits: Nonprofit[] = [
     website: "https://example.com/ssn",
     phoneNumber: "(503) 555-8765",
     email: "help@seniorsupport.org",
+    logo: "", // Added empty logo property
+    verified: false, // Added verified property
   },
   {
     id: "6",
@@ -73,6 +82,8 @@ const sampleNonprofits: Nonprofit[] = [
     website: "https://example.com/vrc",
     phoneNumber: "(503) 555-3456",
     email: "info@veteransrc.org",
+    logo: "", // Added empty logo property
+    verified: true, // Added verified property
   }
 ];
 
