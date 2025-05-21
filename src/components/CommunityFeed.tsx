@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import ProfileDialog from "@/components/ProfileDialog";
 
 // Sample data for the feed
 const samplePosts: Post[] = [
@@ -108,7 +109,9 @@ const CommunityFeed = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 6;
-  
+  const [selectedUser, setSelectedUser] = useState<Post["user"] | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   // Filter posts based on active tab and search query
   const filteredPosts = samplePosts.filter(post => {
     const matchesTab = 
@@ -134,6 +137,13 @@ const CommunityFeed = () => {
   // Handle page changes
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+  
+  const handleUserClick = (post: Post) => {
+    if (post.user) {
+      setSelectedUser(post.user);
+      setIsProfileOpen(true);
+    }
   };
   
   return (
@@ -186,7 +196,11 @@ const CommunityFeed = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentPosts.length > 0 ? 
                 currentPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <PostCard 
+                    key={post.id} 
+                    post={post} 
+                    onUserClick={() => handleUserClick(post)}
+                  />
                 )) : 
                 <div className="col-span-3 text-center py-12">
                   <p className="text-gray-500">No posts found matching your search criteria.</p>
@@ -244,7 +258,11 @@ const CommunityFeed = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentPosts.length > 0 ? 
                 currentPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <PostCard 
+                    key={post.id} 
+                    post={post} 
+                    onUserClick={() => handleUserClick(post)}
+                  />
                 )) : 
                 <div className="col-span-3 text-center py-12">
                   <p className="text-gray-500">No offers found matching your search criteria.</p>
@@ -302,7 +320,11 @@ const CommunityFeed = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentPosts.length > 0 ? 
                 currentPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <PostCard 
+                    key={post.id} 
+                    post={post} 
+                    onUserClick={() => handleUserClick(post)}
+                  />
                 )) : 
                 <div className="col-span-3 text-center py-12">
                   <p className="text-gray-500">No requests found matching your search criteria.</p>
@@ -357,11 +379,22 @@ const CommunityFeed = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <ProfileDialog 
+        user={selectedUser}
+        open={isProfileOpen}
+        onOpenChange={setIsProfileOpen}
+      />
     </section>
   );
 };
 
-const PostCard = ({ post }: { post: Post }) => {
+interface PostCardProps {
+  post: Post;
+  onUserClick: () => void;
+}
+
+const PostCard = ({ post, onUserClick }: PostCardProps) => {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <CardHeader className="pb-3">
@@ -397,9 +430,16 @@ const PostCard = ({ post }: { post: Post }) => {
       </CardContent>
       
       <CardFooter className="pt-0 flex justify-between items-center border-t bg-thryvance-neutral-light/50">
-        <div className="flex items-center gap-2 py-3">
+        <div 
+          className="flex items-center gap-2 py-3 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={onUserClick}
+        >
           <div className="h-8 w-8 rounded-full bg-thryvance-neutral flex items-center justify-center">
-            <User className="h-4 w-4" />
+            {post.user?.avatar ? (
+              <img src={post.user.avatar} alt={post.user.name} className="h-8 w-8 rounded-full object-cover" />
+            ) : (
+              <User className="h-4 w-4" />
+            )}
           </div>
           <div>
             <p className="text-sm font-medium">{post.user?.name}</p>
@@ -410,7 +450,7 @@ const PostCard = ({ post }: { post: Post }) => {
           </div>
         </div>
         
-        <Button variant="ghost" size="sm" className="text-thryvance-blue-dark">
+        <Button variant="ghost" size="sm" className="text-thryvance-blue-dark" onClick={onUserClick}>
           <Flag className="h-4 w-4 mr-1" />
           <span>Connect</span>
         </Button>
