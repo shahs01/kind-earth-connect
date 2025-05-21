@@ -13,6 +13,7 @@ interface AuthContextType {
   logout: () => void;
 }
 
+// Update interface to make all fields required
 interface SignUpData {
   name: string;
   email: string;

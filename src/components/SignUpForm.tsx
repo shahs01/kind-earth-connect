@@ -17,7 +17,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, Github, Mail, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
 // Define form schema with Zod
@@ -57,8 +57,15 @@ const SignUpForm = () => {
     setIsLoading(true);
     
     try {
-      // Remove confirmPassword before sending to auth context
-      const { confirmPassword, ...signUpData } = data;
+      // Fix: Create a properly typed object for signUp instead of using destructuring
+      // which can make properties optional
+      const signUpData = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        location: data.location
+      };
+      
       await signUp(signUpData);
       navigate('/');
     } catch (error) {
@@ -303,3 +310,4 @@ const SignUpForm = () => {
 };
 
 export default SignUpForm;
+
