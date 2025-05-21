@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +16,18 @@ interface AuthContextProps {
   updateUserProfile: (data: Partial<UserType>) => Promise<void>;
   isLoading: boolean;
   emailVerified: boolean;
+
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
+  updateProfile: (data: any) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  validateField: (field: string, value: string) => Promise<boolean>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (data: { email: string; token: string; newPassword: string }) => Promise<void>;
+  sendEmailVerification: () => Promise<void>;
+  verifyEmail: (token: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -27,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const isAuthenticated = !!session;
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -165,6 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function login(email: string, password: string, rememberMe = false) {
+    return signIn(email, password);
+  }
+
+  async function logout() {
+    return signOut();
+  }
+
   async function signOut() {
     try {
       await supabase.auth.signOut();
@@ -178,22 +198,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function resetPassword(email: string) {
+  async function resetPassword(emailOrData: string | { email: string; token: string; newPassword: string }) {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      if (typeof emailOrData === 'string') {
+        // This is the request password reset path
+        const { error } = await supabase.auth.resetPasswordForEmail(emailOrData, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
 
-      if (error) {
-        toast.error(error.message);
-        return;
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+
+        toast.success("Password reset link sent to your email");
+      } else {
+        // This is the confirm password reset path
+        const { email, token, newPassword } = emailOrData;
+        
+        // For password recovery, we need to set a new password
+        const { error } = await supabase.auth.updateUser({ 
+          password: newPassword
+        });
+        
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        
+        toast.success("Password has been reset successfully");
       }
-
-      toast.success("Password reset link sent to your email");
     } catch (error) {
       console.error("Error in resetPassword:", error);
-      toast.error("An error occurred while sending reset password link.");
+      toast.error("An error occurred while processing your request");
     }
+  }
+
+  async function requestPasswordReset(email: string) {
+    return resetPassword(email);
   }
 
   async function updateUserProfile(data: Partial<UserType>) {
@@ -227,6 +269,161 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function updateProfile(data: any) {
+    return updateUserProfile(data);
+  }
+
+  async function changePassword(currentPassword: string, newPassword: string) {
+    try {
+      // First verify the current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Current password is incorrect");
+        return;
+      }
+
+      // Update to the new password
+      const { error } = await supabase.auth.updateUser({ 
+        password: newPassword 
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success("Password changed successfully");
+    } catch (error) {
+      console.error("Error in changePassword:", error);
+      toast.error("An error occurred while changing your password");
+    }
+  }
+
+  async function deleteAccount() {
+    try {
+      if (!session) {
+        toast.error("You must be logged in to delete your account");
+        return;
+      }
+
+      // Delete the user account
+      const { error } = await supabase.rpc('delete_user');
+      
+      if (error) {
+        console.error("Error deleting account:", error);
+        toast.error("Failed to delete account");
+        return;
+      }
+
+      await signOut();
+      toast.success("Your account has been deleted");
+      navigate("/");
+    } catch (error) {
+      console.error("Error in deleteAccount:", error);
+      toast.error("An error occurred while deleting your account");
+    }
+  }
+
+  async function validateField(field: string, value: string) {
+    try {
+      // Field validation logic
+      if (field === "username") {
+        // Check if username is already taken
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("username", value)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error validating username:", error);
+          return false;
+        }
+        
+        return !data; // If no data, username is available
+      } 
+      else if (field === "email") {
+        // Check if email is already taken
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("email", value)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error validating email:", error);
+          return false;
+        }
+        
+        return !data; // If no data, email is available
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Error validating ${field}:`, error);
+      return false;
+    }
+  }
+
+  async function sendEmailVerification() {
+    try {
+      if (!user || !user.email) {
+        toast.error("No user email found");
+        return;
+      }
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email,
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      
+      toast.success("Verification email sent. Please check your inbox.");
+    } catch (error) {
+      console.error("Error sending email verification:", error);
+      toast.error("Failed to send verification email");
+    }
+  }
+
+  async function verifyEmail(token: string): Promise<boolean> {
+    try {
+      // In Supabase, verification happens automatically via link
+      // This function would just handle post-verification actions
+      // The token would typically be in the URL and handled by Supabase redirect
+      
+      // Refresh user session after verification
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error || !data.session) {
+        toast.error("Verification failed or session expired");
+        return false;
+      }
+      
+      // Update the user state
+      setSession(data.session);
+      setEmailVerified(true);
+      
+      if (data.session.user) {
+        await fetchUserProfile(data.session.user.id);
+      }
+      
+      toast.success("Email verified successfully");
+      return true;
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      toast.error("Failed to verify email");
+      return false;
+    }
+  }
+
   const value = {
     user,
     session,
@@ -237,6 +434,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUserProfile,
     isLoading,
     emailVerified,
+    
+    login,
+    logout,
+    isAuthenticated,
+    updateProfile,
+    changePassword,
+    deleteAccount,
+    validateField,
+    requestPasswordReset,
+    sendEmailVerification,
+    verifyEmail
   };
 
   if (isLoading) {
