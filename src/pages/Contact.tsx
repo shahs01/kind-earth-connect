@@ -1,0 +1,150 @@
+
+import React from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Mail, MapPin, Phone, Clock } from "lucide-react";
+
+const Contact = () => {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Contact Us</h1>
+          <p className="text-lg text-gray-700 mb-8">
+            Have questions or feedback? We'd love to hear from you. Get in touch with our team.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <Mail className="h-10 w-10 text-thryvance-green mb-4" />
+              <h2 className="text-lg font-semibold mb-2">Email Us</h2>
+              <p className="text-gray-700 mb-2">For general inquiries:</p>
+              <a href="mailto:info@thryvance.org" className="text-thryvance-green hover:underline">
+                info@thryvance.org
+              </a>
+              <p className="text-gray-700 mt-2 mb-2">For support:</p>
+              <a href="mailto:support@thryvance.org" className="text-thryvance-green hover:underline">
+                support@thryvance.org
+              </a>
+            </div>
+            
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <MapPin className="h-10 w-10 text-thryvance-green mb-4" />
+              <h2 className="text-lg font-semibold mb-2">Visit Us</h2>
+              <p className="text-gray-700 mb-1">Thryvance Headquarters</p>
+              <p className="text-gray-700 mb-1">123 Community Way</p>
+              <p className="text-gray-700 mb-3">San Francisco, CA 94105</p>
+              <a 
+                href="https://maps.google.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-thryvance-green hover:underline"
+              >
+                Get Directions
+              </a>
+            </div>
+            
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <div className="flex gap-4">
+                <Phone className="h-10 w-10 text-thryvance-green" />
+                <Clock className="h-10 w-10 text-thryvance-green" />
+              </div>
+              <h2 className="text-lg font-semibold mt-4 mb-2">Call or Visit</h2>
+              <p className="text-gray-700 mb-2">Phone: (555) 123-4567</p>
+              <p className="text-gray-700 mb-1">Hours:</p>
+              <p className="text-gray-700 mb-1">Monday-Friday: 9am-5pm</p>
+              <p className="text-gray-700">Saturday: 10am-2pm</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
+            <div className="lg:col-span-3 bg-white shadow-md rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-6">Send us a Message</h2>
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                    <Input id="name" placeholder="Your name" />
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <Input id="email" type="email" placeholder="your@email.com" />
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                    Subject
+                  </label>
+                  <Select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General Inquiry</SelectItem>
+                      <SelectItem value="support">Technical Support</SelectItem>
+                      <SelectItem value="partnership">Partnership Opportunities</SelectItem>
+                      <SelectItem value="donation">Donation Questions</SelectItem>
+                      <SelectItem value="volunteer">Volunteering</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                    Message
+                  </label>
+                  <Textarea id="message" placeholder="How can we help you?" rows={5} />
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="subscribe"
+                    type="checkbox"
+                    className="h-4 w-4 text-thryvance-green border-gray-300 rounded"
+                  />
+                  <label htmlFor="subscribe" className="ml-2 block text-sm text-gray-700">
+                    Subscribe to our newsletter
+                  </label>
+                </div>
+                
+                <Button type="submit" className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                  Send Message
+                </Button>
+              </form>
+            </div>
+            
+            <div className="lg:col-span-2 bg-white shadow-md rounded-lg overflow-hidden">
+              <div className="h-full bg-gray-200 flex items-center justify-center">
+                <p className="text-gray-500">[Map Placeholder]</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Frequently Asked Questions</h2>
+            <p className="text-gray-700 mb-4">
+              Before reaching out, you might find answers to common questions in our FAQ section.
+            </p>
+            <Button asChild variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
+              <a href="/faq">View FAQs</a>
+            </Button>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default Contact;

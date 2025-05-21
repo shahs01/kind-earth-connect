@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Menu, X, User, Search, ChevronDown, HelpCircle, Users, Info, UserPlus,
-  Heart, PiggyBank, HandHeart, Box, Mail, MailPlus, Briefcase, Donate
+  Heart, PiggyBank, HandHeart, Box, Mail, MailPlus, Briefcase
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -66,7 +65,7 @@ const Navbar = () => {
             <DropdownMenuContent className="bg-white">
               <DropdownMenuItem asChild>
                 <Link to="/donate" className="flex items-center gap-2 cursor-pointer">
-                  <Donate className="h-4 w-4" />
+                  <Heart className="h-4 w-4" />
                   Online Donations
                 </Link>
               </DropdownMenuItem>
@@ -254,7 +253,7 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <div className="flex items-center gap-1">
-                  <Donate className="h-4 w-4" />
+                  <Heart className="h-4 w-4" />
                   Online Donations
                 </div>
               </Link>
