@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthContextType, AuthProviderProps } from "./AuthTypes";
-import { User } from "@/types";
+import { User, SignUpData } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useAuthOperations } from "@/hooks/useAuthOperations";
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const handleSignUp = async (userData: typeof import("@/types").SignUpData) => {
+  const handleSignUp = async (userData: SignUpData) => {
     setIsLoading(true);
     try {
       // Check username uniqueness
