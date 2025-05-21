@@ -8,6 +8,13 @@ import { User as UserType } from "@/types";
 import { toast } from "sonner";
 import { validatePassword } from "@/utils/validation";
 
+// Define the ResetPasswordData type
+interface ResetPasswordData {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
 interface AuthContextProps {
   user: UserType | null;
   session: Session | null;
@@ -18,9 +25,9 @@ interface AuthContextProps {
   isLoading: boolean;
   emailVerified: boolean;
 
-  // Updated type definition for resetPassword to accept a string OR an object
+  // Fixed type definition for resetPassword to accept a string OR an object with proper type
   resetPassword: (
-    emailOrData: string | { email: string; token: string; newPassword: string }
+    emailOrData: string | ResetPasswordData
   ) => Promise<void>;
   
   // Aliases for better naming consistency
@@ -213,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fixed function to handle both request password reset and setting a new password
   async function resetPassword(
-    emailOrData: string | { email: string; token: string; newPassword: string }
+    emailOrData: string | ResetPasswordData
   ): Promise<void> {
     try {
       if (typeof emailOrData === 'string') {
