@@ -1,11 +1,11 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Menu, X, User, Search, ChevronDown, Users, Info, UserPlus,
   Heart, PiggyBank, HandHeart, Box, Mail, MailPlus, Briefcase,
-  HelpCircle
+  HelpCircle, LogOut
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,12 +14,53 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/components/ui/use-toast";
 import Logo from "./Logo";
+import { User as UserType } from "@/types";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Set to true for demo purposes
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [user, setUser] = useState<UserType | null>(null);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Check if user is logged in on component mount and window focus
+  useEffect(() => {
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setIsLoggedIn(true);
+        setUser(JSON.parse(storedUser));
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+    
+    checkAuth();
+    
+    // Check auth status when window regains focus
+    window.addEventListener('focus', checkAuth);
+    
+    return () => {
+      window.removeEventListener('focus', checkAuth);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    setUser(null);
+    
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account.",
+    });
+    
+    navigate('/');
+  };
 
   return (
     <nav className="bg-white py-4 shadow-sm sticky top-0 z-50">
@@ -28,7 +69,7 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
-          {/* Offer/Request Dropdown - Updated from "Help" to "Offer/Request" */}
+          {/* Offer/Request Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors outline-none">
               <HandHeart className="h-5 w-5" />
@@ -178,8 +219,10 @@ const Navbar = () => {
               </Button>
               <Button 
                 variant="outline" 
-                className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
+                className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light flex items-center gap-2"
+                onClick={handleLogout}
               >
+                <LogOut className="h-4 w-4" />
                 Log Out
               </Button>
             </div>
@@ -211,7 +254,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white py-4 px-4 absolute top-full left-0 w-full shadow-md max-h-[80vh] overflow-y-auto">
           <div className="flex flex-col gap-4">
-            {/* Offer/Request Section - Updated from "Help" to "Offer/Request" */}
+            {/* Offer/Request Section */}
             <div className="border-b border-gray-200 pb-2">
               <h3 className="font-medium text-gray-900 mb-2 flex items-center">
                 <HandHeart className="h-4 w-4 mr-1" />
@@ -397,8 +440,13 @@ const Navbar = () => {
                 </Link>
                 <Button 
                   variant="outline" 
-                  className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
+                  className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light flex items-center gap-2"
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
                 >
+                  <LogOut className="h-4 w-4" />
                   Log Out
                 </Button>
               </>
