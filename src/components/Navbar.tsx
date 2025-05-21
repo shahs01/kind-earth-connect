@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Search } from "lucide-react";
+import { Menu, X, User, Search, ChevronDown, HelpCircle, Users, Info, UserPlus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Logo from "./Logo";
 
 const Navbar = () => {
@@ -16,12 +22,58 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6">
-          <Link to="/community" className="text-gray-700 hover:text-thryvance-green transition-colors">
-            Community Feed
+          {/* Help Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors outline-none">
+              <HelpCircle className="h-5 w-5" />
+              Help
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-white">
+              <DropdownMenuItem asChild>
+                <Link to="/offer-help" className="flex items-center gap-2 cursor-pointer">
+                  <HelpCircle className="h-4 w-4" />
+                  Offer Help
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/request-help" className="flex items-center gap-2 cursor-pointer">
+                  <HelpCircle className="h-4 w-4" />
+                  Request Help
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Community Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors outline-none">
+              <Users className="h-5 w-5" />
+              Community
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-white">
+              <DropdownMenuItem asChild>
+                <Link to="/community" className="flex items-center gap-2 cursor-pointer">
+                  <Users className="h-4 w-4" />
+                  Community Feed
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/nonprofits" className="flex items-center gap-2 cursor-pointer">
+                  <Users className="h-4 w-4" />
+                  Find Nonprofits
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* About Link */}
+          <Link to="/about" className="flex items-center gap-1 text-gray-700 hover:text-thryvance-green transition-colors">
+            <Info className="h-5 w-5" />
+            About Us
           </Link>
-          <Link to="/nonprofits" className="text-gray-700 hover:text-thryvance-green transition-colors">
-            Find Nonprofits
-          </Link>
+          
           {isLoggedIn ? (
             <div className="flex items-center gap-4">
               <Button asChild variant="ghost">
@@ -42,8 +94,11 @@ const Navbar = () => {
               <Button asChild variant="ghost">
                 <Link to="/login">Log In</Link>
               </Button>
-              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                <Link to="/signup">Sign Up</Link>
+              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-1">
+                <Link to="/signup">
+                  <UserPlus className="h-4 w-4" />
+                  Join the Community
+                </Link>
               </Button>
             </div>
           )}
@@ -62,20 +117,57 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white py-4 px-4 absolute top-full left-0 w-full shadow-md">
           <div className="flex flex-col gap-4">
+            <div className="border-b border-gray-200 pb-2">
+              <h3 className="font-medium text-gray-900 mb-2 flex items-center">
+                <HelpCircle className="h-4 w-4 mr-1" />
+                Help
+              </h3>
+              <Link 
+                to="/offer-help" 
+                className="text-gray-700 hover:text-thryvance-green transition-colors py-2 pl-4 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Offer Help
+              </Link>
+              <Link 
+                to="/request-help" 
+                className="text-gray-700 hover:text-thryvance-green transition-colors py-2 pl-4 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Request Help
+              </Link>
+            </div>
+            
+            <div className="border-b border-gray-200 pb-2">
+              <h3 className="font-medium text-gray-900 mb-2 flex items-center">
+                <Users className="h-4 w-4 mr-1" />
+                Community
+              </h3>
+              <Link 
+                to="/community" 
+                className="text-gray-700 hover:text-thryvance-green transition-colors py-2 pl-4 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Community Feed
+              </Link>
+              <Link 
+                to="/nonprofits" 
+                className="text-gray-700 hover:text-thryvance-green transition-colors py-2 pl-4 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Find Nonprofits
+              </Link>
+            </div>
+            
             <Link 
-              to="/community" 
-              className="text-gray-700 hover:text-thryvance-green transition-colors py-2"
+              to="/about" 
+              className="text-gray-700 hover:text-thryvance-green transition-colors py-2 flex items-center"
               onClick={() => setIsMenuOpen(false)}
             >
-              Community Feed
+              <Info className="h-4 w-4 mr-1" />
+              About Us
             </Link>
-            <Link 
-              to="/nonprofits" 
-              className="text-gray-700 hover:text-thryvance-green transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Find Nonprofits
-            </Link>
+            
             {isLoggedIn ? (
               <>
                 <Link 
@@ -105,10 +197,13 @@ const Navbar = () => {
                 </Button>
                 <Button 
                   asChild 
-                  className="bg-thryvance-green hover:bg-thryvance-green-dark"
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <Link to="/signup">Sign Up</Link>
+                  <Link to="/signup">
+                    <UserPlus className="h-4 w-4" />
+                    Join the Community
+                  </Link>
                 </Button>
               </>
             )}
