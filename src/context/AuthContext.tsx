@@ -102,7 +102,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           createdAt: data.created_at ? new Date(data.created_at) : new Date(),
           verifiedStatus: data.verified_status || false,
           emailVerified: true, // If we have a Supabase session, the email is verified
-          trustBadges: data.trust_badges || []
+          trustBadges: data.trust_badges || [],
+          loginAttempts: 0, // Adding missing properties
+          lastLoginAttempt: null // Adding missing properties
         };
 
         setUser(userProfile);
@@ -460,7 +462,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(true);
     
     try {
-      // Call the delete_user RPC function
+      // Call the delete_user RPC function without parameters
+      // The RPC function will use the authenticated user's session
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;

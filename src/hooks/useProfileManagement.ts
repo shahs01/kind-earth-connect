@@ -90,7 +90,7 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
-      // Call the delete_user RPC function without passing the userId parameter
+      // Call the delete_user RPC function without passing any parameters
       // The RPC function will use the authenticated user's session
       const { error } = await supabase.rpc('delete_user');
       
