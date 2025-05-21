@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Briefcase, Handshake } from "lucide-react";
 import ResultCard from "./ResultCard";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 interface ResultsDisplayProps {
   activeTab: string;
@@ -23,6 +25,7 @@ const ResultsDisplay = ({
   allFiltered,
   handleClearFilters
 }: ResultsDisplayProps) => {
+  const { isAuthenticated } = useAuth();
   
   const getItemsToShow = () => {
     switch(activeTab) {
@@ -51,6 +54,17 @@ const ResultsDisplay = ({
           >
             Clear filters
           </Button>
+          
+          {isAuthenticated && (
+            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                <Link to="/offer-help">Offer Help</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/request-help">Request Help</Link>
+              </Button>
+            </div>
+          )}
         </div>
       );
     }

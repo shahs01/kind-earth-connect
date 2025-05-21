@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import Logo from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -48,12 +48,13 @@ const Navbar = () => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className={`text-sm font-medium ${
+              <Button variant="ghost" className={`text-sm font-medium flex items-center ${
                 isActive('/offer-help') || isActive('/request-help') || isActive('/search-help') 
                 ? 'text-thryvance-green' 
                 : 'text-gray-700 hover:text-thryvance-green'
               }`}>
                 Support Options
+                <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" className="w-48 bg-white">
