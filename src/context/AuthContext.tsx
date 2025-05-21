@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, SignUpData, AuthValidationErrors, PasswordResetData } from "@/types";
@@ -462,9 +461,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(true);
     
     try {
-      // Call the delete_user RPC function without parameters
-      // The RPC function will use the authenticated user's session
-      const { error } = await supabase.rpc('delete_user');
+      // Call the delete_user RPC function with an empty object instead of a parameter
+      const { error } = await supabase.rpc('delete_user', {});
       
       if (error) throw error;
       
