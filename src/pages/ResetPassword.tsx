@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ResetPasswordData } from "@/hooks/useAuthMethods";
 
 const formSchema = z.object({
   password: z.string()
@@ -74,11 +74,13 @@ const ResetPassword = () => {
     setIsLoading(true);
     
     try {
-      await resetPassword({
+      const resetData: ResetPasswordData = {
         email,
         token,
         newPassword: data.password,
-      });
+      };
+      
+      await resetPassword(resetData);
       
       setIsSuccess(true);
       
