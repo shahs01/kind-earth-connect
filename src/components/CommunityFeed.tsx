@@ -1,10 +1,19 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Calendar, Tag, Heart, Flag } from "lucide-react";
+import { User, MapPin, Calendar, Tag, Heart, Flag, Search } from "lucide-react";
 import { Post } from "@/types";
+import { Input } from "@/components/ui/input";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 // Sample data for the feed
 const samplePosts: Post[] = [
@@ -96,13 +105,36 @@ const samplePosts: Post[] = [
 
 const CommunityFeed = () => {
   const [activeTab, setActiveTab] = useState<"all" | "offers" | "requests">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 6;
   
+  // Filter posts based on active tab and search query
   const filteredPosts = samplePosts.filter(post => {
-    if (activeTab === "all") return true;
-    if (activeTab === "offers") return post.type === "offer";
-    if (activeTab === "requests") return post.type === "request";
-    return true;
+    const matchesTab = 
+      activeTab === "all" || 
+      (activeTab === "offers" && post.type === "offer") || 
+      (activeTab === "requests" && post.type === "request");
+    
+    const matchesSearch = searchQuery === "" || 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.location.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    return matchesTab && matchesSearch;
   });
+  
+  // Calculate pagination
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  
+  // Handle page changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
   
   return (
     <section className="py-10">
@@ -123,7 +155,27 @@ const CommunityFeed = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setActiveTab(value as "all" | "offers" | "requests")}>
+        {/* Search bar */}
+        <div className="mb-6 relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              type="text" 
+              placeholder="Search postings by title, description, category or location..." 
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1); // Reset to first page on new search
+              }}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        
+        <Tabs defaultValue="all" className="w-full" onValueChange={(value) => {
+          setActiveTab(value as "all" | "offers" | "requests");
+          setCurrentPage(1); // Reset to first page on tab change
+        }}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All Posts</TabsTrigger>
             <TabsTrigger value="offers">Offers</TabsTrigger>
@@ -132,26 +184,176 @@ const CommunityFeed = () => {
           
           <TabsContent value="all" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+              {currentPosts.length > 0 ? 
+                currentPosts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                )) : 
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">No posts found matching your search criteria.</p>
+                </div>
+              }
             </div>
+            
+            {filteredPosts.length > postsPerPage && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )}
+                        <PaginationItem>
+                          <PaginationLink 
+                            isActive={page === currentPage}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </React.Fragment>
+                    ))
+                  }
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </TabsContent>
           
           <TabsContent value="offers" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+              {currentPosts.length > 0 ? 
+                currentPosts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                )) : 
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">No offers found matching your search criteria.</p>
+                </div>
+              }
             </div>
+            
+            {filteredPosts.length > postsPerPage && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )}
+                        <PaginationItem>
+                          <PaginationLink 
+                            isActive={page === currentPage}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </React.Fragment>
+                    ))
+                  }
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </TabsContent>
           
           <TabsContent value="requests" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+              {currentPosts.length > 0 ? 
+                currentPosts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                )) : 
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">No requests found matching your search criteria.</p>
+                </div>
+              }
             </div>
+            
+            {filteredPosts.length > postsPerPage && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )}
+                        <PaginationItem>
+                          <PaginationLink 
+                            isActive={page === currentPage}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </React.Fragment>
+                    ))
+                  }
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </TabsContent>
         </Tabs>
       </div>
