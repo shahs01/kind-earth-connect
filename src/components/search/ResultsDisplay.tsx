@@ -33,7 +33,6 @@ const ResultsDisplay = ({
   const [requests, setRequests] = useState<any[]>([]);
   
   const handleClearFilters = () => {
-    // We'll pass this up to the parent component
     window.location.href = '/search-help';
   };
   
@@ -44,11 +43,12 @@ const ResultsDisplay = ({
         setIsLoading(true);
         console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter });
         
+        // Fix the query to properly get profiles data
         let query = supabase
           .from('posts')
           .select(`
             *,
-            profiles(name, avatar, username)
+            profiles:user_id(name, avatar, username)
           `)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
@@ -74,8 +74,8 @@ const ResultsDisplay = ({
         
         if (data) {
           const formattedPosts = data.map(post => {
-            // Handle the profiles relationship
-            const profileData = post.profiles;
+            // Safely handle the profiles relationship
+            const profileData = post.profiles || {};
             
             return {
               id: post.id,
@@ -85,8 +85,8 @@ const ResultsDisplay = ({
               location: post.location,
               createdAt: new Date(post.created_at).toLocaleString(),
               user: {
-                name: profileData?.name || "Unknown User",
-                avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
+                name: profileData.name || "Unknown User",
+                avatar: profileData.avatar || "https://ui-avatars.com/api/?name=User"
               },
               likes: 0,
               comments: 0

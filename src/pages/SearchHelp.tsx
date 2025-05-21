@@ -152,10 +152,6 @@ const SearchHelp = () => {
             <ResultsDisplay 
               activeTab={activeTab}
               setActiveTab={setActiveTab}
-              filteredOffers={filteredOffers}
-              filteredRequests={filteredRequests}
-              allFiltered={allFiltered}
-              handleClearFilters={handleClearFilters}
               searchQuery={searchQuery}
               categoryFilter={selectedCategory}
               locationFilter={locationFilter}
