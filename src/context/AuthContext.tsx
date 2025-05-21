@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, SignUpData, AuthValidationErrors, PasswordResetData } from "@/types";
@@ -717,7 +716,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     switch (field) {
       case 'username':
         if (!value) return "Username is required";
-        if (!validateUsername(value)) {
+        if (!/^[a-zA-Z0-9_-]{3,20}$/.test(value)) {
           return "Username must be 3-20 characters and contain only letters, numbers, dashes (-) and underscores (_)";
         }
         if (isUsernameTaken(value) && (!user || user.username !== value)) {

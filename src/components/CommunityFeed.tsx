@@ -1,473 +1,221 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Calendar, Tag, Heart, Flag, Search } from "lucide-react";
-import { Post } from "@/types";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationEllipsis, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
-import ProfileDialog from "@/components/ProfileDialog";
+import { Search, MapPin, Clock, ChevronRight } from "lucide-react";
+import { Post, User } from "@/types";
 
-// Sample data for the feed with fixed user objects that include all required properties
-const samplePosts: Post[] = [
+const mockPosts: Post[] = [
   {
     id: "1",
-    title: "Help with grocery shopping for elderly neighbor",
-    description: "Looking for someone who can help my elderly neighbor with weekly grocery shopping on Saturdays.",
-    type: "request",
-    category: "Errands",
-    location: "Downtown Portland",
-    userId: "user1",
+    title: "Offering free tutoring for math and science",
+    description: "I can tutor middle school and high school students in mathematics and science subjects. Available on weekends.",
+    type: "offer",
+    category: "Education",
+    location: "Boston, MA",
+    userId: "user-1",
     user: {
-      id: "user1",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      avatar: "", // Added missing property
-      bio: "I enjoy helping my community and connecting neighbors.", // Added missing property
-      location: "Downtown Portland", // Added missing property
-      createdAt: new Date(2023, 1, 15),
+      id: "user-1",
+      username: "mathtutor",
+      name: "Alex Johnson",
+      email: "alex@example.com",
+      avatar: "https://ui-avatars.com/api/?name=Alex+Johnson",
+      bio: "Math teacher with 10+ years of experience",
+      location: "Boston, MA",
+      createdAt: new Date("2023-01-15"),
       trustScore: 4.8,
       helpOffered: 12,
       helpReceived: 3,
-      verifiedStatus: true
+      verifiedStatus: true,
+      emailVerified: true,
+      loginAttempts: 0,
+      lastLoginAttempt: null,
+      trustBadges: ["Verified Helper", "Education Expert"]
     },
-    createdAt: new Date(2023, 5, 20),
-    status: "active"
+    createdAt: new Date("2023-05-10"),
+    status: "active",
   },
   {
     id: "2",
-    title: "Offering free math tutoring for high school students",
-    description: "I'm a retired math teacher willing to tutor high school students in algebra, geometry, and calculus.",
+    title: "Offering transportation for elderly to medical appointments",
+    description: "I can drive seniors to and from doctor appointments. I have a comfortable sedan with easy access.",
     type: "offer",
-    category: "Education",
-    location: "North Portland",
-    userId: "user2",
+    category: "Transportation",
+    location: "Portland, OR",
+    userId: "user-2",
     user: {
-      id: "user2",
-      name: "Robert Chen",
-      email: "robert@example.com",
-      avatar: "", // Added missing property
-      bio: "Retired math teacher with 25 years of experience.", // Added missing property 
-      location: "North Portland", // Added missing property
-      createdAt: new Date(2022, 11, 5),
-      trustScore: 4.9,
-      helpOffered: 24,
-      helpReceived: 5,
-      verifiedStatus: true
+      id: "user-2",
+      username: "helper123",
+      name: "Maria Garcia",
+      email: "maria@example.com",
+      avatar: "https://ui-avatars.com/api/?name=Maria+Garcia",
+      bio: "Retired nurse wanting to help the community",
+      location: "Portland, OR",
+      createdAt: new Date("2023-02-20"),
+      trustScore: 5.0,
+      helpOffered: 8,
+      helpReceived: 1,
+      verifiedStatus: true,
+      emailVerified: true,
+      loginAttempts: 0,
+      lastLoginAttempt: null,
+      trustBadges: ["Verified Helper", "Healthcare Expert"]
     },
-    createdAt: new Date(2023, 5, 18),
-    status: "active"
+    createdAt: new Date("2023-05-12"),
+    status: "active",
   },
   {
     id: "3",
-    title: "Can help with basic home repairs this weekend",
-    description: "I'm handy with tools and have this weekend free. Can help with minor home repairs, installing fixtures, etc.",
-    type: "offer",
-    category: "Home Repair",
-    location: "Southeast Portland",
-    userId: "user3",
+    title: "Need help moving furniture this weekend",
+    description: "Looking for help moving some heavy furniture from my apartment to a new place about 2 miles away. Can provide refreshments!",
+    type: "request",
+    category: "Moving",
+    location: "Chicago, IL",
+    userId: "user-3",
     user: {
-      id: "user3",
-      name: "Miguel Fernandez",
-      email: "miguel@example.com",
-      avatar: "", // Added missing property
-      bio: "Handy and reliable neighbor, always willing to help.", // Added missing property
-      location: "Southeast Portland", // Added missing property
-      createdAt: new Date(2023, 2, 10),
-      trustScore: 4.7,
-      helpOffered: 8,
-      helpReceived: 2,
-      verifiedStatus: false
+      id: "user-3",
+      username: "movingout",
+      name: "James Wilson",
+      email: "james@example.com",
+      avatar: "https://ui-avatars.com/api/?name=James+Wilson",
+      bio: "Graduate student at UChicago",
+      location: "Chicago, IL",
+      createdAt: new Date("2023-03-05"),
+      trustScore: 4.2,
+      helpOffered: 2,
+      helpReceived: 3,
+      verifiedStatus: false,
+      emailVerified: true,
+      loginAttempts: 0,
+      lastLoginAttempt: null,
+      trustBadges: []
     },
-    createdAt: new Date(2023, 5, 16),
-    status: "active"
+    createdAt: new Date("2023-05-15"),
+    status: "active",
   },
   {
     id: "4",
-    title: "Need help moving furniture - will provide lunch!",
-    description: "Moving to a new apartment and need help with some heavy furniture. It's a second-floor walk-up. Will provide lunch and drinks!",
-    type: "request",
-    category: "Moving",
-    location: "West Portland",
-    userId: "user4",
+    title: "Offering free lawn mowing service for seniors",
+    description: "I have a lawn mower and can help seniors or disabled individuals with their lawn. Available on weekday evenings.",
+    type: "offer",
+    category: "Home & Garden",
+    location: "Austin, TX",
+    userId: "user-4",
     user: {
-      id: "user4",
-      name: "Aisha Johnson",
-      email: "aisha@example.com",
-      avatar: "", // Added missing property
-      bio: "New to the area and looking to connect with helpful neighbors.", // Added missing property
-      location: "West Portland", // Added missing property
-      createdAt: new Date(2023, 3, 25),
-      trustScore: 4.5,
-      helpOffered: 6,
-      helpReceived: 4,
-      verifiedStatus: true
+      id: "user-4",
+      username: "greengarden",
+      name: "Robert Taylor",
+      email: "robert@example.com",
+      avatar: "https://ui-avatars.com/api/?name=Robert+Taylor",
+      bio: "Landscaper who loves helping the community",
+      location: "Austin, TX",
+      createdAt: new Date("2023-01-10"),
+      trustScore: 4.9,
+      helpOffered: 15,
+      helpReceived: 0,
+      verifiedStatus: true,
+      emailVerified: true,
+      loginAttempts: 0,
+      lastLoginAttempt: null,
+      trustBadges: ["Verified Helper", "Community Champion"]
     },
-    createdAt: new Date(2023, 5, 15),
-    status: "active"
-  }
+    createdAt: new Date("2023-05-18"),
+    status: "active",
+  },
 ];
 
 const CommunityFeed = () => {
-  const [activeTab, setActiveTab] = useState<"all" | "offers" | "requests">("all");
+  const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 6;
-  const [selectedUser, setSelectedUser] = useState<Post["user"] | null>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [locationFilter, setLocationFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
 
-  // Filter posts based on active tab and search query
-  const filteredPosts = samplePosts.filter(post => {
-    const matchesTab = 
-      activeTab === "all" || 
-      (activeTab === "offers" && post.type === "offer") || 
-      (activeTab === "requests" && post.type === "request");
-    
-    const matchesSearch = searchQuery === "" || 
+  const filteredPosts = posts.filter((post) => {
+    const searchMatch =
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.location.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    return matchesTab && matchesSearch;
+      post.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const locationMatch = post.location
+      .toLowerCase()
+      .includes(locationFilter.toLowerCase());
+    const categoryMatch =
+      categoryFilter === "All" || post.category === categoryFilter;
+
+    return searchMatch && locationMatch && categoryMatch;
   });
-  
-  // Calculate pagination
-  const indexOfLastPost = currentPage * postsPerPage;
-  const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
-  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-  
-  // Handle page changes
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-  
-  const handleUserClick = (post: Post) => {
-    if (post.user) {
-      setSelectedUser(post.user);
-      setIsProfileOpen(true);
-    }
-  };
-  
+
+  const categories = ["All", "Education", "Transportation", "Moving", "Home & Garden"];
+
   return (
-    <section className="py-10">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold">Community Feed</h2>
-            <p className="text-gray-600 mt-1">See who's offering help and who needs support</p>
-          </div>
-          
-          <div className="flex gap-4">
-            <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
-              <a href="/offer-help">Offer Help</a>
-            </Button>
-            <Button asChild variant="outline" className="border-thryvance-blue text-thryvance-blue hover:bg-thryvance-blue-light">
-              <a href="/request-help">Request Help</a>
-            </Button>
-          </div>
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex items-center border rounded-md px-3 py-2 flex-grow">
+          <Search className="h-5 w-5 mr-2 text-gray-500" />
+          <Input
+            type="text"
+            placeholder="Search offers and requests..."
+            className="border-none shadow-none focus-visible:ring-0"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        
-        {/* Search bar */}
-        <div className="mb-6 relative">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input 
-              type="text" 
-              placeholder="Search postings by title, description, category or location..." 
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1); // Reset to first page on new search
-              }}
-              className="pl-10"
-            />
-          </div>
+
+        <div className="flex items-center border rounded-md px-3 py-2">
+          <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+          <Input
+            type="text"
+            placeholder="Enter location"
+            className="border-none shadow-none focus-visible:ring-0"
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+          />
         </div>
-        
-        <Tabs defaultValue="all" className="w-full" onValueChange={(value) => {
-          setActiveTab(value as "all" | "offers" | "requests");
-          setCurrentPage(1); // Reset to first page on tab change
-        }}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">All Posts</TabsTrigger>
-            <TabsTrigger value="offers">Offers</TabsTrigger>
-            <TabsTrigger value="requests">Requests</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentPosts.length > 0 ? 
-                currentPosts.map((post) => (
-                  <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    onUserClick={() => handleUserClick(post)}
-                  />
-                )) : 
-                <div className="col-span-3 text-center py-12">
-                  <p className="text-gray-500">No posts found matching your search criteria.</p>
-                </div>
-              }
-            </div>
-            
-            {filteredPosts.length > postsPerPage && (
-              <Pagination className="mt-8">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => 
-                      page === 1 || 
-                      page === totalPages || 
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    )
-                    .map((page, index, array) => (
-                      <React.Fragment key={page}>
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )}
-                        <PaginationItem>
-                          <PaginationLink 
-                            isActive={page === currentPage}
-                            onClick={() => handlePageChange(page)}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      </React.Fragment>
-                    ))
-                  }
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="offers" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentPosts.length > 0 ? 
-                currentPosts.map((post) => (
-                  <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    onUserClick={() => handleUserClick(post)}
-                  />
-                )) : 
-                <div className="col-span-3 text-center py-12">
-                  <p className="text-gray-500">No offers found matching your search criteria.</p>
-                </div>
-              }
-            </div>
-            
-            {filteredPosts.length > postsPerPage && (
-              <Pagination className="mt-8">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => 
-                      page === 1 || 
-                      page === totalPages || 
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    )
-                    .map((page, index, array) => (
-                      <React.Fragment key={page}>
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )}
-                        <PaginationItem>
-                          <PaginationLink 
-                            isActive={page === currentPage}
-                            onClick={() => handlePageChange(page)}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      </React.Fragment>
-                    ))
-                  }
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="requests" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentPosts.length > 0 ? 
-                currentPosts.map((post) => (
-                  <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    onUserClick={() => handleUserClick(post)}
-                  />
-                )) : 
-                <div className="col-span-3 text-center py-12">
-                  <p className="text-gray-500">No requests found matching your search criteria.</p>
-                </div>
-              }
-            </div>
-            
-            {filteredPosts.length > postsPerPage && (
-              <Pagination className="mt-8">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => 
-                      page === 1 || 
-                      page === totalPages || 
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    )
-                    .map((page, index, array) => (
-                      <React.Fragment key={page}>
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <PaginationItem>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )}
-                        <PaginationItem>
-                          <PaginationLink 
-                            isActive={page === currentPage}
-                            onClick={() => handlePageChange(page)}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      </React.Fragment>
-                    ))
-                  }
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </TabsContent>
-        </Tabs>
       </div>
-      
-      <ProfileDialog 
-        user={selectedUser}
-        open={isProfileOpen}
-        onOpenChange={setIsProfileOpen}
-      />
-    </section>
-  );
-};
 
-interface PostCardProps {
-  post: Post;
-  onUserClick: () => void;
-}
+      <Tabs defaultValue="all" className="mb-4">
+        <TabsList className="bg-thryvance-neutral-light rounded-md">
+          <TabsTrigger value="all">All</TabsTrigger>
+          {categories.map((category) => (
+            <TabsTrigger value={category} key={category}>
+              {category}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
-const PostCard = ({ post, onUserClick }: PostCardProps) => {
-  return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="pb-3">
-        <div className={`text-sm font-medium inline-flex items-center px-3 py-1 rounded-full ${
-          post.type === 'offer' 
-            ? 'bg-thryvance-green-light text-thryvance-green-dark' 
-            : 'bg-thryvance-blue-light text-thryvance-blue-dark'
-        }`}>
-          {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
-        </div>
-        <h3 className="text-xl font-semibold mt-3 line-clamp-2">{post.title}</h3>
-      </CardHeader>
-      
-      <CardContent className="pb-4">
-        <p className="text-gray-600 mb-4 line-clamp-3">{post.description}</p>
-        
-        <div className="flex flex-col gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-gray-500" />
-            <span>{post.category}</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-gray-500" />
-            <span>{post.location}</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span>{post.createdAt.toLocaleDateString()}</span>
-          </div>
-        </div>
-      </CardContent>
-      
-      <CardFooter className="pt-0 flex justify-between items-center border-t bg-thryvance-neutral-light/50">
-        <div 
-          className="flex items-center gap-2 py-3 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={onUserClick}
-        >
-          <div className="h-8 w-8 rounded-full bg-thryvance-neutral flex items-center justify-center">
-            {post.user?.avatar ? (
-              <img src={post.user.avatar} alt={post.user.name} className="h-8 w-8 rounded-full object-cover" />
-            ) : (
-              <User className="h-4 w-4" />
-            )}
-          </div>
-          <div>
-            <p className="text-sm font-medium">{post.user?.name}</p>
-            <div className="flex items-center gap-1">
-              <Heart className="h-3 w-3 text-thryvance-green" />
-              <span className="text-xs text-gray-600">{post.user?.trustScore} Trust Score</span>
-            </div>
-          </div>
-        </div>
-        
-        <Button variant="ghost" size="sm" className="text-thryvance-blue-dark" onClick={onUserClick}>
-          <Flag className="h-4 w-4 mr-1" />
-          <span>Connect</span>
-        </Button>
-      </CardFooter>
-    </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredPosts.map((post) => (
+          <Card key={post.id}>
+            <CardContent className="p-4">
+              <div className="flex items-center mb-4">
+                <Avatar className="w-8 h-8 mr-3">
+                  <AvatarImage src={post.user?.avatar} alt={post.user?.name} />
+                  <AvatarFallback>{post.user?.name.substring(0, 2)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-semibold">{post.user?.name}</div>
+                  <div className="text-sm text-gray-500 flex items-center">
+                    <Clock className="w-4 h-4 mr-1" />
+                    {post.createdAt.toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
+              <p className="text-gray-700 mb-3">{post.description}</p>
+              <Badge className="bg-blue-100 text-blue-800 mr-2">{post.category}</Badge>
+              <Badge className="bg-green-100 text-green-800">{post.type}</Badge>
+            </CardContent>
+            <CardFooter className="px-4 py-2 bg-gray-50 border-t">
+              <Button variant="ghost" className="w-full justify-start">
+                Learn More <ChevronRight className="w-4 h-4 ml-auto" />
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 };
 

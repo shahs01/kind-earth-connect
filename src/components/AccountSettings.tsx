@@ -174,6 +174,7 @@ const AccountSettings = () => {
         bio: data.bio || "",
         location: data.location,
         notificationPreferences: {
+          emailUpdates: true, // Adding the missing property
           messageNotifications: data.notifyMessages,
           helpRequestAlerts: data.notifyHelp,
           marketingEmails: data.notifyUpdates,
