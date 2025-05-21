@@ -3,7 +3,7 @@ import { User } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, MapPin, Calendar, Heart, Flag, Star, Shield, Check } from "lucide-react";
+import { User as UserIcon, MapPin, Calendar, Star, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileCardProps {
@@ -11,9 +11,16 @@ interface ProfileCardProps {
   isOwnProfile?: boolean;
   compact?: boolean;
   onConnectClick?: () => void;
+  onAvatarClick?: () => void;
 }
 
-const ProfileCard = ({ user, isOwnProfile = false, compact = false, onConnectClick }: ProfileCardProps) => {
+const ProfileCard = ({ 
+  user, 
+  isOwnProfile = false, 
+  compact = false, 
+  onConnectClick,
+  onAvatarClick
+}: ProfileCardProps) => {
   return (
     <Card className={`overflow-hidden shadow-md ${compact ? 'max-w-md mx-auto' : ''}`}>
       <CardHeader className={`bg-gradient-to-r from-thryvance-green-light to-thryvance-blue-light ${compact ? 'pb-12' : 'pb-16'} relative`}>
@@ -26,7 +33,10 @@ const ProfileCard = ({ user, isOwnProfile = false, compact = false, onConnectCli
       
       <CardContent className="pt-0">
         <div className="flex flex-col items-center -mt-12">
-          <div className={`${compact ? 'h-20 w-20' : 'h-24 w-24'} rounded-full bg-thryvance-neutral flex items-center justify-center border-4 border-white shadow-md`}>
+          <div 
+            className={`${compact ? 'h-20 w-20' : 'h-24 w-24'} rounded-full bg-thryvance-neutral flex items-center justify-center border-4 border-white shadow-md ${isOwnProfile ? 'cursor-pointer hover:opacity-90' : ''}`}
+            onClick={isOwnProfile ? onAvatarClick : undefined}
+          >
             {user.avatar ? (
               <Avatar className="h-full w-full">
                 <AvatarImage src={user.avatar} alt={user.name} className="object-cover" />
@@ -42,10 +52,12 @@ const ProfileCard = ({ user, isOwnProfile = false, compact = false, onConnectCli
           <div className="text-center mt-3">
             <h2 className="text-xl font-bold">{user.name}</h2>
             
-            <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
-              <MapPin className="h-4 w-4" />
-              <span>{user.location || "No location set"}</span>
-            </div>
+            {user.location && (
+              <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
+                <MapPin className="h-4 w-4" />
+                <span>{user.location}</span>
+              </div>
+            )}
             
             <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
               <Calendar className="h-4 w-4" />
@@ -71,7 +83,7 @@ const ProfileCard = ({ user, isOwnProfile = false, compact = false, onConnectCli
             )}
           </div>
           
-          {!compact && (
+          {!compact && user.helpOffered > 0 && (
             <>
               <div className="w-full grid grid-cols-2 gap-4 mt-6">
                 <div className="bg-thryvance-green-light/50 p-4 rounded-lg text-center">
@@ -84,30 +96,10 @@ const ProfileCard = ({ user, isOwnProfile = false, compact = false, onConnectCli
                   <p className="text-sm text-gray-600">Help Received</p>
                 </div>
               </div>
-              
-              <div className="w-full mt-6">
-                <h3 className="text-lg font-semibold mb-2">Trust Indicators</h3>
-                <div className="bg-thryvance-neutral-light p-4 rounded-lg">
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-2 text-sm">
-                      <Shield className="h-4 w-4 text-thryvance-green" />
-                      <span>Email verified</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <Heart className="h-4 w-4 text-thryvance-green" />
-                      <span>Contributed to 12 community projects</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                      <Flag className="h-4 w-4 text-thryvance-green" />
-                      <span>Member for 1 year and 3 months</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
             </>
           )}
           
-          {compact && (
+          {compact && (user.helpOffered > 0 || user.helpReceived > 0) && (
             <div className="w-full mt-4 grid grid-cols-2 gap-3">
               <div className="bg-thryvance-green-light/50 p-3 rounded-lg text-center">
                 <p className="text-lg font-bold text-thryvance-green-dark">{user.helpOffered}</p>

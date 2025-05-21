@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
@@ -97,16 +98,23 @@ export const useAuthProfile = () => {
         emailVerificationRequired = true;
       }
       
+      // Prepare update data, including avatar if provided
+      const updateData: any = {
+        username: userData.username || user.username,
+        name: userData.name || user.name,
+        bio: userData.bio,
+        location: userData.location,
+      };
+      
+      // Only include avatar if it's explicitly provided
+      if (userData.avatar) {
+        updateData.avatar = userData.avatar;
+      }
+      
       // Update profile in profiles table
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: userData.username || user.username,
-          name: userData.name || user.name,
-          bio: userData.bio,
-          location: userData.location,
-          avatar: userData.avatar
-        })
+        .update(updateData)
         .eq('id', user.id);
       
       if (error) throw error;

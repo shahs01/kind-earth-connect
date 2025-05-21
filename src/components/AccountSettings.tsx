@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import AvatarUpload from "@/components/AvatarUpload";
 import {
   Form,
   FormControl,
@@ -236,6 +236,17 @@ const AccountSettings = () => {
     }
   };
   
+  // Function to handle avatar updates
+  const handleAvatarUpdate = (avatarUrl: string) => {
+    if (user) {
+      // Update local user state with new avatar URL
+      updateProfile({
+        ...user,
+        avatar: avatarUrl
+      });
+    }
+  };
+  
   if (!user) return null;
   
   return (
@@ -251,23 +262,12 @@ const AccountSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20 border-2 border-white shadow-md">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-medium">{user.name}</h3>
-              <p className="text-sm text-gray-500">
-                Member since {user.createdAt.toLocaleDateString()}
-              </p>
-              <div className="flex gap-2 mt-2">
-                <Button size="sm" variant="outline" disabled>
-                  Change Avatar
-                </Button>
-              </div>
-            </div>
-          </div>
+          {/* Replace the old avatar section with the new AvatarUpload component */}
+          <AvatarUpload
+            currentAvatar={user.avatar}
+            userId={user.id}
+            onAvatarUpdate={handleAvatarUpdate}
+          />
           
           <Form {...profileForm}>
             <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">

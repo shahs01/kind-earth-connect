@@ -17,14 +17,22 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
+      // Prepare update data
+      const updateData: any = {
+        name: profileData.name,
+        bio: profileData.bio,
+        location: profileData.location,
+        email: profileData.email
+      };
+      
+      // Only include avatar if it's explicitly provided
+      if (profileData.avatar) {
+        updateData.avatar = profileData.avatar;
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .update({
-          name: profileData.name,
-          bio: profileData.bio,
-          location: profileData.location,
-          email: profileData.email
-        })
+        .update(updateData)
         .eq('id', userId);
       
       if (error) throw error;
@@ -117,6 +125,6 @@ export function useProfileManagement() {
     loading,
     updateUserProfile,
     updateNotificationPreferences,
-    deleteUserAccount
+    deleteAccount: deleteUserAccount
   };
 }
