@@ -10,6 +10,13 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Define an interface for profile data to help TypeScript
+interface ProfileData {
+  name?: string;
+  avatar?: string;
+  username?: string;
+}
+
 interface ResultsDisplayProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -74,8 +81,8 @@ const ResultsDisplay = ({
         
         if (data) {
           const formattedPosts = data.map(post => {
-            // Safely handle the profiles relationship
-            const profileData = post.profiles || {};
+            // Safely handle the profiles relationship with proper typing
+            const profileData = post.profiles as ProfileData || {} as ProfileData;
             
             return {
               id: post.id,
