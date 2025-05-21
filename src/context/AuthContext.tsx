@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -245,9 +246,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function requestPasswordReset(email: string) {
-    // Fixed: Instead of passing the email directly to resetPassword,
-    // we explicitly cast it to ensure the type is correct
-    return resetPassword(email as string);
+    // We need to call resetPassword with the email string
+    return resetPassword(email);
   }
 
   async function updateUserProfile(data: Partial<UserType>) {
