@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types";
 
 /**
@@ -9,6 +9,7 @@ import { User } from "@/types";
  */
 export function useProfileManagement() {
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   /**
    * Updates a user's profile information
@@ -18,17 +19,15 @@ export function useProfileManagement() {
       setLoading(true);
       
       // Prepare update data
-      const updateData: any = {
-        name: profileData.name,
-        bio: profileData.bio,
-        location: profileData.location,
-        email: profileData.email
-      };
+      const updateData: any = {};
       
-      // Only include avatar if it's explicitly provided
-      if (profileData.avatar) {
-        updateData.avatar = profileData.avatar;
-      }
+      // Only include fields that are explicitly provided
+      if (profileData.name !== undefined) updateData.name = profileData.name;
+      if (profileData.bio !== undefined) updateData.bio = profileData.bio;
+      if (profileData.location !== undefined) updateData.location = profileData.location;
+      if (profileData.email !== undefined) updateData.email = profileData.email;
+      if (profileData.avatar !== undefined) updateData.avatar = profileData.avatar;
+      if (profileData.username !== undefined) updateData.username = profileData.username;
       
       const { error } = await supabase
         .from('profiles')

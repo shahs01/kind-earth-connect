@@ -3,8 +3,8 @@ import React, { useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { User, Upload, X, Loader2 } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useAvatarStorage } from "@/hooks/useAvatarStorage";
+import { useToast } from "@/hooks/use-toast";
 
 interface AvatarUploadProps {
   currentAvatar: string | null;
@@ -16,8 +16,10 @@ const AvatarUpload = ({ currentAvatar, userId, onAvatarUpdate }: AvatarUploadPro
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(currentAvatar);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadAvatar, removeAvatar } = useAvatarStorage();
+  const { toast } = useToast();
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
       
@@ -26,8 +28,6 @@ const AvatarUpload = ({ currentAvatar, userId, onAvatarUpdate }: AvatarUploadPro
       }
       
       const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${userId}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       
       // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
@@ -40,7 +40,8 @@ const AvatarUpload = ({ currentAvatar, userId, onAvatarUpdate }: AvatarUploadPro
       }
       
       // Check file type
-      if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt?.toLowerCase() || '')) {
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
+      if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
         toast({
           title: "Invalid file type",
           description: "Please select a valid image file (jpg, png, gif, webp)",
@@ -49,33 +50,11 @@ const AvatarUpload = ({ currentAvatar, userId, onAvatarUpdate }: AvatarUploadPro
         return;
       }
       
-      // Upload file to Supabase Storage
-      const { data, error } = await supabase
-        .storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-        
-      if (error) throw error;
+      const result = await uploadAvatar(file, userId);
       
-      if (data) {
-        const { data: publicUrlData } = supabase
-          .storage
-          .from('avatars')
-          .getPublicUrl(data.path);
-          
-        // Update the avatar URL in the profiles table
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ avatar: publicUrlData.publicUrl })
-          .eq('id', userId);
-          
-        if (updateError) throw updateError;
-        
-        setAvatarUrl(publicUrlData.publicUrl);
-        onAvatarUpdate(publicUrlData.publicUrl);
+      if (result) {
+        setAvatarUrl(result.url);
+        onAvatarUpdate(result.url);
         
         toast({
           title: "Avatar updated",
@@ -101,23 +80,20 @@ const AvatarUpload = ({ currentAvatar, userId, onAvatarUpdate }: AvatarUploadPro
     try {
       setUploading(true);
       
-      // Update profile to use default avatar
-      const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userId)}`;
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ avatar: defaultAvatar })
-        .eq('id', userId);
+      if (avatarUrl && !avatarUrl.includes('ui-avatars.com')) {
+        const removed = await removeAvatar(avatarUrl);
         
-      if (error) throw error;
-      
-      setAvatarUrl(defaultAvatar);
-      onAvatarUpdate(defaultAvatar);
-      
-      toast({
-        title: "Avatar removed",
-        description: "Your profile photo has been removed."
-      });
+        if (removed) {
+          const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(userId)}`;
+          setAvatarUrl(defaultAvatar);
+          onAvatarUpdate(defaultAvatar);
+          
+          toast({
+            title: "Avatar removed",
+            description: "Your profile photo has been removed."
+          });
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -176,7 +152,7 @@ const AvatarUpload = ({ currentAvatar, userId, onAvatarUpdate }: AvatarUploadPro
       <input
         type="file"
         ref={fileInputRef}
-        onChange={uploadAvatar}
+        onChange={handleUploadAvatar}
         accept="image/*"
         className="hidden"
         disabled={uploading}

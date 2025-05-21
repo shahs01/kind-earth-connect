@@ -21,6 +21,12 @@ const ProfileCard = ({
   onConnectClick,
   onAvatarClick
 }: ProfileCardProps) => {
+  // Only display trust score if it's not the default (5.0)
+  const showTrustScore = user.trustScore !== 5.0;
+  
+  // Only show help metrics if the user has actual activity
+  const showHelpMetrics = user.helpOffered > 0 || user.helpReceived > 0;
+  
   return (
     <Card className={`overflow-hidden shadow-md ${compact ? 'max-w-md mx-auto' : ''}`}>
       <CardHeader className={`bg-gradient-to-r from-thryvance-green-light to-thryvance-blue-light ${compact ? 'pb-12' : 'pb-16'} relative`}>
@@ -72,10 +78,12 @@ const ProfileCard = ({
                 </Badge>
               )}
               
-              <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-blue/10 text-thryvance-blue-dark border-thryvance-blue/20">
-                <Star className="h-3 w-3" />
-                {user.trustScore} Trust Score
-              </Badge>
+              {showTrustScore && (
+                <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-blue/10 text-thryvance-blue-dark border-thryvance-blue/20">
+                  <Star className="h-3 w-3" />
+                  {user.trustScore} Trust Score
+                </Badge>
+              )}
             </div>
             
             {user.bio && !compact && (
@@ -83,7 +91,7 @@ const ProfileCard = ({
             )}
           </div>
           
-          {!compact && user.helpOffered > 0 && (
+          {!compact && showHelpMetrics && (
             <>
               <div className="w-full grid grid-cols-2 gap-4 mt-6">
                 <div className="bg-thryvance-green-light/50 p-4 rounded-lg text-center">
@@ -99,7 +107,7 @@ const ProfileCard = ({
             </>
           )}
           
-          {compact && (user.helpOffered > 0 || user.helpReceived > 0) && (
+          {compact && showHelpMetrics && (
             <div className="w-full mt-4 grid grid-cols-2 gap-3">
               <div className="bg-thryvance-green-light/50 p-3 rounded-lg text-center">
                 <p className="text-lg font-bold text-thryvance-green-dark">{user.helpOffered}</p>

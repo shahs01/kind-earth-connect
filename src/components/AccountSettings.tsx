@@ -21,7 +21,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -262,7 +261,7 @@ const AccountSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Replace the old avatar section with the new AvatarUpload component */}
+          {/* Add the new AvatarUpload component */}
           <AvatarUpload
             currentAvatar={user.avatar}
             userId={user.id}
