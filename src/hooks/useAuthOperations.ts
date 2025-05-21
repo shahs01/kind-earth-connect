@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpData, PasswordResetData, User } from "@/types";
@@ -59,10 +58,13 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
+      const redirectTo = `${window.location.origin}/auth-callback`;
+      console.log("Redirecting to:", redirectTo);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth-callback`,
+          redirectTo: redirectTo,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

@@ -15,6 +15,7 @@ const AuthCallback = () => {
       const { data, error } = await supabase.auth.getSession();
       
       if (error) {
+        console.error("Auth callback error:", error);
         toast({
           title: "Authentication error",
           description: error.message,

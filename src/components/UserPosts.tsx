@@ -19,6 +19,7 @@ interface Post {
   created_at: string;
   location: string | null;
   status: string | null;
+  photos?: string[] | null;
 }
 
 interface UserPostsProps {
