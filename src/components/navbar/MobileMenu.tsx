@@ -17,8 +17,10 @@ import {
   FileText, 
   File,
   ChevronDown,
-  Search
+  Search,
+  Plus
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface MobileMenuProps {
   isActive: (path: string) => boolean;
@@ -48,12 +50,6 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
     { label: "Sponsor a Project", path: "/sponsor-project", icon: <Heart className="h-4 w-4" /> },
     { label: "Donate", path: "/donate", icon: <Heart className="h-4 w-4" /> },
   ];
-  
-  const supportItems = [
-    { label: "Offer Help", path: "/offer-help", icon: <Heart className="h-4 w-4" /> },
-    { label: "Request Help", path: "/request-help", icon: <HelpCircle className="h-4 w-4" /> },
-    { label: "Search Help", path: "/search-help", icon: <Search className="h-4 w-4" /> },
-  ];
 
   return (
     <div className="md:hidden bg-white border-t border-gray-100 p-4">
@@ -68,35 +64,22 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
           Home
         </Link>
         
+        {/* Create Posting Button */}
+        <Button 
+          asChild 
+          className="bg-thryvance-green hover:bg-thryvance-green-dark text-white w-full justify-start"
+        >
+          <Link
+            to="/create-posting"
+            onClick={toggleMenu}
+            className="flex items-center"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create Posting
+          </Link>
+        </Button>
+        
         <Accordion type="single" collapsible className="border-none shadow-none w-full">
-          <AccordionItem value="help-options" className="border-none">
-            <AccordionTrigger className={`px-3 rounded-md flex items-center justify-between ${
-              isActive("/offer-help") || isActive("/request-help") || isActive("/search-help")
-                ? "bg-thryvance-green-light text-thryvance-green"
-                : "text-gray-700"
-            }`}>
-              <span>Support Options</span>
-              <ChevronDown className="h-4 w-4" />
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col space-y-2 pl-4 mt-2">
-                {supportItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`px-3 py-2 rounded-md flex items-center ${
-                      isActive(item.path) ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-                    }`}
-                    onClick={toggleMenu}
-                  >
-                    <span className="mr-2">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
           {/* About Us dropdown */}
           <AccordionItem value="about-us" className="border-none">
             <AccordionTrigger className="px-3 rounded-md text-gray-700">

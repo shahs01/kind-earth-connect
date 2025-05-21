@@ -35,6 +35,7 @@ import SponsorProject from "./pages/SponsorProject";
 import MonthlyGiving from "./pages/MonthlyGiving";
 import DonateGoods from "./pages/DonateGoods";
 import Careers from "./pages/Careers";
+import CreatePosting from "./pages/CreatePosting";
 
 import "./App.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -70,6 +71,7 @@ function App() {
         <Route path="/donate-goods" element={<DonateGoods />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/subscribe" element={<Subscribe />} />
+        <Route path="/create-posting" element={<CreatePosting />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>

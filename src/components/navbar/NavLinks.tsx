@@ -1,6 +1,8 @@
 
 import { Link } from "react-router-dom";
 import NavbarDropdown from "./NavbarDropdown";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface NavLinksProps {
   isActive: (path: string) => boolean;
@@ -26,8 +28,13 @@ const NavLinks = ({ isActive }: NavLinksProps) => {
         Community
       </Link>
       
-      {/* Offer/Request dropdown menu */}
-      <NavbarDropdown label="Offer/Request" type="support" />
+      {/* Create Posting button */}
+      <Button asChild variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light hover:text-thryvance-green">
+        <Link to="/create-posting" className="flex items-center gap-1">
+          <Plus className="h-4 w-4" />
+          Create Posting
+        </Link>
+      </Button>
       
       <Link
         to="/nonprofit-directory"
