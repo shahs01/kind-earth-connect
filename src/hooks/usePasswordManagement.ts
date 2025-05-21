@@ -2,8 +2,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { validatePassword } from "@/utils/validation";
-import { ResetPasswordData } from "./useAuthMethods";
 import { User as UserType } from "@/types";
+
+// Define the ResetPasswordData type here to be consistent across files
+export interface ResetPasswordData {
+  email: string;
+  token: string;
+  newPassword: string;
+}
 
 export function usePasswordManagement(user: UserType | null) {
   async function resetPassword(

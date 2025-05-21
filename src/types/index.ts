@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string; // Added username field

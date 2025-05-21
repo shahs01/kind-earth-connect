@@ -4,9 +4,9 @@ import { User, Session } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { User as UserType } from "@/types";
 import { useAuthState } from "@/hooks/useAuthState";
-import { useAuthMethods, SignUpData, ResetPasswordData } from "@/hooks/useAuthMethods";
+import { useAuthMethods, SignUpData } from "@/hooks/useAuthMethods";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
-import { usePasswordManagement } from "@/hooks/usePasswordManagement";
+import { usePasswordManagement, ResetPasswordData } from "@/hooks/usePasswordManagement";
 import { useEmailVerification } from "@/hooks/useEmailVerification";
 
 interface AuthContextProps {
