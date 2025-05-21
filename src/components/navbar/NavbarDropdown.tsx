@@ -40,7 +40,7 @@ const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
           <span>{label}</span>
           <ChevronDown className="ml-1 h-4 w-4" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" className="w-56">
+        <DropdownMenuContent align="center" className="w-56 bg-white">
           {items.map((item) => (
             <DropdownMenuItem key={item.path} asChild>
               <Link to={item.path} className="flex items-center cursor-pointer w-full">

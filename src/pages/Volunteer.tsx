@@ -199,7 +199,7 @@ const Volunteer = () => {
           </div>
           
           <div className="mt-4">
-            <Tabs value={activeTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsContent value="browse">
                 <div className="flex flex-wrap gap-3 mb-8">
                   <Button variant="outline" className="bg-thryvance-green text-white hover:bg-thryvance-green-dark">
