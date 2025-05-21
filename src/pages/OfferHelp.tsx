@@ -5,13 +5,14 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
 import OfferHelpForm from "@/components/OfferHelpForm";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const OfferHelp = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [showAuthAlert, setShowAuthAlert] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Show auth alert if user is not authenticated after loading completes

@@ -6,13 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useAuthOperations } from "@/hooks/useAuthOperations";
 import { useAuthValidation } from "@/hooks/useAuthValidation";
+import { Session } from '@supabase/supabase-js';
+import { useToast } from "@/hooks/use-toast";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const { toast } = useToast();
 
   const { fetchUserProfile, updateProfile, deleteAccount: deleteUserAccount } = useAuthProfile();
   const { 
@@ -32,12 +36,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Security fix: Set up auth state listener FIRST to avoid missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event);
+      (event, session) => {
+        console.log("Auth state changed:", event, session);
         if (session) {
-          await handleSessionChange(session.user.id);
+          setSession(session);
+          handleSessionChange(session.user.id);
         } else {
           setUser(null);
+          setSession(null);
           setEmailVerified(false);
         }
       }
@@ -49,6 +55,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
+          setSession(session);
           await handleSessionChange(session.user.id);
         }
       } catch (error) {
@@ -69,10 +76,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const handleSessionChange = async (userId: string) => {
     try {
       const profile = await fetchUserProfile(userId);
-      setUser(profile);
-      // For both email/password and OAuth logins, we set emailVerified to true
-      // For OAuth providers like Google, email is already verified by the provider
-      setEmailVerified(true);
+      if (profile) {
+        setUser(profile);
+        // For both email/password and OAuth logins, we set emailVerified to true
+        // For OAuth providers like Google, email is already verified by the provider
+        setEmailVerified(true);
+      } else {
+        // If no profile found but we have a session, create a profile
+        console.log("No profile found for user, attempting to create one");
+        toast({
+          title: "Profile not found",
+          description: "We're setting up your profile now",
+        });
+        // The profile will be created via database trigger when authentication happens
+        // Re-fetch the profile after a short delay
+        setTimeout(async () => {
+          const retryProfile = await fetchUserProfile(userId);
+          if (retryProfile) {
+            setUser(retryProfile);
+            setEmailVerified(true);
+          } else {
+            console.error("Failed to create or fetch user profile");
+            logout();
+          }
+        }, 1000);
+      }
     } catch (error) {
       console.error("Error handling session change:", error);
       // If there's an error fetching the profile, we'll sign the user out
@@ -129,8 +157,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const contextValue: AuthContextType = {
     user,
+    session,
     isLoading: isLoading || authOpLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!session,
     emailVerified,
     login: handleLogin,
     signInWithProvider: handleSignInWithProvider,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
@@ -14,6 +13,7 @@ import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
+import UserPosts from "@/components/UserPosts";
 
 const EmptyState = ({ message }: { message: string }) => (
   <div className="text-center py-12 px-6">

@@ -2,6 +2,8 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProtectedRouteProps {
   redirectPath?: string;
@@ -16,8 +18,20 @@ const ProtectedRoute = ({
   redirectPath = "/login",
   requireVerified = false // Email verification is disabled by default
 }: ProtectedRouteProps) => {
-  const { user, isLoading, emailVerified } = useAuth();
+  const { user, isLoading, emailVerified, isAuthenticated } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Show toast notification if user is redirected to login
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access this page.",
+        variant: "default"
+      });
+    }
+  }, [isLoading, isAuthenticated]);
 
   // Show loading indicator while authentication state is being determined
   if (isLoading) {
@@ -30,7 +44,7 @@ const ProtectedRoute = ({
   }
 
   // If not authenticated, redirect to login with current location for redirect back
-  if (!user) {
+  if (!user || !isAuthenticated) {
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 

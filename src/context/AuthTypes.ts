@@ -1,9 +1,11 @@
 
-import { User, SignUpData, AuthValidationErrors, PasswordResetData } from "@/types";
+import { User, SignUpData, PasswordResetData } from "@/types";
 import { ReactNode } from "react";
+import { Session } from '@supabase/supabase-js';
 
 export interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   emailVerified: boolean;

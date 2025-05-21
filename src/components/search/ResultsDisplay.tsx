@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,7 @@ import { Users, Briefcase, Handshake } from "lucide-react";
 import ResultCard from "./ResultCard";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ResultsDisplayProps {
   activeTab: string;
@@ -15,6 +16,9 @@ interface ResultsDisplayProps {
   filteredRequests: any[];
   allFiltered: any[];
   handleClearFilters: () => void;
+  searchQuery: string;
+  categoryFilter: string;
+  locationFilter: string;
 }
 
 const ResultsDisplay = ({
@@ -23,37 +27,127 @@ const ResultsDisplay = ({
   filteredOffers,
   filteredRequests,
   allFiltered,
-  handleClearFilters
+  handleClearFilters,
+  searchQuery,
+  categoryFilter,
+  locationFilter
 }: ResultsDisplayProps) => {
   const { isAuthenticated } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  
+  // Fetch posts from Supabase
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setIsLoading(true);
+        
+        let query = supabase
+          .from('posts')
+          .select(`
+            *,
+            profiles:user_id (
+              name,
+              avatar,
+              username
+            )
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+          
+        // Apply search filters if provided
+        if (searchQuery) {
+          query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        }
+        
+        if (categoryFilter) {
+          query = query.eq('category', categoryFilter);
+        }
+        
+        if (locationFilter) {
+          query = query.ilike('location', `%${locationFilter}%`);
+        }
+
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        if (data) {
+          const formattedPosts = data.map(post => ({
+            id: post.id,
+            type: post.type,
+            title: post.title,
+            description: post.description,
+            location: post.location,
+            createdAt: new Date(post.created_at).toLocaleString(),
+            user: {
+              name: post.profiles?.name || "Unknown User",
+              avatar: post.profiles?.avatar || "https://ui-avatars.com/api/?name=User"
+            },
+            likes: 0,
+            comments: 0
+          }));
+          
+          setPosts(formattedPosts);
+          setOffers(formattedPosts.filter(post => post.type === 'offer'));
+          setRequests(formattedPosts.filter(post => post.type === 'request'));
+        }
+      } catch (err) {
+        console.error("Error fetching posts:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPosts();
+  }, [searchQuery, categoryFilter, locationFilter]);
   
   const getItemsToShow = () => {
     switch(activeTab) {
       case "offers":
-        return filteredOffers;
+        return offers;
       case "requests":
-        return filteredRequests;
+        return requests;
       default:
-        return allFiltered;
+        return posts;
     }
   };
 
   const displayResults = () => {
     const itemsToShow = getItemsToShow();
     
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 gap-6 animate-pulse">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-gray-100 h-48 rounded-lg"></div>
+          ))}
+        </div>
+      );
+    }
+    
     if (itemsToShow.length === 0) {
       return (
         <div className="text-center py-12">
           <Search className="h-12 w-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-700">No results found</h3>
-          <p className="text-gray-500 mt-2">Try adjusting your search filters</p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={handleClearFilters}
-          >
-            Clear filters
-          </Button>
+          <p className="text-gray-500 mt-2">
+            {searchQuery || categoryFilter || locationFilter 
+              ? "Try adjusting your search filters" 
+              : "No posts have been created yet"}
+          </p>
+          
+          {(searchQuery || categoryFilter || locationFilter) && (
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={handleClearFilters}
+            >
+              Clear filters
+            </Button>
+          )}
           
           {isAuthenticated && (
             <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
@@ -70,7 +164,7 @@ const ResultsDisplay = ({
     }
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {itemsToShow.map(item => (
           <ResultCard key={item.id} item={item} />
         ))}
@@ -84,7 +178,7 @@ const ResultsDisplay = ({
         <h2 className="text-2xl font-semibold">
           Search Results 
           <span className="ml-2 text-sm font-normal text-gray-500">
-            ({allFiltered.length} {allFiltered.length === 1 ? 'result' : 'results'})
+            ({posts.length} {posts.length === 1 ? 'result' : 'results'})
           </span>
         </h2>
         

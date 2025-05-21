@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
@@ -17,6 +18,7 @@ export const useAuthProfile = () => {
    */
   const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
+      // First check if profile exists
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -27,6 +29,7 @@ export const useAuthProfile = () => {
         throw error;
       }
 
+      // If profile exists, return it
       if (data) {
         const userProfile: User = {
           id: userId,
@@ -52,7 +55,30 @@ export const useAuthProfile = () => {
         return userProfile;
       }
       
-      console.log("No user profile found for ID:", userId);
+      // If profile doesn't exist, get user info from auth
+      const { data: authUser } = await supabase.auth.getUser();
+      
+      if (authUser?.user) {
+        // Create profile for user
+        const { error: createError } = await supabase.from('profiles').insert({
+          id: userId,
+          username: authUser.user.user_metadata?.username || `user_${userId.substring(0, 6)}`,
+          email: authUser.user.email,
+          name: authUser.user.user_metadata?.name || authUser.user.email?.split('@')[0] || 'New User',
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.user.user_metadata?.name || 'User')}`,
+          location: authUser.user.user_metadata?.location || '',
+        });
+
+        if (createError) {
+          console.error("Error creating user profile:", createError);
+          return null;
+        }
+
+        // Fetch newly created profile
+        return fetchUserProfile(userId);
+      }
+      
+      console.log("No user profile found or created for ID:", userId);
       return null;
     } catch (error) {
       console.error("Error fetching user profile:", error);
