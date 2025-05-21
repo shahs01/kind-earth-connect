@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
+import { useParams, Navigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import AccountSettings from "@/components/AccountSettings";
@@ -13,6 +14,7 @@ import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
 import { Loader2 } from "lucide-react";
 import UserPosts from "@/components/UserPosts";
+import { useAuthProfile } from "@/hooks/useAuthProfile";
 
 const EmptyState = ({ message }: { message: string }) => (
   <div className="text-center py-12 px-6">
@@ -21,10 +23,48 @@ const EmptyState = ({ message }: { message: string }) => (
 );
 
 const Profile = () => {
+  const { userId } = useParams<{ userId: string }>();
   const { user, emailVerified } = useAuth();
+  const { fetchUserProfile } = useAuthProfile();
   const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [profileUser, setProfileUser] = useState(user);
   const [currentTab, setCurrentTab] = useState("activity");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  
+  useEffect(() => {
+    const loadProfileData = async () => {
+      setIsLoading(true);
+      
+      try {
+        if (!userId) {
+          console.error("No userId provided");
+          return;
+        }
+        
+        // Check if this is the current user's profile
+        setIsOwnProfile(user?.id === userId);
+        
+        // If it's not the user's own profile, fetch the profile data
+        if (user?.id !== userId) {
+          const profileData = await fetchUserProfile(userId);
+          console.log("Fetched profile:", profileData);
+          setProfileUser(profileData);
+        } else {
+          // It's the user's own profile, use the current user data
+          setProfileUser(user);
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (userId) {
+      loadProfileData();
+    }
+  }, [userId, user, fetchUserProfile]);
   
   // Ensure we have a user before proceeding
   if (!user) {
@@ -34,14 +74,36 @@ const Profile = () => {
       </div>
     );
   }
+  
+  // Handle missing userId
+  if (!userId) {
+    return <Navigate to="/404" />;
+  }
+  
+  // Show loading state while profile is loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+        <span className="ml-2">Loading profile...</span>
+      </div>
+    );
+  }
+  
+  // Show 404 if profile not found
+  if (!profileUser) {
+    return <Navigate to="/404" />;
+  }
 
   console.log("Current user in Profile:", user);
+  console.log("Profile user:", profileUser);
+  console.log("Is own profile:", isOwnProfile);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow bg-thryvance-neutral-light py-10">
-        {!emailVerified && (
+        {!emailVerified && isOwnProfile && (
           <div className="container mx-auto px-4 mb-6">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800">
               <div className="flex items-start gap-2">
@@ -65,17 +127,17 @@ const Profile = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
-              <ProfileCard user={user} isOwnProfile={true} />
+              <ProfileCard user={profileUser} isOwnProfile={isOwnProfile} />
             </div>
             
             <div className="md:col-span-2">
               <Tabs value={currentTab} onValueChange={setCurrentTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="activity">Activity</TabsTrigger>
-                  <TabsTrigger value="posts">My Posts</TabsTrigger>
-                  <TabsTrigger value="reviews">My Reviews</TabsTrigger>
-                  <TabsTrigger value="reviewsgiven">Reviews Given</TabsTrigger>
-                  <TabsTrigger value="settings">Settings</TabsTrigger>
+                  {isOwnProfile && <TabsTrigger value="posts">My Posts</TabsTrigger>}
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                  {isOwnProfile && <TabsTrigger value="reviewsgiven">Reviews Given</TabsTrigger>}
+                  {isOwnProfile && <TabsTrigger value="settings">Settings</TabsTrigger>}
                 </TabsList>
                 
                 <TabsContent value="activity" className="space-y-6">
@@ -95,13 +157,13 @@ const Profile = () => {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-thryvance-green-light/50 p-6 rounded-lg text-center">
-                          <p className="text-3xl font-bold text-thryvance-green-dark">{user.helpOffered}</p>
+                          <p className="text-3xl font-bold text-thryvance-green-dark">{profileUser.helpOffered || 0}</p>
                           <p className="text-sm text-gray-600">People helped</p>
                         </div>
                         
                         <div className="bg-thryvance-blue-light/50 p-6 rounded-lg text-center">
                           <p className="text-3xl font-bold text-thryvance-blue-dark">
-                            {user.volunteerHours || 0}
+                            {profileUser.volunteerHours || 0}
                           </p>
                           <p className="text-sm text-gray-600">Volunteer hours</p>
                         </div>
@@ -110,21 +172,27 @@ const Profile = () => {
                   </Card>
                 </TabsContent>
                 
-                <TabsContent value="posts">
-                  <UserPosts />
-                </TabsContent>
+                {isOwnProfile && (
+                  <TabsContent value="posts">
+                    <UserPosts userId={userId} />
+                  </TabsContent>
+                )}
                 
                 <TabsContent value="reviews">
-                  <Reviews user={user} />
+                  <Reviews user={profileUser} />
                 </TabsContent>
                 
-                <TabsContent value="reviewsgiven">
-                  <ReviewsGiven user={user} />
-                </TabsContent>
+                {isOwnProfile && (
+                  <TabsContent value="reviewsgiven">
+                    <ReviewsGiven user={profileUser} />
+                  </TabsContent>
+                )}
                 
-                <TabsContent value="settings">
-                  <AccountSettings />
-                </TabsContent>
+                {isOwnProfile && (
+                  <TabsContent value="settings">
+                    <AccountSettings />
+                  </TabsContent>
+                )}
               </Tabs>
             </div>
           </div>
@@ -132,12 +200,14 @@ const Profile = () => {
       </main>
       <Footer />
       
-      {/* Rating Dialog */}
-      <RateUserDialog 
-        user={user} 
-        open={isRateDialogOpen} 
-        onOpenChange={setIsRateDialogOpen} 
-      />
+      {/* Rating Dialog - only show for other users' profiles */}
+      {!isOwnProfile && (
+        <RateUserDialog 
+          user={profileUser} 
+          open={isRateDialogOpen} 
+          onOpenChange={setIsRateDialogOpen} 
+        />
+      )}
     </div>
   );
 };

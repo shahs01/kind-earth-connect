@@ -1,5 +1,6 @@
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -40,6 +41,17 @@ import CreatePosting from "./pages/CreatePosting";
 import "./App.css";
 import { Toaster } from "@/components/ui/toaster";
 
+// ProfileRedirect component to handle /profile path
+const ProfileRedirect = () => {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+  
+  return <Navigate to={`/profile/${user.id}`} replace />;
+};
+
 function App() {
   return (
     <>
@@ -75,6 +87,8 @@ function App() {
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
+          {/* Add a simple redirect from /profile to the user's profile */}
+          <Route path="/profile" element={<ProfileRedirect />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/messages" element={<Messages />} />

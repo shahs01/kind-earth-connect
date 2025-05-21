@@ -20,38 +20,46 @@ interface Post {
   status: string | null;
 }
 
-const UserPosts = () => {
+interface UserPostsProps {
+  userId?: string;
+}
+
+const UserPosts = ({ userId }: UserPostsProps) => {
   const { user } = useAuth();
   const { fetchUserPosts, deletePost, isLoading: loadingPosts } = useProfileManagement();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Determine whose posts we're showing
+  const targetUserId = userId || user?.id;
+  const isOwnProfile = user?.id === targetUserId;
 
   useEffect(() => {
     const loadPosts = async () => {
-      if (!user) {
+      if (!targetUserId) {
         setIsLoading(false);
         return;
       }
       
-      console.log("Loading posts for user:", user.id);
+      console.log("Loading posts for user:", targetUserId);
       setIsLoading(true);
       setError(null);
       
       try {
-        const userPosts = await fetchUserPosts(user.id);
+        const userPosts = await fetchUserPosts(targetUserId);
         console.log("Fetched posts:", userPosts);
         setPosts(userPosts);
       } catch (err: any) {
         console.error("Error loading posts:", err);
-        setError("Failed to load your posts. Please try again later.");
+        setError("Failed to load posts. Please try again later.");
       } finally {
         setIsLoading(false);
       }
     };
 
     loadPosts();
-  }, [user, fetchUserPosts]);
+  }, [targetUserId, fetchUserPosts]);
 
   const handleDelete = async (postId: string) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
@@ -72,7 +80,7 @@ const UserPosts = () => {
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mr-2" />
-        <span>Loading your posts...</span>
+        <span>Loading posts...</span>
       </div>
     );
   }
@@ -89,22 +97,30 @@ const UserPosts = () => {
   if (posts.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500 mb-4">You haven't created any posts yet.</p>
-        <div className="flex justify-center gap-4">
-          <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
-            <Link to="/offer-help">Offer Help</Link>
-          </Button>
-          <Button asChild className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
-            <Link to="/request-help">Request Help</Link>
-          </Button>
-        </div>
+        <p className="text-gray-500 mb-4">
+          {isOwnProfile 
+            ? "You haven't created any posts yet." 
+            : "This user hasn't created any posts yet."}
+        </p>
+        {isOwnProfile && (
+          <div className="flex justify-center gap-4">
+            <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+              <Link to="/offer-help">Offer Help</Link>
+            </Button>
+            <Button asChild className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
+              <Link to="/request-help">Request Help</Link>
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-6 my-4">
-      <h2 className="text-2xl font-bold">My Posts</h2>
+      <h2 className="text-2xl font-bold">
+        {isOwnProfile ? "My Posts" : "User's Posts"}
+      </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {posts.map((post) => (
@@ -140,26 +156,28 @@ const UserPosts = () => {
               </div>
             </CardContent>
             
-            <CardFooter className="border-t pt-3 flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={() => handleEditPost(post.id)}
-              >
-                <Edit className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={() => handleDelete(post.id)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete
-              </Button>
-            </CardFooter>
+            {isOwnProfile && (
+              <CardFooter className="border-t pt-3 flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  onClick={() => handleEditPost(post.id)}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  onClick={() => handleDelete(post.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         ))}
       </div>
