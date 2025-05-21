@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Nonprofit } from "@/types";
 import { Search } from "lucide-react";
+import { Badge, Globe, Phone, Mail, MapPin } from "@/components/NonprofitUtils";
 
 // Sample nonprofit data
 const sampleNonprofits: Nonprofit[] = [
