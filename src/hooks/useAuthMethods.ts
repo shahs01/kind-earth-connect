@@ -3,15 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { validatePassword } from "@/utils/validation";
-
-// Define the SignUpData type
-export interface SignUpData {
-  email: string;
-  password: string;
-  username?: string;
-  name?: string;
-  location?: string;
-}
+import { SignUpData } from "@/types";
 
 export function useAuthMethods() {
   const navigate = useNavigate();
