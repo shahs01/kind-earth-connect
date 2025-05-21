@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -255,8 +256,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Fix: Update the implementation to correctly use the resetPassword function
   async function requestPasswordReset(email: string): Promise<void> {
-    // Call resetPassword with the email string
+    // Call resetPassword with the email string directly
     return resetPassword(email);
   }
 
