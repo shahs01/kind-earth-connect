@@ -8,7 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Calendar } from "lucide-react";
+import { Search, MapPin, Calendar, Filter, ChevronDown, Users, HandShake, Briefcase } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Label } from "@/components/ui/label";
 
 // Sample data for offers and requests
 const sampleOffers = [
@@ -108,7 +111,17 @@ const SearchHelp = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [locationFilter, setLocationFilter] = useState("");
-  const [postType, setPostType] = useState("all"); // New state for post type filter (offers/requests/all)
+  const [postType, setPostType] = useState("all");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
+  
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("All Categories");
+    setLocationFilter("");
+    setPostType("all");
+    setSortBy("newest");
+  };
   
   const filterItems = (items: any[]) => {
     return items.filter(item => {
@@ -124,7 +137,6 @@ const SearchHelp = () => {
         !locationFilter || 
         item.location.toLowerCase().includes(locationFilter.toLowerCase());
       
-      // Add post type filter
       const matchesType = 
         postType === "all" || 
         (postType === "offers" && item.id.startsWith('o')) ||
@@ -134,9 +146,24 @@ const SearchHelp = () => {
     });
   };
   
+  // Apply filters
   const filteredOffers = filterItems(sampleOffers);
   const filteredRequests = filterItems(sampleRequests);
-  const allFiltered = [...filteredOffers, ...filteredRequests];
+  let allFiltered = [...filteredOffers, ...filteredRequests];
+  
+  // Apply sorting
+  const sortItems = (items: any[]) => {
+    if (sortBy === "newest") {
+      return [...items].sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+    } else if (sortBy === "oldest") {
+      return [...items].sort((a, b) => new Date(a.postedDate).getTime() - new Date(b.postedDate).getTime());
+    }
+    return items;
+  };
+  
+  filteredOffers.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+  filteredRequests.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+  allFiltered = sortItems(allFiltered);
   
   const displayResults = () => {
     let itemsToShow;
@@ -161,12 +188,7 @@ const SearchHelp = () => {
           <Button 
             variant="outline" 
             className="mt-4"
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("All Categories");
-              setLocationFilter("");
-              setPostType("all");
-            }}
+            onClick={handleClearFilters}
           >
             Clear filters
           </Button>
@@ -226,67 +248,148 @@ const SearchHelp = () => {
       
       <main className="flex-grow py-10 bg-thryvance-neutral-light">
         <div className="container mx-auto px-4">
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-              <div className="lg:col-span-2 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <Input 
-                  placeholder="Search for skills, services, or needs..." 
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Input 
+                    placeholder="Search for skills, services, or needs..." 
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Input 
+                    placeholder="Filter by location" 
+                    className="pl-10"
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                  />
+                </div>
+                
+                <Select 
+                  value={postType} 
+                  onValueChange={setPostType}
+                >
+                  <SelectTrigger>
+                    <div className="flex items-center gap-2">
+                      {postType === "offers" ? <Briefcase className="h-4 w-4" /> : 
+                       postType === "requests" ? <HandShake className="h-4 w-4" /> : 
+                       <Filter className="h-4 w-4" />}
+                      <SelectValue placeholder="Filter by post type" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" /> All Posts
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="offers">
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" /> Offers Only
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="requests">
+                      <div className="flex items-center gap-2">
+                        <HandShake className="h-4 w-4" /> Requests Only
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              <Select 
-                value={selectedCategory} 
-                onValueChange={setSelectedCategory}
+              <Collapsible 
+                open={showAdvancedFilters} 
+                onOpenChange={setShowAdvancedFilters}
+                className="space-y-4"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-500">Advanced Filters</h3>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+                      <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'transform rotate-180' : ''}`} />
+                      <span className="sr-only">Toggle advanced filters</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+                
+                <CollapsibleContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="category">Category</Label>
+                      <Select 
+                        value={selectedCategory} 
+                        onValueChange={setSelectedCategory}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Filter by category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Sort By</Label>
+                      <RadioGroup 
+                        value={sortBy} 
+                        onValueChange={setSortBy}
+                        className="flex flex-row space-x-4 mt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="newest" id="newest" />
+                          <Label htmlFor="newest" className="cursor-pointer">Newest First</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="oldest" id="oldest" />
+                          <Label htmlFor="oldest" className="cursor-pointer">Oldest First</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
               
-              <Input 
-                placeholder="Filter by location" 
-                value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-              />
-              
-              {/* New Post Type Filter */}
-              <Select 
-                value={postType} 
-                onValueChange={setPostType}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by post type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Posts</SelectItem>
-                  <SelectItem value="offers">Offers Only</SelectItem>
-                  <SelectItem value="requests">Requests Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" className="mr-2" onClick={handleClearFilters}>
+                  Clear Filters
+                </Button>
+                <Button className="bg-thryvance-blue">
+                  Search
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">
-                Search Results
+                Search Results 
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({allFiltered.length} {allFiltered.length === 1 ? 'result' : 'results'})
+                </span>
               </h2>
               
               <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="offers">Offers</TabsTrigger>
-                <TabsTrigger value="requests">Requests</TabsTrigger>
+                <TabsTrigger value="all" className="flex items-center gap-1">
+                  <Users className="h-4 w-4" /> All
+                </TabsTrigger>
+                <TabsTrigger value="offers" className="flex items-center gap-1">
+                  <Briefcase className="h-4 w-4" /> Offers
+                </TabsTrigger>
+                <TabsTrigger value="requests" className="flex items-center gap-1">
+                  <HandShake className="h-4 w-4" /> Requests
+                </TabsTrigger>
               </TabsList>
             </div>
             

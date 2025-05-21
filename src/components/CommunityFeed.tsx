@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Search, MapPin, Clock, ChevronRight } from "lucide-react";
 import { Post, User } from "@/types";
 
@@ -127,56 +126,50 @@ const mockPosts: Post[] = [
   },
 ];
 
-const CommunityFeed = () => {
+interface CommunityFeedProps {
+  searchQuery?: string;
+  locationFilter?: string;
+  postTypeFilter?: string;
+  categoryFilter?: string;
+}
+
+const CommunityFeed = ({
+  searchQuery = "",
+  locationFilter = "",
+  postTypeFilter = "all",
+  categoryFilter = "All"
+}: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>(mockPosts);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("All");
+  
+  const categories = ["All", "Education", "Transportation", "Moving", "Home & Garden"];
 
   const filteredPosts = posts.filter((post) => {
+    // Search term filter
     const searchMatch =
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const locationMatch = post.location
-      .toLowerCase()
-      .includes(locationFilter.toLowerCase());
+    
+    // Location filter
+    const locationMatch = !locationFilter || 
+      post.location.toLowerCase().includes(locationFilter.toLowerCase());
+    
+    // Post type filter (offer/request/all)
+    const typeMatch = 
+      postTypeFilter === "all" || 
+      post.type === postTypeFilter;
+    
+    // Category filter
     const categoryMatch =
-      categoryFilter === "All" || post.category === categoryFilter;
+      activeCategory === "All" || post.category === activeCategory;
 
-    return searchMatch && locationMatch && categoryMatch;
+    return searchMatch && locationMatch && typeMatch && categoryMatch;
   });
 
-  const categories = ["All", "Education", "Transportation", "Moving", "Home & Garden"];
-
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex items-center border rounded-md px-3 py-2 flex-grow">
-          <Search className="h-5 w-5 mr-2 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Search offers and requests..."
-            className="border-none shadow-none focus-visible:ring-0"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="flex items-center border rounded-md px-3 py-2">
-          <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Enter location"
-            className="border-none shadow-none focus-visible:ring-0"
-            value={locationFilter}
-            onChange={(e) => setLocationFilter(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <Tabs defaultValue="all" className="mb-4">
+    <div className="w-full">
+      <Tabs defaultValue="All" value={activeCategory} onValueChange={setActiveCategory} className="mb-6">
         <TabsList className="bg-thryvance-neutral-light rounded-md">
-          <TabsTrigger value="all">All</TabsTrigger>
           {categories.map((category) => (
             <TabsTrigger value={category} key={category}>
               {category}
@@ -185,36 +178,53 @@ const CommunityFeed = () => {
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPosts.map((post) => (
-          <Card key={post.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center mb-4">
-                <Avatar className="w-8 h-8 mr-3">
-                  <AvatarImage src={post.user?.avatar} alt={post.user?.name} />
-                  <AvatarFallback>{post.user?.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-semibold">{post.user?.name}</div>
-                  <div className="text-sm text-gray-500 flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {post.createdAt.toLocaleDateString()}
+      {filteredPosts.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+          <Search className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-xl font-medium text-gray-700">No results found</h3>
+          <p className="text-gray-500 mt-2">Try adjusting your search filters</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPosts.map((post) => (
+            <Card key={post.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center mb-4">
+                  <Avatar className="w-8 h-8 mr-3">
+                    <AvatarImage src={post.user?.avatar} alt={post.user?.name} />
+                    <AvatarFallback>{post.user?.name.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-semibold">{post.user?.name}</div>
+                    <div className="text-sm text-gray-500 flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {post.createdAt.toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
-              <p className="text-gray-700 mb-3">{post.description}</p>
-              <Badge className="bg-blue-100 text-blue-800 mr-2">{post.category}</Badge>
-              <Badge className="bg-green-100 text-green-800">{post.type}</Badge>
-            </CardContent>
-            <CardFooter className="px-4 py-2 bg-gray-50 border-t">
-              <Button variant="ghost" className="w-full justify-start">
-                Learn More <ChevronRight className="w-4 h-4 ml-auto" />
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+                <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
+                <p className="text-gray-700 mb-3">{post.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-blue-100 text-blue-800">{post.category}</Badge>
+                  <Badge className={post.type === "offer" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
+                    {post.type === "offer" ? "Offering Help" : "Requesting Help"}
+                  </Badge>
+                  {post.location && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {post.location}
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="px-4 py-2 bg-gray-50 border-t">
+                <Button variant="ghost" className="w-full justify-start">
+                  Learn More <ChevronRight className="w-4 h-4 ml-auto" />
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
