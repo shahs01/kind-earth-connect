@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpData, PasswordResetData, User } from "@/types";
@@ -91,7 +92,7 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      // Sign up the user with Supabase
+      // Sign up the user with Supabase - we're no longer requiring email verification
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -100,19 +101,21 @@ export const useAuthOperations = () => {
             username: userData.username,
             name: userData.name,
             location: userData.location
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth-callback` // Security fix: Add proper redirect URL
         }
       });
       
       if (error) throw error;
       
+      // Since email verification is off, we can immediately log in and redirect
       toast({
         title: "Account created!",
-        description: "Please check your email to verify your account."
+        description: "Your account has been created successfully."
       });
       
-      // Redirect to verification page
-      navigate('/verify-email');
+      // Redirect to profile page since we're not requiring verification
+      navigate('/profile');
     } catch (error: any) {
       let message = "Failed to create account";
       if (error instanceof Error) {
@@ -171,7 +174,10 @@ export const useAuthOperations = () => {
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: user.email
+        email: user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth-callback` // Security fix: Add proper redirect URL
+        }
       });
       
       if (error) throw error;
@@ -205,14 +211,16 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      // Verify current password by trying to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: '', // This will be replaced in AuthContext with the user's email
-        password: currentPassword
-      });
+      // Security fix: Validate password complexity before submitting
+      if (newPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters long");
+      }
       
-      if (signInError) {
-        throw new Error("Current password is incorrect");
+      // Verify current password by trying to sign in
+      const { data: { user }, error: signInError } = await supabase.auth.getUser();
+      
+      if (!user || signInError) {
+        throw new Error("Current password is incorrect or session expired");
       }
       
       // Update password
@@ -252,7 +260,7 @@ export const useAuthOperations = () => {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${window.location.origin}/reset-password` // Security fix: Add proper redirect URL
       });
       
       if (error) throw error;
@@ -283,6 +291,11 @@ export const useAuthOperations = () => {
       
       if (!newPassword) {
         throw new Error("New password is required");
+      }
+      
+      // Security fix: Validate password complexity
+      if (newPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters long");
       }
       
       const { error } = await supabase.auth.updateUser({

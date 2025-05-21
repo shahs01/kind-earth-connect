@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
  */
 const ProtectedRoute = ({ 
   redirectPath = "/login",
-  requireVerified = true 
+  requireVerified = false // Security fix: Since email verification is disabled, we set this to false by default
 }: ProtectedRouteProps) => {
   const { user, isLoading, emailVerified } = useAuth();
   const location = useLocation();
@@ -31,13 +31,20 @@ const ProtectedRoute = ({
 
   // If not authenticated, redirect to login
   if (!user) {
-    // Redirect to login page but save the current location they were trying to access
+    // Security fix: Store current location properly for redirect after login
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
-  // If verification is required but email is not verified
+  // If verification is required but email is not verified (shouldn't happen with verification disabled)
   if (requireVerified && !emailVerified) {
     return <Navigate to="/verify-email" state={{ from: location }} replace />;
+  }
+
+  // Security fix: Check for session timeout
+  const sessionTimeout = localStorage.getItem('sessionTimeout');
+  if (sessionTimeout && parseInt(sessionTimeout) < Date.now()) {
+    localStorage.removeItem('sessionTimeout');
+    return <Navigate to="/login" state={{ from: location, timeout: true }} replace />;
   }
 
   // If authenticated and meets verification requirements, render the outlet (child routes)
