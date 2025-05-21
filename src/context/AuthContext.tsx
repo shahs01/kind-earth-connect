@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +17,7 @@ interface AuthContextProps {
   isLoading: boolean;
   emailVerified: boolean;
 
-  // Define the parameter type as a union type
+  // Updated type definition for resetPassword to accept a string OR an object
   resetPassword: (
     emailOrData: string | { email: string; token: string; newPassword: string }
   ) => Promise<void>;
@@ -211,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Combined function to handle both requesting a reset and setting a new password
+  // Fixed function to handle both request password reset and setting a new password
   async function resetPassword(
     emailOrData: string | { email: string; token: string; newPassword: string }
   ): Promise<void> {
@@ -256,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Fix: Update the implementation to correctly use the resetPassword function
+  // Updated implementation to correctly use the resetPassword function
   async function requestPasswordReset(email: string): Promise<void> {
     // Call resetPassword with the email string directly
     return resetPassword(email);
