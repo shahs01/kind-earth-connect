@@ -9,20 +9,22 @@ import { MessageSquare, MapPin, Clock, User, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+interface ProfileData {
+  name?: string | null;
+  avatar?: string | null;
+}
+
 interface Post {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   type: string;
   category: string | null;
   created_at: string;
   location: string | null;
-  status: string;
+  status: string | null;
   user_id: string;
-  profiles?: {
-    name: string | null;
-    avatar: string | null;
-  } | null;
+  profiles?: ProfileData | null;
 }
 
 interface PostsListProps {
@@ -30,13 +32,15 @@ interface PostsListProps {
   categoryFilter?: string;
   typeFilter?: string | null;
   locationFilter?: string;
+  sortBy?: string;
 }
 
 const PostsList = ({ 
   searchQuery = "", 
   categoryFilter = "",
   typeFilter = null,
-  locationFilter = ""
+  locationFilter = "",
+  sortBy = "newest"
 }: PostsListProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +51,7 @@ const PostsList = ({
     const fetchPosts = async () => {
       try {
         setLoading(true);
-        console.log("Fetching posts with filters:", { searchQuery, categoryFilter, typeFilter, locationFilter });
+        console.log("Fetching posts with filters:", { searchQuery, categoryFilter, typeFilter, locationFilter, sortBy });
         
         // Start building the query
         let query = supabase
@@ -56,8 +60,7 @@ const PostsList = ({
             *,
             profiles(name, avatar)
           `)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
+          .eq('status', 'active');
 
         // Apply filters
         if (searchQuery) {
@@ -76,6 +79,14 @@ const PostsList = ({
           query = query.ilike('location', `%${locationFilter}%`);
         }
 
+        // Apply sorting
+        if (sortBy === "oldest") {
+          query = query.order('created_at', { ascending: true });
+        } else {
+          // Default to newest first
+          query = query.order('created_at', { ascending: false });
+        }
+
         const { data, error } = await query;
         
         console.log("Posts query result:", { data, error });
@@ -85,7 +96,7 @@ const PostsList = ({
         // Process the data to ensure it matches our Post type
         const processedPosts: Post[] = (data || []).map((post: any) => ({
           ...post,
-          profiles: post.profiles ? post.profiles[0] : null // Handle the nested profiles array
+          profiles: post.profiles && post.profiles.length > 0 ? post.profiles[0] : null
         }));
         
         setPosts(processedPosts);
@@ -106,7 +117,7 @@ const PostsList = ({
     };
 
     fetchPosts();
-  }, [searchQuery, categoryFilter, typeFilter, locationFilter, toast]);
+  }, [searchQuery, categoryFilter, typeFilter, locationFilter, sortBy, toast]);
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search, MapPin, Filter, ChevronDown, Users, Handshake, Briefcase } from "lucide-react";
+import { Search, MapPin, Filter, ChevronDown, Users, Handshake, Briefcase, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -143,11 +143,15 @@ const SearchFilters = ({
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="newest" id="newest" />
-                    <Label htmlFor="newest" className="cursor-pointer">Newest First</Label>
+                    <Label htmlFor="newest" className="cursor-pointer flex items-center">
+                      <Clock className="h-3.5 w-3.5 mr-1" /> Newest First
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="oldest" id="oldest" />
-                    <Label htmlFor="oldest" className="cursor-pointer">Oldest First</Label>
+                    <Label htmlFor="oldest" className="cursor-pointer flex items-center">
+                      <Clock className="h-3.5 w-3.5 mr-1" /> Oldest First
+                    </Label>
                   </div>
                 </RadioGroup>
               </div>

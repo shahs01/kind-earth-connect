@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -6,12 +7,13 @@ import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Handshake, Users, Search, MapPin, Filter } from "lucide-react";
+import { Handshake, Users, Search, MapPin, Filter, SortDesc } from "lucide-react";
 
 const Community = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [postTypeFilter, setPostTypeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -67,17 +69,38 @@ const Community = () => {
               </Select>
             </div>
             
-            <div className="mt-4 flex justify-center md:justify-end gap-4">
-              <Button variant="outline" onClick={() => {
-                setSearchQuery("");
-                setLocationFilter("");
-                setPostTypeFilter("all");
-              }}>
-                Clear Filters
-              </Button>
-              <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                <Users className="mr-2 h-4 w-4" /> Find Neighbors
-              </Button>
+            <div className="mt-4 flex flex-wrap justify-between items-center">
+              <div className="mb-2 md:mb-0">
+                <Select 
+                  value={sortBy} 
+                  onValueChange={setSortBy}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <div className="flex items-center gap-2">
+                      <SortDesc className="h-4 w-4" />
+                      <SelectValue placeholder="Sort posts" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => {
+                  setSearchQuery("");
+                  setLocationFilter("");
+                  setPostTypeFilter("all");
+                  setSortBy("newest");
+                }}>
+                  Clear Filters
+                </Button>
+                <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                  <Users className="mr-2 h-4 w-4" /> Find Neighbors
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -87,7 +110,8 @@ const Community = () => {
         <CommunityFeed 
           searchQuery={searchQuery} 
           locationFilter={locationFilter} 
-          postTypeFilter={postTypeFilter} 
+          postTypeFilter={postTypeFilter}
+          sortBy={sortBy}
         />
       </main>
       <Footer />

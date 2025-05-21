@@ -155,6 +155,7 @@ const SearchHelp = () => {
               searchQuery={searchQuery}
               categoryFilter={selectedCategory}
               locationFilter={locationFilter}
+              sortBy={sortBy}
             />
           )}
         </div>

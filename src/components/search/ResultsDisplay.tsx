@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ interface ResultsDisplayProps {
   searchQuery: string;
   categoryFilter: string;
   locationFilter: string;
+  sortBy?: string; // Add sortBy prop
 }
 
 const ResultsDisplay = ({
@@ -30,7 +30,8 @@ const ResultsDisplay = ({
   setActiveTab,
   searchQuery,
   categoryFilter,
-  locationFilter
+  locationFilter,
+  sortBy = "newest" // Default to newest
 }: ResultsDisplayProps) => {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -48,7 +49,7 @@ const ResultsDisplay = ({
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
-        console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter });
+        console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter, sortBy });
         
         // Fix the query to properly get profiles data
         let query = supabase
@@ -57,8 +58,7 @@ const ResultsDisplay = ({
             *,
             profiles:user_id(name, avatar, username)
           `)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
+          .eq('status', 'active');
           
         // Apply search filters if provided
         if (searchQuery) {
@@ -71,6 +71,14 @@ const ResultsDisplay = ({
         
         if (locationFilter) {
           query = query.ilike('location', `%${locationFilter}%`);
+        }
+
+        // Apply sorting based on sortBy prop
+        if (sortBy === "oldest") {
+          query = query.order('created_at', { ascending: true });
+        } else {
+          // Default to newest first
+          query = query.order('created_at', { ascending: false });
         }
 
         const { data, error } = await query;
@@ -90,6 +98,7 @@ const ResultsDisplay = ({
               title: post.title,
               description: post.description,
               location: post.location,
+              category: post.category,
               createdAt: new Date(post.created_at).toLocaleString(),
               user: {
                 name: profileData.name || "Unknown User",
@@ -125,7 +134,7 @@ const ResultsDisplay = ({
     };
     
     fetchPosts();
-  }, [searchQuery, categoryFilter, locationFilter, toast]);
+  }, [searchQuery, categoryFilter, locationFilter, sortBy, toast]);
   
   const getItemsToShow = () => {
     switch(activeTab) {
