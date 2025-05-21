@@ -16,7 +16,8 @@ import {
   Shield, 
   FileText, 
   File,
-  ChevronDown
+  ChevronDown,
+  Search
 } from "lucide-react";
 
 interface MobileMenuProps {
@@ -47,6 +48,12 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
     { label: "Sponsor a Project", path: "/sponsor-project", icon: <Heart className="h-4 w-4" /> },
     { label: "Donate", path: "/donate", icon: <Heart className="h-4 w-4" /> },
   ];
+  
+  const supportItems = [
+    { label: "Offer Help", path: "/offer-help", icon: <Heart className="h-4 w-4" /> },
+    { label: "Request Help", path: "/request-help", icon: <HelpCircle className="h-4 w-4" /> },
+    { label: "Search Help", path: "/search-help", icon: <Search className="h-4 w-4" /> },
+  ];
 
   return (
     <div className="md:hidden bg-white border-t border-gray-100 p-4">
@@ -73,33 +80,19 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col space-y-2 pl-4 mt-2">
-                <Link
-                  to="/offer-help"
-                  className={`px-3 py-2 rounded-md ${
-                    isActive("/offer-help") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-                  }`}
-                  onClick={toggleMenu}
-                >
-                  Offer Help
-                </Link>
-                <Link
-                  to="/request-help"
-                  className={`px-3 py-2 rounded-md ${
-                    isActive("/request-help") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-                  }`}
-                  onClick={toggleMenu}
-                >
-                  Request Help
-                </Link>
-                <Link
-                  to="/search-help"
-                  className={`px-3 py-2 rounded-md ${
-                    isActive("/search-help") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-                  }`}
-                  onClick={toggleMenu}
-                >
-                  Search Help
-                </Link>
+                {supportItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`px-3 py-2 rounded-md flex items-center ${
+                      isActive(item.path) ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
+                    }`}
+                    onClick={toggleMenu}
+                  >
+                    <span className="mr-2">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </AccordionContent>
           </AccordionItem>

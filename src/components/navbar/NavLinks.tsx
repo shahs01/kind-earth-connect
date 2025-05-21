@@ -25,14 +25,10 @@ const NavLinks = ({ isActive }: NavLinksProps) => {
       >
         Community
       </Link>
-      <Link
-        to="/offer-help"
-        className={`transition-colors hover:text-thryvance-green ${
-          isActive("/offer-help") || isActive("/request-help") ? "text-thryvance-green font-medium" : "text-gray-700"
-        }`}
-      >
-        Offer/Request
-      </Link>
+      
+      {/* Offer/Request dropdown menu */}
+      <NavbarDropdown label="Offer/Request" type="support" />
+      
       <Link
         to="/nonprofit-directory"
         className={`transition-colors hover:text-thryvance-green ${

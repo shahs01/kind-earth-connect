@@ -1,5 +1,5 @@
 
-import { ChevronDown, Info, Heart, HelpCircle, Bell, Handshake, Shield, FileText, File } from "lucide-react";
+import { ChevronDown, Info, Heart, HelpCircle, Bell, Handshake, Shield, FileText, File, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
 
 interface NavbarDropdownProps {
   label: string;
-  type: "about" | "involved";
+  type: "about" | "involved" | "support";
 }
 
 const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
@@ -32,7 +32,16 @@ const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
     { label: "Donate", path: "/donate", icon: <Heart className="mr-2 h-4 w-4" /> },
   ];
   
-  const items = type === "about" ? aboutItems : involvedItems;
+  const supportItems = [
+    { label: "Offer Help", path: "/offer-help", icon: <Heart className="mr-2 h-4 w-4" /> },
+    { label: "Request Help", path: "/request-help", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
+    { label: "Search Help", path: "/search-help", icon: <Search className="mr-2 h-4 w-4" /> },
+  ];
+  
+  const items = 
+    type === "about" ? aboutItems : 
+    type === "involved" ? involvedItems : 
+    supportItems;
   
   return (
     <div className="relative">
