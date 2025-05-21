@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Loader2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define username form schema with Zod
 const formSchema = z.object({
@@ -40,7 +41,7 @@ interface UsernameSelectionFormProps {
 }
 
 const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
-  const { signUp, validateField } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -67,11 +68,25 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
     }
     
     setUsernameChecking(true);
+    
     const timer = setTimeout(async () => {
       try {
-        const error = await validateField("username", username);
-        setUsernameAvailable(!error);
+        // Direct check against database instead of using validateField
+        const { data: usernameData, error: usernameError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .maybeSingle();
+        
+        if (usernameError) {
+          console.error("Error checking username:", usernameError);
+          setUsernameAvailable(false);
+        } else {
+          // If no data found, username is available
+          setUsernameAvailable(!usernameData);
+        }
       } catch (err) {
+        console.error("Username check error:", err);
         setUsernameAvailable(false);
       } finally {
         setUsernameChecking(false);
@@ -79,7 +94,7 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [username, validateField]);
+  }, [username]);
   
   const onSubmit = async (data: FormData) => {
     if (!userData) {
@@ -110,7 +125,7 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
         description: "Your account has been created successfully."
       });
       
-      navigate('/profile');
+      navigate('/');
     } catch (error) {
       console.error("Signup error:", error);
       toast({
