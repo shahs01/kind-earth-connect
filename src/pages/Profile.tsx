@@ -1,10 +1,10 @@
-
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Post, User } from "@/types";
+import { SettingsForm } from "@/components/SettingsForm";
 
 // Sample user data
 const sampleUser: User = {
@@ -173,14 +173,7 @@ const Profile = () => {
                 </TabsContent>
                 
                 <TabsContent value="settings">
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-semibold mb-4">Account Settings</h3>
-                      <p className="text-gray-600">
-                        Profile settings would go here (in a real app).
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <SettingsForm user={sampleUser} />
                 </TabsContent>
               </Tabs>
             </div>
