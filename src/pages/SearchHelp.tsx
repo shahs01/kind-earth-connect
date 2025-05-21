@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -278,7 +277,7 @@ const SearchHelp = () => {
                   <SelectTrigger>
                     <div className="flex items-center gap-2">
                       {postType === "offers" ? <Briefcase className="h-4 w-4" /> : 
-                       postType === "requests" ? <HandShake className="h-4 w-4" /> : 
+                       postType === "requests" ? <Handshake className="h-4 w-4" /> : 
                        <Filter className="h-4 w-4" />}
                       <SelectValue placeholder="Filter by post type" />
                     </div>
@@ -296,7 +295,7 @@ const SearchHelp = () => {
                     </SelectItem>
                     <SelectItem value="requests">
                       <div className="flex items-center gap-2">
-                        <HandShake className="h-4 w-4" /> Requests Only
+                        <Handshake className="h-4 w-4" /> Requests Only
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -388,7 +387,7 @@ const SearchHelp = () => {
                   <Briefcase className="h-4 w-4" /> Offers
                 </TabsTrigger>
                 <TabsTrigger value="requests" className="flex items-center gap-1">
-                  <HandShake className="h-4 w-4" /> Requests
+                  <Handshake className="h-4 w-4" /> Requests
                 </TabsTrigger>
               </TabsList>
             </div>
