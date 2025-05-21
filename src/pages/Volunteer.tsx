@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { User, Clock, Calendar, MapPin, Users as UsersIcon, Plus, Briefcase } from "lucide-react";
+import { User, Clock, Calendar, MapPin, Users as UsersIcon, Plus, Briefcase, Image, Link, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,11 @@ const Volunteer = () => {
     category: "Environment",
     description: "",
     spots: "5",
+    links: [""]
   });
+
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -34,6 +39,59 @@ const Volunteer = () => {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    
+    if (!fileList || photos.length + fileList.length > 3) {
+      toast({
+        title: "Upload limit reached",
+        description: "You can only upload up to 3 photos",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newPhotos = [...photos];
+    const newPhotoUrls = [...photoPreviewUrls];
+    
+    Array.from(fileList).forEach((file) => {
+      if (file.type.startsWith("image/")) {
+        newPhotos.push(file);
+        newPhotoUrls.push(URL.createObjectURL(file));
+      }
+    });
+    
+    setPhotos(newPhotos);
+    setPhotoPreviewUrls(newPhotoUrls);
+    
+    // Reset the input to allow selecting the same file again
+    e.target.value = "";
+  };
+  
+  const removePhoto = (index: number) => {
+    // Release the object URL to avoid memory leaks
+    URL.revokeObjectURL(photoPreviewUrls[index]);
+    
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleLinkChange = (index: number, value: string) => {
+    const newLinks = [...formData.links];
+    newLinks[index] = value;
+    setFormData(prev => ({ ...prev, links: newLinks }));
+  };
+
+  const addLinkField = () => {
+    setFormData(prev => ({ ...prev, links: [...prev.links, ""] }));
+  };
+
+  const removeLinkField = (index: number) => {
+    const newLinks = [...formData.links];
+    newLinks.splice(index, 1);
+    setFormData(prev => ({ ...prev, links: newLinks }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +109,10 @@ const Volunteer = () => {
     setIsSubmitting(true);
     
     try {
+      // Filter out empty links
+      const validLinks = formData.links.filter(link => link.trim() !== "");
+      
+      // Create the post in Supabase
       const { error } = await supabase.from('posts').insert({
         title: formData.title,
         description: formData.description,
@@ -59,11 +121,11 @@ const Volunteer = () => {
         type: "volunteer_opportunity",
         user_id: user?.id,
         status: "active",
-        // Store additional details in the description or consider adding custom fields to your posts table
         metadata: {
           schedule: formData.schedule,
           commitment: formData.commitment,
-          spots: parseInt(formData.spots)
+          spots: parseInt(formData.spots),
+          links: validLinks
         }
       });
       
@@ -83,7 +145,10 @@ const Volunteer = () => {
         category: "Environment",
         description: "",
         spots: "5",
+        links: [""]
       });
+      setPhotos([]);
+      setPhotoPreviewUrls([]);
       
       // Switch back to browse tab
       setActiveTab("browse");
@@ -297,6 +362,30 @@ const Volunteer = () => {
                         </p>
                       </div>
                       
+                      {!isAuthenticated && (
+                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <AlertCircle className="h-5 w-5 text-yellow-400" />
+                            </div>
+                            <div className="ml-3">
+                              <h3 className="text-sm font-medium text-yellow-800">Authentication required</h3>
+                              <div className="mt-2 text-sm text-yellow-700">
+                                <p>You need to be logged in to post volunteer opportunities.</p>
+                                <div className="mt-4">
+                                  <Button asChild variant="outline" className="mr-2">
+                                    <Link to="/login">Log in</Link>
+                                  </Button>
+                                  <Button asChild>
+                                    <Link to="/signup">Sign up</Link>
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                           <label htmlFor="title" className="block font-medium">Opportunity Title</label>
@@ -307,6 +396,7 @@ const Volunteer = () => {
                             onChange={handleInputChange}
                             placeholder="e.g., Community Garden Helper"
                             required
+                            disabled={!isAuthenticated}
                           />
                         </div>
                         
@@ -320,6 +410,7 @@ const Volunteer = () => {
                               onChange={handleInputChange}
                               placeholder="e.g., Main St Community Center"
                               required
+                              disabled={!isAuthenticated}
                             />
                           </div>
                           
@@ -328,6 +419,7 @@ const Volunteer = () => {
                             <Select 
                               value={formData.category}
                               onValueChange={(value) => handleSelectChange("category", value)}
+                              disabled={!isAuthenticated}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a category" />
@@ -351,6 +443,7 @@ const Volunteer = () => {
                               onChange={handleInputChange}
                               placeholder="e.g., Weekends, 9am-12pm"
                               required
+                              disabled={!isAuthenticated}
                             />
                           </div>
                           
@@ -363,6 +456,7 @@ const Volunteer = () => {
                               onChange={handleInputChange}
                               placeholder="e.g., Weekly, 3 months, etc."
                               required
+                              disabled={!isAuthenticated}
                             />
                           </div>
                           
@@ -376,6 +470,7 @@ const Volunteer = () => {
                               value={formData.spots}
                               onChange={handleInputChange}
                               required
+                              disabled={!isAuthenticated}
                             />
                           </div>
                         </div>
@@ -390,7 +485,89 @@ const Volunteer = () => {
                             placeholder="Describe the volunteer opportunity, what volunteers will be doing, skills required, etc."
                             rows={5}
                             required
+                            disabled={!isAuthenticated}
                           />
+                        </div>
+                        
+                        {/* Photo Upload Section */}
+                        <div className="space-y-2">
+                          <label className="block font-medium">Photos (optional, max 3)</label>
+                          <div className="flex flex-col gap-4">
+                            <div className="grid grid-cols-3 gap-4">
+                              {photoPreviewUrls.map((url, index) => (
+                                <div key={index} className="relative aspect-square rounded-md overflow-hidden border bg-white">
+                                  <img src={url} alt={`Preview ${index + 1}`} className="h-full w-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => removePhoto(index)}
+                                    className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
+                                    disabled={!isAuthenticated}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ))}
+                              
+                              {photos.length < 3 && (
+                                <label htmlFor="photoUpload" className={`flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 ${isAuthenticated ? 'bg-gray-50 cursor-pointer hover:bg-gray-100' : 'bg-gray-100 cursor-not-allowed'} transition-colors`}>
+                                  <Image className="h-6 w-6 text-gray-400 mb-1" />
+                                  <span className="text-xs text-gray-500">Add Photo</span>
+                                  <input
+                                    id="photoUpload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoUpload}
+                                    className="sr-only"
+                                    disabled={!isAuthenticated}
+                                  />
+                                </label>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">Upload photos related to your opportunity (max 3)</p>
+                          </div>
+                        </div>
+                        
+                        {/* Links Section */}
+                        <div className="space-y-2">
+                          <label className="block font-medium">Related Links (optional)</label>
+                          <div className="space-y-3">
+                            {formData.links.map((link, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <div className="flex-grow">
+                                  <div className="relative">
+                                    <Input
+                                      value={link}
+                                      onChange={(e) => handleLinkChange(index, e.target.value)}
+                                      placeholder="https://example.com"
+                                      className="pl-9"
+                                      disabled={!isAuthenticated}
+                                    />
+                                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  </div>
+                                </div>
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => removeLinkField(index)}
+                                  disabled={formData.links.length === 1 || !isAuthenticated}
+                                  className="flex-shrink-0"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addLinkField}
+                              disabled={!isAuthenticated}
+                              className="text-xs"
+                            >
+                              Add Another Link
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="pt-4 flex flex-col sm:flex-row justify-end gap-2">
@@ -404,7 +581,7 @@ const Volunteer = () => {
                           <Button 
                             type="submit" 
                             className="bg-thryvance-green hover:bg-thryvance-green-dark"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !isAuthenticated}
                           >
                             {isSubmitting ? (
                               <>Processing...</>
@@ -417,12 +594,6 @@ const Volunteer = () => {
                           </Button>
                         </div>
                       </form>
-                      
-                      {!isAuthenticated && (
-                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-sm">
-                          <strong>Note:</strong> You need to be logged in to post volunteer opportunities.
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>

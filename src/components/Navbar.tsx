@@ -9,6 +9,12 @@ import NavLinks from "./navbar/NavLinks";
 import UserMenu from "./navbar/UserMenu";
 import GuestActions from "./navbar/GuestActions";
 import MobileMenu from "./navbar/MobileMenu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,8 +39,47 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Desktop navigation */}
-        <NavLinks isActive={isActive} />
+        {/* Desktop navigation with help dropdown */}
+        <div className="hidden md:flex items-center space-x-6">
+          <Link to="/" className={`text-sm font-medium ${isActive('/') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
+            Home
+          </Link>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className={`text-sm font-medium ${
+                isActive('/offer-help') || isActive('/request-help') || isActive('/search-help') 
+                ? 'text-thryvance-green' 
+                : 'text-gray-700 hover:text-thryvance-green'
+              }`}>
+                Help Options
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-48 bg-white">
+              <DropdownMenuItem className="cursor-pointer">
+                <Link to="/offer-help" className="w-full">Offer Help</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <Link to="/request-help" className="w-full">Request Help</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <Link to="/search-help" className="w-full">Search Help</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Link to="/community" className={`text-sm font-medium ${isActive('/community') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
+            Community
+          </Link>
+          
+          <Link to="/volunteer" className={`text-sm font-medium ${isActive('/volunteer') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
+            Volunteer
+          </Link>
+          
+          <Link to="/nonprofit-directory" className={`text-sm font-medium ${isActive('/nonprofit-directory') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
+            Nonprofits
+          </Link>
+        </div>
 
         {/* Show different buttons based on authentication status */}
         {isAuthenticated ? (
