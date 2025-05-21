@@ -3,19 +3,16 @@ import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Briefcase, Handshake } from "lucide-react";
+import { Users, Briefcase, Handshake, Loader2 } from "lucide-react";
 import ResultCard from "./ResultCard";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResultsDisplayProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  filteredOffers: any[];
-  filteredRequests: any[];
-  allFiltered: any[];
-  handleClearFilters: () => void;
   searchQuery: string;
   categoryFilter: string;
   locationFilter: string;
@@ -24,25 +21,28 @@ interface ResultsDisplayProps {
 const ResultsDisplay = ({
   activeTab,
   setActiveTab,
-  filteredOffers,
-  filteredRequests,
-  allFiltered,
-  handleClearFilters,
   searchQuery,
   categoryFilter,
   locationFilter
 }: ResultsDisplayProps) => {
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  
+  const handleClearFilters = () => {
+    // We'll pass this up to the parent component
+    window.location.href = '/search-help';
+  };
   
   // Fetch posts from Supabase
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter });
         
         let query = supabase
           .from('posts')
@@ -68,14 +68,14 @@ const ResultsDisplay = ({
 
         const { data, error } = await query;
         
+        console.log("Search results:", { data, error });
+        
         if (error) throw error;
         
         if (data) {
           const formattedPosts = data.map(post => {
-            // Handle the profiles relationship - it returns an array of profiles
-            const profileData = post.profiles && Array.isArray(post.profiles) && post.profiles.length > 0 
-              ? post.profiles[0] 
-              : { name: "Unknown User", avatar: null, username: null };
+            // Handle the profiles relationship
+            const profileData = post.profiles;
             
             return {
               id: post.id,
@@ -85,8 +85,8 @@ const ResultsDisplay = ({
               location: post.location,
               createdAt: new Date(post.created_at).toLocaleString(),
               user: {
-                name: typeof profileData === 'object' ? profileData.name || "Unknown User" : "Unknown User",
-                avatar: typeof profileData === 'object' ? profileData.avatar || "https://ui-avatars.com/api/?name=User" : "https://ui-avatars.com/api/?name=User"
+                name: profileData?.name || "Unknown User",
+                avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
               likes: 0,
               comments: 0
@@ -96,16 +96,29 @@ const ResultsDisplay = ({
           setPosts(formattedPosts);
           setOffers(formattedPosts.filter(post => post.type === 'offer'));
           setRequests(formattedPosts.filter(post => post.type === 'request'));
+          
+          if (formattedPosts.length === 0) {
+            toast({
+              title: "No results found",
+              description: "Try adjusting your search filters to find more posts",
+              variant: "default"
+            });
+          }
         }
       } catch (err) {
         console.error("Error fetching posts:", err);
+        toast({
+          title: "Error fetching posts",
+          description: "Could not load search results. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchPosts();
-  }, [searchQuery, categoryFilter, locationFilter]);
+  }, [searchQuery, categoryFilter, locationFilter, toast]);
   
   const getItemsToShow = () => {
     switch(activeTab) {
@@ -123,10 +136,9 @@ const ResultsDisplay = ({
     
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-6 animate-pulse">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-gray-100 h-48 rounded-lg"></div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
+          <p className="text-gray-600">Loading search results...</p>
         </div>
       );
     }
@@ -155,10 +167,7 @@ const ResultsDisplay = ({
           {isAuthenticated && (
             <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
               <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                <Link to="/offer-help">Offer Help</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/request-help">Request Help</Link>
+                <Link to="/create-posting">Create a Post</Link>
               </Button>
             </div>
           )}

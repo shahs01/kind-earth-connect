@@ -82,7 +82,7 @@ const UserMenu = () => {
           )}
           
           <DropdownMenuItem asChild>
-            <Link to="/profile" className="cursor-pointer w-full">
+            <Link to="/settings" className="cursor-pointer w-full">
               <Settings className="mr-2 h-4 w-4" />
               <span>Account Settings</span>
             </Link>

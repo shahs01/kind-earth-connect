@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardFooter, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, MapPin, Clock, User } from "lucide-react";
+import { MessageSquare, MapPin, Clock, User, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface Post {
   id: string;
@@ -40,11 +41,13 @@ const PostsList = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setLoading(true);
+        console.log("Fetching posts with filters:", { searchQuery, categoryFilter, typeFilter, locationFilter });
         
         // Start building the query
         let query = supabase
@@ -61,11 +64,11 @@ const PostsList = ({
           query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
         }
         
-        if (categoryFilter) {
+        if (categoryFilter && categoryFilter !== "All Categories") {
           query = query.eq('category', categoryFilter);
         }
         
-        if (typeFilter) {
+        if (typeFilter && typeFilter !== "all") {
           query = query.eq('type', typeFilter);
         }
         
@@ -74,6 +77,8 @@ const PostsList = ({
         }
 
         const { data, error } = await query;
+        
+        console.log("Posts query result:", { data, error });
 
         if (error) throw error;
         
@@ -84,6 +89,14 @@ const PostsList = ({
         }));
         
         setPosts(processedPosts);
+        
+        if (processedPosts.length === 0) {
+          toast({
+            title: "No posts found",
+            description: "Try adjusting your search filters to find more posts",
+            variant: "default"
+          });
+        }
       } catch (err: any) {
         console.error("Error fetching posts:", err);
         setError(err.message || "Failed to load posts");
@@ -93,7 +106,7 @@ const PostsList = ({
     };
 
     fetchPosts();
-  }, [searchQuery, categoryFilter, typeFilter, locationFilter]);
+  }, [searchQuery, categoryFilter, typeFilter, locationFilter, toast]);
 
   if (loading) {
     return (
@@ -118,7 +131,9 @@ const PostsList = ({
     return (
       <Card className="my-8 border-red-200">
         <CardContent className="text-center py-6">
-          <p className="text-red-500">{error}</p>
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <p className="text-red-500 font-medium mb-2">Error Loading Posts</p>
+          <p className="text-gray-600 mb-4">{error}</p>
           <Button 
             variant="outline" 
             className="mt-4"
@@ -141,6 +156,9 @@ const PostsList = ({
               ? "Try adjusting your search filters"
               : "Be the first to create a post in our community!"}
           </p>
+          <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+            <Link to="/create-posting">Create a Post</Link>
+          </Button>
         </CardContent>
       </Card>
     );
