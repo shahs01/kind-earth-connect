@@ -42,6 +42,12 @@ const Navbar = () => {
                   Request Help
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/search-help" className="flex items-center gap-2 cursor-pointer">
+                  <Search className="h-4 w-4" />
+                  Search Help
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
@@ -63,6 +69,12 @@ const Navbar = () => {
                 <Link to="/nonprofits" className="flex items-center gap-2 cursor-pointer">
                   <Users className="h-4 w-4" />
                   Find Nonprofits
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/partner-with-us" className="flex items-center gap-2 cursor-pointer">
+                  <Users className="h-4 w-4" />
+                  Partner With Us
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -136,6 +148,16 @@ const Navbar = () => {
               >
                 Request Help
               </Link>
+              <Link 
+                to="/search-help" 
+                className="text-gray-700 hover:text-thryvance-green transition-colors py-2 pl-4 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <div className="flex items-center gap-1">
+                  <Search className="h-4 w-4" />
+                  Search Help
+                </div>
+              </Link>
             </div>
             
             <div className="border-b border-gray-200 pb-2">
@@ -156,6 +178,13 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Find Nonprofits
+              </Link>
+              <Link 
+                to="/partner-with-us" 
+                className="text-gray-700 hover:text-thryvance-green transition-colors py-2 pl-4 block"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Partner With Us
               </Link>
             </div>
             
@@ -215,3 +244,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
