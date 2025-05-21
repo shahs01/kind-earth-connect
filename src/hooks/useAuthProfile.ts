@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
@@ -147,8 +146,8 @@ export const useAuthProfile = () => {
     setIsLoading(true);
     
     try {
-      // Call the delete_user RPC function with an empty object
-      const { error } = await supabase.rpc('delete_user', {});
+      // Call the delete_user RPC function without any parameters
+      const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
       

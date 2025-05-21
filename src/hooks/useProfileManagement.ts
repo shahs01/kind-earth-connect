@@ -90,8 +90,8 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
-      // Call the delete_user RPC function with an empty object instead of a parameter
-      const { error } = await supabase.rpc('delete_user', {});
+      // Call the delete_user RPC function without any parameters
+      const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
       
