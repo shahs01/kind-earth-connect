@@ -9,7 +9,126 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      posts: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          location: string | null
+          status: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          status?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          status?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          bio: string | null
+          created_at: string | null
+          email: string | null
+          help_offered: number | null
+          help_received: number | null
+          id: string
+          location: string | null
+          name: string | null
+          trust_badges: string[] | null
+          trust_score: number | null
+          username: string | null
+          verified_status: boolean | null
+          volunteer_hours: number | null
+        }
+        Insert: {
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          help_offered?: number | null
+          help_received?: number | null
+          id: string
+          location?: string | null
+          name?: string | null
+          trust_badges?: string[] | null
+          trust_score?: number | null
+          username?: string | null
+          verified_status?: boolean | null
+          volunteer_hours?: number | null
+        }
+        Update: {
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          help_offered?: number | null
+          help_received?: number | null
+          id?: string
+          location?: string | null
+          name?: string | null
+          trust_badges?: string[] | null
+          trust_score?: number | null
+          username?: string | null
+          verified_status?: boolean | null
+          volunteer_hours?: number | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string | null
+          from_user_avatar: string | null
+          from_user_id: string
+          from_user_name: string
+          id: string
+          rating: number
+          text: string | null
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          from_user_avatar?: string | null
+          from_user_id: string
+          from_user_name: string
+          id?: string
+          rating: number
+          text?: string | null
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          from_user_avatar?: string | null
+          from_user_id?: string
+          from_user_name?: string
+          id?: string
+          rating?: number
+          text?: string | null
+          to_user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
