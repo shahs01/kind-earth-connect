@@ -59,6 +59,7 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/monthly-giving" element={<MonthlyGiving />} />
+          <Route path="/search-help" element={<SearchHelp />} />
           
           {/* Routes that require just authentication */}
           <Route element={<ProtectedRoute requireVerified={false} />}>
@@ -68,7 +69,6 @@ const App = () => {
           {/* Routes that require authentication and email verification */}
           <Route element={<ProtectedRoute requireVerified={true} />}>
             <Route path="/profile" element={<Profile />} />
-            <Route path="/search-help" element={<SearchHelp />} />
             <Route path="/request-help" element={<RequestHelp />} />
             <Route path="/offer-help" element={<OfferHelp />} />
             <Route path="/messages" element={<Messages />}>

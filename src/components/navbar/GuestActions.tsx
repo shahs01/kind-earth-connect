@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import SearchButton from "./SearchButton";
 
 const GuestActions = () => {
   const [isSecure, setIsSecure] = useState(true);
@@ -30,6 +31,7 @@ const GuestActions = () => {
           ⚠️ Insecure connection - use HTTPS for secure login
         </div>
         <div className="flex space-x-2">
+          <SearchButton />
           <Button variant="ghost" asChild>
             <Link to="/login" aria-label="Log in to your account">Log In</Link>
           </Button>
@@ -42,7 +44,8 @@ const GuestActions = () => {
   }
   
   return (
-    <div className="flex space-x-2">
+    <div className="flex items-center space-x-2">
+      <SearchButton />
       <Button variant="ghost" asChild>
         <Link to="/login" aria-label="Log in to your account">Log In</Link>
       </Button>

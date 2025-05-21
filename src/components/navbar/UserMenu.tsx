@@ -1,5 +1,5 @@
 
-import { User, LogOut, Mail, Settings } from "lucide-react";
+import { User, LogOut, Mail, Settings, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import SearchButton from "./SearchButton";
 
 const UserMenu = () => {
   const { user, emailVerified, logout } = useAuth();
@@ -20,6 +21,7 @@ const UserMenu = () => {
   return (
     <div className="flex items-center gap-2">
       <div className="flex space-x-2">
+        <SearchButton />
         <Button
           variant="outline"
           className="bg-thryvance-green-light text-thryvance-green hover:bg-thryvance-green hover:text-white"
