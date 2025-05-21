@@ -76,7 +76,7 @@ export const useProfileManagement = () => {
     setError(null);
     
     try {
-      // Changed: Removing the string parameter that was causing the error
+      // Fixed: Removing the string parameter that was causing the error
       // The RPC function is defined to not accept parameters
       const { error: deleteError } = await supabase.rpc('delete_user');
       
