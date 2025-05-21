@@ -55,13 +55,10 @@ const CommunityFeed = ({
         setLoading(true);
         console.log("Fetching community feed with filters:", { searchQuery, locationFilter, postTypeFilter, sortBy });
         
-        // Build the query
+        // Build the query - fixed to use separate query for profiles
         let query = supabase
           .from('posts')
-          .select(`
-            *,
-            profiles:user_id(name, avatar, username)
-          `)
+          .select('*')
           .eq('status', 'active');
           
         // Apply filters
@@ -85,17 +82,20 @@ const CommunityFeed = ({
           query = query.order('created_at', { ascending: false });
         }
 
-        const { data, error } = await query;
+        const { data: postsData, error: postsError } = await query;
         
-        console.log("Community feed results:", { data, error });
+        if (postsError) throw postsError;
         
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          // Format posts for display
-          const formattedPosts = data.map(post => {
-            const profileData = post.profiles as ProfileData || {} as ProfileData;
-            
+        if (postsData && postsData.length > 0) {
+          // For each post, get the author profile
+          const postsWithProfiles = await Promise.all(postsData.map(async (post) => {
+            // Get user profile data in a separate query
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', post.user_id)
+              .single();
+              
             return {
               id: post.id,
               type: post.type,
@@ -104,16 +104,16 @@ const CommunityFeed = ({
               location: post.location,
               category: post.category,
               user: {
-                name: profileData.name || profileData.username || "Unknown User",
-                avatar: profileData.avatar || "https://ui-avatars.com/api/?name=User"
+                name: profileData?.name || profileData?.username || "Unknown User",
+                avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
               createdAt: new Date(post.created_at).toLocaleString(),
               likes: 0, // These would be actual counts from a likes table
               comments: 0 // These would be actual counts from a comments table
             };
-          });
+          }));
           
-          setPosts(formattedPosts);
+          setPosts(postsWithProfiles);
         } else {
           setPosts([]);
         }

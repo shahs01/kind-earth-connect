@@ -51,13 +51,10 @@ const ResultsDisplay = ({
         setIsLoading(true);
         console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter, sortBy });
         
-        // Fix the query to properly get profiles data
+        // Updated query to fetch posts first, then get profiles separately
         let query = supabase
           .from('posts')
-          .select(`
-            *,
-            profiles:user_id(name, avatar, username)
-          `)
+          .select('*')
           .eq('status', 'active');
           
         // Apply search filters if provided
@@ -81,17 +78,20 @@ const ResultsDisplay = ({
           query = query.order('created_at', { ascending: false });
         }
 
-        const { data, error } = await query;
+        const { data: postsData, error: postsError } = await query;
         
-        console.log("Search results:", { data, error });
+        if (postsError) throw postsError;
         
-        if (error) throw error;
-        
-        if (data) {
-          const formattedPosts = data.map(post => {
-            // Safely handle the profiles relationship with proper typing
-            const profileData = post.profiles as ProfileData || {} as ProfileData;
-            
+        if (postsData && postsData.length > 0) {
+          // Process each post with its associated profile data
+          const formattedPosts = await Promise.all(postsData.map(async (post) => {
+            // Get the profile data in a separate query
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', post.user_id)
+              .single();
+              
             return {
               id: post.id,
               type: post.type,
@@ -101,13 +101,13 @@ const ResultsDisplay = ({
               category: post.category,
               createdAt: new Date(post.created_at).toLocaleString(),
               user: {
-                name: profileData.name || "Unknown User",
-                avatar: profileData.avatar || "https://ui-avatars.com/api/?name=User"
+                name: profileData?.name || profileData?.username || "Unknown User",
+                avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
               likes: 0,
               comments: 0
             };
-          });
+          }));
           
           setPosts(formattedPosts);
           setOffers(formattedPosts.filter(post => post.type === 'offer'));
@@ -120,6 +120,15 @@ const ResultsDisplay = ({
               variant: "default"
             });
           }
+        } else {
+          setPosts([]);
+          setOffers([]);
+          setRequests([]);
+          toast({
+            title: "No results found",
+            description: "Try adjusting your search filters to find more posts",
+            variant: "default"
+          });
         }
       } catch (err) {
         console.error("Error fetching posts:", err);

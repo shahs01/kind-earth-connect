@@ -24,7 +24,7 @@ interface Post {
   location: string | null;
   status: string | null;
   user_id: string;
-  profiles?: ProfileData | null;
+  profile?: ProfileData | null;
 }
 
 interface PostsListProps {
@@ -56,10 +56,7 @@ const PostsList = ({
         // Start building the query
         let query = supabase
           .from('posts')
-          .select(`
-            *,
-            profiles(name, avatar)
-          `)
+          .select('*')
           .eq('status', 'active');
 
         // Apply filters
@@ -87,21 +84,34 @@ const PostsList = ({
           query = query.order('created_at', { ascending: false });
         }
 
-        const { data, error } = await query;
+        const { data: postsData, error: postsError } = await query;
         
-        console.log("Posts query result:", { data, error });
+        console.log("Posts query result:", { postsData, postsError });
 
-        if (error) throw error;
+        if (postsError) throw postsError;
         
-        // Process the data to ensure it matches our Post type
-        const processedPosts: Post[] = (data || []).map((post: any) => ({
-          ...post,
-          profiles: post.profiles && post.profiles.length > 0 ? post.profiles[0] : null
+        if (!postsData || postsData.length === 0) {
+          setPosts([]);
+          return;
+        }
+        
+        // Get profile data for each post
+        const postsWithProfiles = await Promise.all(postsData.map(async (post) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name, avatar')
+            .eq('id', post.user_id)
+            .single();
+          
+          return {
+            ...post,
+            profile: profileData || null
+          };
         }));
         
-        setPosts(processedPosts);
+        setPosts(postsWithProfiles);
         
-        if (processedPosts.length === 0) {
+        if (postsWithProfiles.length === 0) {
           toast({
             title: "No posts found",
             description: "Try adjusting your search filters to find more posts",
@@ -224,13 +234,13 @@ const PostsList = ({
           <CardFooter className="border-t pt-3 flex justify-between items-center bg-gray-50">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarImage src={post.profiles?.avatar || undefined} />
+                <AvatarImage src={post.profile?.avatar || undefined} />
                 <AvatarFallback className="bg-thryvance-neutral-light text-thryvance-neutral-dark">
                   <User className="h-3.5 w-3.5" />
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm font-medium truncate max-w-[100px]">
-                {post.profiles?.name || "User"}
+                {post.profile?.name || "User"}
               </span>
             </div>
             
