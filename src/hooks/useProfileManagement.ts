@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@/types";
 import { useToast } from "./use-toast";
 
 export const useProfileManagement = () => {
@@ -12,15 +11,23 @@ export const useProfileManagement = () => {
   const fetchUserPosts = async (userId: string) => {
     try {
       setIsLoading(true);
+      console.log("Fetching posts for user ID:", userId);
+      
       const { data, error } = await supabase
         .from('posts')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching user posts:", error);
+        throw error;
+      }
+      
+      console.log("Fetched posts:", data);
       return data || [];
     } catch (error: any) {
+      console.error("Error in fetchUserPosts:", error);
       toast({
         title: "Error fetching posts",
         description: error.message || "Could not load your posts",

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Trash2, Edit, AlertCircle } from "lucide-react";
+import { Trash2, Edit, AlertCircle, Loader2 } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -12,32 +12,43 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface Post {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   type: string;
   category: string | null;
   created_at: string;
   location: string | null;
-  status: string;
+  status: string | null;
 }
 
 const UserPosts = () => {
   const { user } = useAuth();
-  const { fetchUserPosts, deletePost, isLoading } = useProfileManagement();
+  const { fetchUserPosts, deletePost, isLoading: loadingPosts } = useProfileManagement();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadPosts = async () => {
-    if (!user) return;
-    
-    try {
-      const userPosts = await fetchUserPosts(user.id);
-      setPosts(userPosts);
-    } catch (err) {
-      setError("Failed to load your posts. Please try again later.");
-    }
-  };
-
   useEffect(() => {
+    const loadPosts = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Loading posts for user:", user.id);
+      setIsLoading(true);
+      
+      try {
+        const userPosts = await fetchUserPosts(user.id);
+        console.log("Fetched posts:", userPosts);
+        setPosts(userPosts);
+      } catch (err: any) {
+        console.error("Error loading posts:", err);
+        setError("Failed to load your posts. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadPosts();
   }, [user]);
 
@@ -52,7 +63,12 @@ const UserPosts = () => {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center my-8">Loading your posts...</div>;
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mr-2" />
+        <span>Loading your posts...</span>
+      </div>
+    );
   }
 
   if (error) {
