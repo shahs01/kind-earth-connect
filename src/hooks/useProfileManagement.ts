@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -90,9 +89,8 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
-      // Call the delete_user RPC function without passing any parameters
-      // The RPC function will use the authenticated user's session
-      const { error } = await supabase.rpc('delete_user');
+      // Call the delete_user RPC function with an empty object instead of a parameter
+      const { error } = await supabase.rpc('delete_user', {});
       
       if (error) throw error;
       
