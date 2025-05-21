@@ -100,7 +100,9 @@ const ResultsDisplay = ({
               location: post.location,
               category: post.category,
               createdAt: new Date(post.created_at).toLocaleString(),
+              photos: post.photos,
               user: {
+                id: post.user_id,
                 name: profileData?.name || profileData?.username || "Unknown User",
                 avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
@@ -109,6 +111,7 @@ const ResultsDisplay = ({
             };
           }));
           
+          console.log("Formatted posts for search:", formattedPosts);
           setPosts(formattedPosts);
           setOffers(formattedPosts.filter(post => post.type === 'offer'));
           setRequests(formattedPosts.filter(post => post.type === 'request'));
