@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchFilters from "@/components/search/SearchFilters";
 import ResultsDisplay from "@/components/search/ResultsDisplay";
-import { sampleOffers, sampleRequests, categories } from "@/data/searchHelpData";
+import { categories } from "@/data/searchHelpData";
 import { useAuth } from "@/context/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -156,6 +156,9 @@ const SearchHelp = () => {
               filteredRequests={filteredRequests}
               allFiltered={allFiltered}
               handleClearFilters={handleClearFilters}
+              searchQuery={searchQuery}
+              categoryFilter={selectedCategory}
+              locationFilter={locationFilter}
             />
           )}
         </div>

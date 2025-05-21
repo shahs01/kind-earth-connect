@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,11 +47,7 @@ const ResultsDisplay = ({
           .from('posts')
           .select(`
             *,
-            profiles:user_id (
-              name,
-              avatar,
-              username
-            )
+            profiles(name, avatar, username)
           `)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
@@ -62,7 +57,7 @@ const ResultsDisplay = ({
           query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
         }
         
-        if (categoryFilter) {
+        if (categoryFilter && categoryFilter !== "All Categories") {
           query = query.eq('category', categoryFilter);
         }
         
@@ -75,20 +70,27 @@ const ResultsDisplay = ({
         if (error) throw error;
         
         if (data) {
-          const formattedPosts = data.map(post => ({
-            id: post.id,
-            type: post.type,
-            title: post.title,
-            description: post.description,
-            location: post.location,
-            createdAt: new Date(post.created_at).toLocaleString(),
-            user: {
-              name: post.profiles?.name || "Unknown User",
-              avatar: post.profiles?.avatar || "https://ui-avatars.com/api/?name=User"
-            },
-            likes: 0,
-            comments: 0
-          }));
+          const formattedPosts = data.map(post => {
+            // Handle the profiles relationship - it returns an array of profiles
+            const profileData = post.profiles && post.profiles.length > 0 
+              ? post.profiles[0] 
+              : { name: "Unknown User", avatar: null, username: null };
+            
+            return {
+              id: post.id,
+              type: post.type,
+              title: post.title,
+              description: post.description,
+              location: post.location,
+              createdAt: new Date(post.created_at).toLocaleString(),
+              user: {
+                name: profileData.name || "Unknown User",
+                avatar: profileData.avatar || "https://ui-avatars.com/api/?name=User"
+              },
+              likes: 0,
+              comments: 0
+            };
+          });
           
           setPosts(formattedPosts);
           setOffers(formattedPosts.filter(post => post.type === 'offer'));

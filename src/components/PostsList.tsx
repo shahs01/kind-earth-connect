@@ -18,8 +18,8 @@ interface Post {
   location: string | null;
   status: string;
   user_id: string;
-  profiles: {
-    name: string;
+  profiles?: {
+    name: string | null;
     avatar: string | null;
   } | null;
 }
@@ -51,10 +51,7 @@ const PostsList = ({
           .from('posts')
           .select(`
             *,
-            profiles:user_id (
-              name,
-              avatar
-            )
+            profiles(name, avatar)
           `)
           .eq('status', 'active')
           .order('created_at', { ascending: false });
@@ -80,7 +77,13 @@ const PostsList = ({
 
         if (error) throw error;
         
-        setPosts(data || []);
+        // Process the data to ensure it matches our Post type
+        const processedPosts: Post[] = (data || []).map((post: any) => ({
+          ...post,
+          profiles: post.profiles ? post.profiles[0] : null // Handle the nested profiles array
+        }));
+        
+        setPosts(processedPosts);
       } catch (err: any) {
         console.error("Error fetching posts:", err);
         setError(err.message || "Failed to load posts");
