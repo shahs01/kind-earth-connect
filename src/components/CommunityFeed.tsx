@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/pagination";
 import ProfileDialog from "@/components/ProfileDialog";
 
-// Sample data for the feed
+// Sample data for the feed with fixed user objects that include all required properties
 const samplePosts: Post[] = [
   {
     id: "1",
@@ -30,6 +30,9 @@ const samplePosts: Post[] = [
       id: "user1",
       name: "Jane Smith",
       email: "jane@example.com",
+      avatar: "", // Added missing property
+      bio: "I enjoy helping my community and connecting neighbors.", // Added missing property
+      location: "Downtown Portland", // Added missing property
       createdAt: new Date(2023, 1, 15),
       trustScore: 4.8,
       helpOffered: 12,
@@ -51,6 +54,9 @@ const samplePosts: Post[] = [
       id: "user2",
       name: "Robert Chen",
       email: "robert@example.com",
+      avatar: "", // Added missing property
+      bio: "Retired math teacher with 25 years of experience.", // Added missing property 
+      location: "North Portland", // Added missing property
       createdAt: new Date(2022, 11, 5),
       trustScore: 4.9,
       helpOffered: 24,
@@ -72,6 +78,9 @@ const samplePosts: Post[] = [
       id: "user3",
       name: "Miguel Fernandez",
       email: "miguel@example.com",
+      avatar: "", // Added missing property
+      bio: "Handy and reliable neighbor, always willing to help.", // Added missing property
+      location: "Southeast Portland", // Added missing property
       createdAt: new Date(2023, 2, 10),
       trustScore: 4.7,
       helpOffered: 8,
@@ -93,6 +102,9 @@ const samplePosts: Post[] = [
       id: "user4",
       name: "Aisha Johnson",
       email: "aisha@example.com",
+      avatar: "", // Added missing property
+      bio: "New to the area and looking to connect with helpful neighbors.", // Added missing property
+      location: "West Portland", // Added missing property
       createdAt: new Date(2023, 3, 25),
       trustScore: 4.5,
       helpOffered: 6,

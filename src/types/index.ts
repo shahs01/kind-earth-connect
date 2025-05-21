@@ -1,5 +1,6 @@
 
 
+
 export interface User {
   id: string;
   name: string;
@@ -43,7 +44,7 @@ export interface RateUserFormData {
   review: string;
 }
 
-// Add Nonprofit interface that's being used in NonprofitCard.tsx and NonprofitDirectory.tsx
+// Updated Nonprofit interface with phoneNumber and email properties
 export interface Nonprofit {
   id: string;
   name: string;
@@ -52,5 +53,8 @@ export interface Nonprofit {
   description: string;
   location: string;
   website: string;
+  phoneNumber?: string; // Added optional phoneNumber property
+  email?: string; // Added optional email property
   verified: boolean;
 }
+
