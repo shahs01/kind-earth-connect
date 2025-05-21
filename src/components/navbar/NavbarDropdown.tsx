@@ -1,0 +1,55 @@
+
+import { ChevronDown, Info, Heart, HelpCircle, Bell, Handshake } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface NavbarDropdownProps {
+  label: string;
+  type: "about" | "involved";
+}
+
+const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
+  const aboutItems = [
+    { label: "About Us", path: "/about", icon: <Info className="mr-2 h-4 w-4" /> },
+    { label: "Our Values", path: "/values", icon: <Heart className="mr-2 h-4 w-4" /> },
+    { label: "FAQ", path: "/faq", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
+    { label: "Stay Updated", path: "/subscribe", icon: <Bell className="mr-2 h-4 w-4" /> },
+  ];
+  
+  const involvedItems = [
+    { label: "Partner With Us", path: "/partner-with-us", icon: <Handshake className="mr-2 h-4 w-4" /> },
+    { label: "Volunteer", path: "/volunteer", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
+    { label: "Sponsor a Project", path: "/sponsor-project", icon: <Heart className="mr-2 h-4 w-4" /> },
+    { label: "Donate", path: "/donate", icon: <Heart className="mr-2 h-4 w-4" /> },
+  ];
+  
+  const items = type === "about" ? aboutItems : involvedItems;
+  
+  return (
+    <div className="relative">
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex items-center transition-colors hover:text-thryvance-green text-gray-700 focus:outline-none">
+          <span>{label}</span>
+          <ChevronDown className="ml-1 h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="center" className="w-56">
+          {items.map((item) => (
+            <DropdownMenuItem key={item.path} asChild>
+              <Link to={item.path} className="flex items-center cursor-pointer w-full">
+                {item.icon}
+                <span>{item.label}</span>
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
+
+export default NavbarDropdown;
