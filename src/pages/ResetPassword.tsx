@@ -13,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ResetPasswordData } from "@/hooks/usePasswordManagement";
 
 const formSchema = z.object({
   password: z.string()
@@ -75,13 +74,11 @@ const ResetPassword = () => {
     setIsLoading(true);
     
     try {
-      const resetData: ResetPasswordData = {
+      await resetPassword({
         email,
         token,
         newPassword: data.password,
-      };
-      
-      await resetPassword(resetData);
+      });
       
       setIsSuccess(true);
       

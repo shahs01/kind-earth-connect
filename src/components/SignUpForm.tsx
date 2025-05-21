@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -122,13 +123,15 @@ const SignUpForm = () => {
     
     try {
       // Create signup data with all required fields
-      await signUp({
-        email: data.email,
-        password: data.password,
+      const signUpData = {
         username: data.username,
         name: data.name,
+        email: data.email,
+        password: data.password,
         location: data.location
-      });
+      };
+      
+      await signUp(signUpData);
     } catch (error) {
       // Error is already handled in the auth context
       console.error("Signup error:", error);
