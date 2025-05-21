@@ -15,6 +15,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import NavbarDropdown from "./navbar/NavbarDropdown";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -79,6 +80,12 @@ const Navbar = () => {
           <Link to="/nonprofit-directory" className={`text-sm font-medium ${isActive('/nonprofit-directory') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
             Nonprofits
           </Link>
+          
+          {/* About Us dropdown */}
+          <NavbarDropdown label="About Us" type="about" />
+          
+          {/* Get Involved dropdown */}
+          <NavbarDropdown label="Get Involved" type="involved" />
         </div>
 
         {/* Show different buttons based on authentication status */}
