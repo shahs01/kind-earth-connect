@@ -66,7 +66,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
                 ? "bg-thryvance-green-light text-thryvance-green"
                 : "text-gray-700"
             }`}>
-              Help Options
+              Support Options
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col space-y-2 pl-4 mt-2">
@@ -158,15 +158,6 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
           onClick={toggleMenu}
         >
           Community
-        </Link>
-        <Link
-          to="/volunteer"
-          className={`px-3 py-2 rounded-md ${
-            isActive("/volunteer") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-          }`}
-          onClick={toggleMenu}
-        >
-          Volunteer
         </Link>
         <Link
           to="/nonprofit-directory"

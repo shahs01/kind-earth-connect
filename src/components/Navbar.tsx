@@ -53,7 +53,7 @@ const Navbar = () => {
                 ? 'text-thryvance-green' 
                 : 'text-gray-700 hover:text-thryvance-green'
               }`}>
-                Help Options
+                Support Options
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" className="w-48 bg-white">
@@ -71,10 +71,6 @@ const Navbar = () => {
           
           <Link to="/community" className={`text-sm font-medium ${isActive('/community') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
             Community
-          </Link>
-          
-          <Link to="/volunteer" className={`text-sm font-medium ${isActive('/volunteer') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
-            Volunteer
           </Link>
           
           <Link to="/nonprofit-directory" className={`text-sm font-medium ${isActive('/nonprofit-directory') ? 'text-thryvance-green' : 'text-gray-700 hover:text-thryvance-green'}`}>
