@@ -1,10 +1,11 @@
-
+import { useState } from "react";
 import { User } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User as UserIcon, MapPin, Calendar, Star, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import EditProfileDialog from "@/components/EditProfileDialog";
 
 interface ProfileCardProps {
   user: User;
@@ -21,6 +22,8 @@ const ProfileCard = ({
   onConnectClick,
   onAvatarClick
 }: ProfileCardProps) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
   // Only display trust score if it's not the default (5.0)
   const showTrustScore = user.trustScore !== 5.0;
   
@@ -31,7 +34,12 @@ const ProfileCard = ({
     <Card className={`overflow-hidden shadow-md ${compact ? 'max-w-md mx-auto' : ''}`}>
       <CardHeader className={`bg-gradient-to-r from-thryvance-green-light to-thryvance-blue-light ${compact ? 'pb-12' : 'pb-16'} relative`}>
         {isOwnProfile && (
-          <Button variant="ghost" size="sm" className="absolute top-4 right-4 bg-white/80 hover:bg-white text-gray-700">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="absolute top-4 right-4 bg-white/80 hover:bg-white text-gray-700"
+            onClick={() => setIsEditDialogOpen(true)}
+          >
             Edit Profile
           </Button>
         )}
@@ -132,6 +140,13 @@ const ProfileCard = ({
             Connect with {user.name.split(" ")[0]}
           </Button>
         </CardFooter>
+      )}
+      
+      {isOwnProfile && (
+        <EditProfileDialog 
+          open={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen} 
+        />
       )}
     </Card>
   );
