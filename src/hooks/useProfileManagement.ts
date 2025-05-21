@@ -64,7 +64,7 @@ export const useProfileManagement = () => {
       for (const photo of photos) {
         const fileExt = photo.name.split('.').pop();
         const fileName = `${userId}/${postId}/${Date.now()}.${fileExt}`;
-        const filePath = `posts/${fileName}`;
+        const filePath = `${userId}/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('post-photos')
@@ -87,10 +87,13 @@ export const useProfileManagement = () => {
       
       // Update post with photo URLs if any were successfully uploaded
       if (photoUrls.length > 0) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('posts')
-          .update({ photos: photoUrls })
-          .eq('id', postId);
+          .update({ photos: photoUrls }) as { error: any };
+          
+        if (updateError) {
+          console.error("Error updating post with photos:", updateError);
+        }
       }
       
       return photoUrls;
