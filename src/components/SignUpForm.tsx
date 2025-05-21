@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -15,18 +16,14 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Github, Mail, Loader2, Check, X } from "lucide-react";
+import { Heart, Mail, Loader2, Check, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { validateUsername, validateEmail, validatePassword } from "@/utils/validation";
+import { validateEmail, validatePassword } from "@/utils/validation";
 
 // Define form schema with Zod
 const formSchema = z.object({
-  username: z.string()
-    .min(3, { message: "Username must be at least 3 characters long" })
-    .max(20, { message: "Username cannot exceed 20 characters" })
-    .regex(/^[a-zA-Z0-9_-]+$/, { message: "Username can only contain letters, numbers, dashes and underscores" }),
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string()
@@ -45,21 +42,26 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const SignUpForm = () => {
-  const { signUp, validateField, signInWithProvider } = useAuth();
-  const navigate = useNavigate();
+interface SignUpFormProps {
+  onFirstStepComplete: (data: {
+    email: string;
+    password: string;
+    name: string;
+    location: string;
+  }) => void;
+}
+
+const SignUpForm = ({ onFirstStepComplete }: SignUpFormProps) => {
+  const { validateField, signInWithProvider } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
-  const [usernameChecking, setUsernameChecking] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
   
   // Initialize form
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
       name: "",
       email: "",
       password: "",
@@ -69,31 +71,8 @@ const SignUpForm = () => {
     mode: "onChange",
   });
   
-  // Watch username and email for availability check
-  const username = form.watch("username");
+  // Watch email for availability check
   const email = form.watch("email");
-  
-  // Check username availability with debounce
-  useEffect(() => {
-    if (!username || username.length < 3 || !validateUsername(username)) {
-      setUsernameAvailable(null);
-      return;
-    }
-    
-    setUsernameChecking(true);
-    const timer = setTimeout(async () => {
-      try {
-        const error = await validateField("username", username);
-        setUsernameAvailable(!error);
-      } catch (err) {
-        setUsernameAvailable(false);
-      } finally {
-        setUsernameChecking(false);
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [username, validateField]);
   
   // Check email availability with debounce
   useEffect(() => {
@@ -117,26 +96,23 @@ const SignUpForm = () => {
     return () => clearTimeout(timer);
   }, [email, validateField]);
   
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true);
-    
-    try {
-      // Create signup data with all required fields
-      const signUpData = {
-        username: data.username,
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        location: data.location
-      };
-      
-      await signUp(signUpData);
-    } catch (error) {
-      // Error is already handled in the auth context
-      console.error("Signup error:", error);
-    } finally {
-      setIsLoading(false);
+  const onSubmit = (data: FormData) => {
+    if (!emailAvailable) {
+      toast({
+        title: "Email not available",
+        description: "Please use a different email address.",
+        variant: "destructive"
+      });
+      return;
     }
+    
+    // Pass first step data to parent component
+    onFirstStepComplete({
+      email: data.email,
+      password: data.password,
+      name: data.name,
+      location: data.location
+    });
   };
   
   const handleGoogleSignUp = () => {
@@ -199,53 +175,6 @@ const SignUpForm = () => {
             {/* Email Form with React Hook Form */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <div className="relative">
-                        <FormControl>
-                          <Input 
-                            placeholder="Choose a username" 
-                            {...field} 
-                            disabled={isLoading}
-                            className={
-                              usernameAvailable === true
-                                ? "pr-8 border-green-500 focus-visible:ring-green-500"
-                                : usernameAvailable === false
-                                ? "pr-8 border-red-500 focus-visible:ring-red-500"
-                                : "pr-8"
-                            }
-                          />
-                        </FormControl>
-                        
-                        {/* Username availability indicator */}
-                        {usernameChecking && (
-                          <div className="absolute right-3 top-2.5">
-                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                          </div>
-                        )}
-                        {!usernameChecking && usernameAvailable === true && (
-                          <div className="absolute right-3 top-2.5">
-                            <Check className="h-4 w-4 text-green-500" />
-                          </div>
-                        )}
-                        {!usernameChecking && usernameAvailable === false && (
-                          <div className="absolute right-3 top-2.5">
-                            <X className="h-4 w-4 text-red-500" />
-                          </div>
-                        )}
-                      </div>
-                      <FormDescription className="text-xs">
-                        3-20 characters, letters, numbers, dashes (-) and underscores (_) only
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
                 <FormField
                   control={form.control}
                   name="name"
@@ -388,17 +317,17 @@ const SignUpForm = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
-                  disabled={isLoading || !usernameAvailable || !emailAvailable}
+                  disabled={isLoading || emailAvailable !== true}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating Account...
+                      Processing...
                     </>
                   ) : (
                     <>
                       <Mail className="h-4 w-4" />
-                      Create Account with Email
+                      Continue to Username Selection
                     </>
                   )}
                 </Button>
