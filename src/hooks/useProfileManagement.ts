@@ -39,6 +39,49 @@ export const useProfileManagement = () => {
     }
   };
 
+  // Create a post
+  const createPost = async (postData: any) => {
+    try {
+      setIsLoading(true);
+      
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error("You must be logged in to create a post");
+      }
+      
+      const post = {
+        ...postData,
+        user_id: userData.user.id,
+        created_at: new Date().toISOString(),
+        status: 'active'
+      };
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .insert(post)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Post created",
+        description: "Your post has been successfully created",
+      });
+
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Error creating post",
+        description: error.message || "Could not create your post",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Delete a post
   const deletePost = async (postId: string) => {
     try {
@@ -71,6 +114,7 @@ export const useProfileManagement = () => {
   return {
     isLoading,
     fetchUserPosts,
+    createPost,
     deletePost
   };
 };

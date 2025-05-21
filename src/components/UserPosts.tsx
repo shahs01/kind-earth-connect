@@ -36,6 +36,7 @@ const UserPosts = () => {
       
       console.log("Loading posts for user:", user.id);
       setIsLoading(true);
+      setError(null);
       
       try {
         const userPosts = await fetchUserPosts(user.id);
@@ -50,7 +51,7 @@ const UserPosts = () => {
     };
 
     loadPosts();
-  }, [user]);
+  }, [user, fetchUserPosts]);
 
   const handleDelete = async (postId: string) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
@@ -60,6 +61,11 @@ const UserPosts = () => {
         setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       }
     }
+  };
+
+  const handleEditPost = (postId: string) => {
+    // For now just navigate to edit page
+    window.location.href = `/edit-post/${postId}`;
   };
 
   if (isLoading) {
@@ -135,7 +141,12 @@ const UserPosts = () => {
             </CardContent>
             
             <CardFooter className="border-t pt-3 flex justify-end gap-2">
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={() => handleEditPost(post.id)}
+              >
                 <Edit className="h-3.5 w-3.5" />
                 Edit
               </Button>

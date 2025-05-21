@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Image, X } from "lucide-react";
+import { Heart, Image, X, Loader2 } from "lucide-react";
+import { useProfileManagement } from "@/hooks/useProfileManagement";
+import { useNavigate } from "react-router-dom";
 
 const categories = [
   "Home Repair",
@@ -23,6 +25,8 @@ const categories = [
 ];
 
 const OfferHelpForm = () => {
+  const navigate = useNavigate();
+  const { createPost, isLoading } = useProfileManagement();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -95,7 +99,7 @@ const OfferHelpForm = () => {
     setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Simple validation
@@ -111,12 +115,25 @@ const OfferHelpForm = () => {
       return;
     }
     
-    // Here you would normally handle the form submission with a backend service
-    // Including photos array for upload
-    console.log("Form submitted:", formData, { photos });
+    // Create the post in Supabase
+    const postData = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      location: formData.location,
+      availability: formData.availability,
+      type: "offer" // This is an offer help post
+    };
     
-    // For demo purposes, redirect to community
-    window.location.href = "/community";
+    console.log("Creating offer post:", postData);
+    const newPost = await createPost(postData);
+    
+    if (newPost) {
+      // TODO: Handle photo uploads if needed
+      
+      // Redirect to profile page to see their posts
+      navigate("/profile");
+    }
   };
   
   return (
@@ -141,6 +158,7 @@ const OfferHelpForm = () => {
               value={formData.title}
               onChange={handleChange}
               className={errors.title ? "border-red-500" : ""}
+              disabled={isLoading}
             />
             {errors.title && <p className="text-xs text-red-500">{errors.title}</p>}
           </div>
@@ -154,6 +172,7 @@ const OfferHelpForm = () => {
               value={formData.description}
               onChange={handleChange}
               className={`min-h-32 ${errors.description ? "border-red-500" : ""}`}
+              disabled={isLoading}
             />
             {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
           </div>
@@ -163,6 +182,7 @@ const OfferHelpForm = () => {
             <Select
               value={formData.category}
               onValueChange={(value) => handleSelectChange("category", value)}
+              disabled={isLoading}
             >
               <SelectTrigger className={`w-full ${errors.category ? "border-red-500" : ""}`}>
                 <SelectValue placeholder="Select a category" />
@@ -187,6 +207,7 @@ const OfferHelpForm = () => {
               value={formData.location}
               onChange={handleChange}
               className={errors.location ? "border-red-500" : ""}
+              disabled={isLoading}
             />
             {errors.location && <p className="text-xs text-red-500">{errors.location}</p>}
           </div>
@@ -200,6 +221,7 @@ const OfferHelpForm = () => {
               value={formData.availability}
               onChange={handleChange}
               className={errors.availability ? "border-red-500" : ""}
+              disabled={isLoading}
             />
             {errors.availability && <p className="text-xs text-red-500">{errors.availability}</p>}
           </div>
@@ -215,6 +237,7 @@ const OfferHelpForm = () => {
                       type="button"
                       onClick={() => removePhoto(index)}
                       className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
+                      disabled={isLoading}
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -222,7 +245,7 @@ const OfferHelpForm = () => {
                 ))}
                 
                 {photos.length < 3 && (
-                  <label htmlFor="photoUpload" className="flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
+                  <label htmlFor="photoUpload" className={`flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <Image className="h-6 w-6 text-gray-400 mb-1" />
                     <span className="text-xs text-gray-500">Add Photo</span>
                     <input
@@ -231,6 +254,7 @@ const OfferHelpForm = () => {
                       accept="image/*"
                       onChange={handlePhotoUpload}
                       className="sr-only"
+                      disabled={isLoading}
                     />
                   </label>
                 )}
@@ -239,8 +263,17 @@ const OfferHelpForm = () => {
             </div>
           </div>
           
-          <Button type="submit" className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
-            Submit Offer
+          <Button 
+            type="submit" 
+            className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                Submitting...
+              </>
+            ) : 'Submit Offer'}
           </Button>
         </form>
       </CardContent>
