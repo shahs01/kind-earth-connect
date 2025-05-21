@@ -15,7 +15,8 @@ import {
   Handshake, 
   Shield, 
   FileText, 
-  File 
+  File,
+  ChevronDown
 } from "lucide-react";
 
 interface MobileMenuProps {
@@ -37,6 +38,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
     { label: "Privacy Policy", path: "/privacy-policy", icon: <FileText className="h-4 w-4" /> },
     { label: "Terms of Service", path: "/terms-of-service", icon: <File className="h-4 w-4" /> },
     { label: "Stay Updated", path: "/subscribe", icon: <Bell className="h-4 w-4" /> },
+    { label: "Contact Us", path: "/contact", icon: <Info className="h-4 w-4" /> },
   ];
   
   const involvedItems = [
@@ -61,12 +63,13 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
         
         <Accordion type="single" collapsible className="border-none shadow-none w-full">
           <AccordionItem value="help-options" className="border-none">
-            <AccordionTrigger className={`px-3 rounded-md ${
+            <AccordionTrigger className={`px-3 rounded-md flex items-center justify-between ${
               isActive("/offer-help") || isActive("/request-help") || isActive("/search-help")
                 ? "bg-thryvance-green-light text-thryvance-green"
                 : "text-gray-700"
             }`}>
-              Support Options
+              <span>Support Options</span>
+              <ChevronDown className="h-4 w-4" />
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col space-y-2 pl-4 mt-2">

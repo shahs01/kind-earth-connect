@@ -1,45 +1,63 @@
-import React from "react";
-import { Link } from "react-router-dom";
+
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Menu } from "lucide-react";
 import UserMenu from "./navbar/UserMenu";
-import AboutUsDropdown from "./navbar/AboutUsDropdown";
+import GuestActions from "./navbar/GuestActions";
+import NavLinks from "./navbar/NavLinks";
+import MobileMenu from "./navbar/MobileMenu";
 
 const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   return (
-    <nav className="bg-white py-4 shadow-md">
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold text-thryvance-green">
-          Thryvance
-        </Link>
-        
-        <div className="flex items-center space-x-6">
-          <AboutUsDropdown />
-          <Link to="/community" className="text-sm text-gray-700 hover:text-thryvance-green">
-            Community
-          </Link>
-          <Link to="/search" className="text-sm text-gray-700 hover:text-thryvance-green">
-            Search
-          </Link>
+    <header className="bg-white py-4 shadow-md sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/" className="text-2xl font-bold text-thryvance-green mr-10">
+              Thryvance
+            </Link>
+            
+            {/* Desktop navigation links */}
+            <NavLinks isActive={isActive} />
+          </div>
           
-          {isAuthenticated ? (
-            <UserMenu />
-          ) : (
-            <div className="flex space-x-2">
-              <Button asChild variant="outline">
-                <Link to="/login">Log In</Link>
-              </Button>
-              <Button asChild>
-                <Link to="/signup">Sign Up</Link>
-              </Button>
-            </div>
-          )}
+          <div className="hidden md:flex">
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <GuestActions />
+            )}
+          </div>
+          
+          {/* Mobile menu button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden"
+            onClick={toggleMenu}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
         </div>
       </div>
-    </nav>
+      
+      {/* Mobile menu */}
+      <MobileMenu isActive={isActive} isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
+    </header>
   );
 };
 

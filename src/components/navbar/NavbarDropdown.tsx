@@ -22,6 +22,7 @@ const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
     { label: "Privacy Policy", path: "/privacy-policy", icon: <FileText className="mr-2 h-4 w-4" /> },
     { label: "Terms of Service", path: "/terms-of-service", icon: <File className="mr-2 h-4 w-4" /> },
     { label: "Stay Updated", path: "/subscribe", icon: <Bell className="mr-2 h-4 w-4" /> },
+    { label: "Contact Us", path: "/contact", icon: <Info className="mr-2 h-4 w-4" /> },
   ];
   
   const involvedItems = [

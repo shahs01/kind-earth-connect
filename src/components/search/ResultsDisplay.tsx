@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ const ResultsDisplay = ({
         if (data) {
           const formattedPosts = data.map(post => {
             // Handle the profiles relationship - it returns an array of profiles
-            const profileData = post.profiles && post.profiles.length > 0 
+            const profileData = post.profiles && Array.isArray(post.profiles) && post.profiles.length > 0 
               ? post.profiles[0] 
               : { name: "Unknown User", avatar: null, username: null };
             
@@ -84,8 +85,8 @@ const ResultsDisplay = ({
               location: post.location,
               createdAt: new Date(post.created_at).toLocaleString(),
               user: {
-                name: profileData.name || "Unknown User",
-                avatar: profileData.avatar || "https://ui-avatars.com/api/?name=User"
+                name: typeof profileData === 'object' ? profileData.name || "Unknown User" : "Unknown User",
+                avatar: typeof profileData === 'object' ? profileData.avatar || "https://ui-avatars.com/api/?name=User" : "https://ui-avatars.com/api/?name=User"
               },
               likes: 0,
               comments: 0
