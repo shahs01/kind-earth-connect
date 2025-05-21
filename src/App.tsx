@@ -32,6 +32,7 @@ import DonateGoods from "@/pages/DonateGoods";
 import Contact from "@/pages/Contact";
 import Subscribe from "@/pages/Subscribe";
 import MonthlyGiving from "@/pages/MonthlyGiving";
+import Values from "@/pages/Values";
 
 const App = () => {
   return (
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
           <Route path="/about" element={<About />} />
+          <Route path="/values" element={<Values />} />
           <Route path="/community" element={<Community />} />
           <Route path="/nonprofit-directory" element={<NonprofitDirectory />} />
           <Route path="/faq" element={<FAQ />} />

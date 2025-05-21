@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, LogOut, Mail, Settings, Heart, HelpCircle, Info, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Mail, Settings, Heart, HelpCircle, Info, ChevronDown, Handshake, Bell } from "lucide-react";
 import Logo from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -58,12 +58,12 @@ const Navbar = () => {
             Community
           </Link>
           <Link
-            to="/search-help"
+            to="/offer-help"
             className={`transition-colors hover:text-thryvance-green ${
-              isActive("/search-help") ? "text-thryvance-green font-medium" : "text-gray-700"
+              isActive("/offer-help") || isActive("/request-help") ? "text-thryvance-green font-medium" : "text-gray-700"
             }`}
           >
-            Find Help
+            Offer/Request
           </Link>
           <Link
             to="/nonprofit-directory"
@@ -74,11 +74,11 @@ const Navbar = () => {
             Nonprofits
           </Link>
           
-          {/* New dropdown menu for additional links */}
+          {/* About dropdown menu */}
           <div className="relative">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center transition-colors hover:text-thryvance-green text-gray-700 focus:outline-none">
-                <span>More</span>
+                <span>About Us</span>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-56">
@@ -89,9 +89,51 @@ const Navbar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/values" className="flex items-center cursor-pointer w-full">
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>Our Values</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/faq" className="flex items-center cursor-pointer w-full">
                     <HelpCircle className="mr-2 h-4 w-4" />
                     <span>FAQ</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/subscribe" className="flex items-center cursor-pointer w-full">
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Stay Updated</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
+          {/* Partner With Us dropdown */}
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center transition-colors hover:text-thryvance-green text-gray-700 focus:outline-none">
+                <span>Get Involved</span>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link to="/partner-with-us" className="flex items-center cursor-pointer w-full">
+                    <Handshake className="mr-2 h-4 w-4" />
+                    <span>Partner With Us</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/volunteer" className="flex items-center cursor-pointer w-full">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    <span>Volunteer</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/sponsor-project" className="flex items-center cursor-pointer w-full">
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>Sponsor a Project</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -103,15 +145,6 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
-          <Link
-            to="/about"
-            className={`transition-colors hover:text-thryvance-green ${
-              isActive("/about") ? "text-thryvance-green font-medium" : "text-gray-700"
-            }`}
-          >
-            About
-          </Link>
           
           {/* Show different buttons based on authentication status */}
           {isAuthenticated ? (
@@ -241,13 +274,13 @@ const Navbar = () => {
               Community
             </Link>
             <Link
-              to="/search-help"
+              to="/offer-help"
               className={`transition-colors hover:text-thryvance-green ${
-                isActive("/search-help") ? "text-thryvance-green font-medium" : "text-gray-700"
+                isActive("/offer-help") || isActive("/request-help") ? "text-thryvance-green font-medium" : "text-gray-700"
               }`}
               onClick={toggleMenu}
             >
-              Find Help
+              Offer/Request
             </Link>
             <Link
               to="/nonprofit-directory"
@@ -258,31 +291,76 @@ const Navbar = () => {
             >
               Nonprofits
             </Link>
-            <Link
-              to="/about"
-              className={`transition-colors hover:text-thryvance-green ${
-                isActive("/about") ? "text-thryvance-green font-medium" : "text-gray-700"
-              }`}
-              onClick={toggleMenu}
-            >
-              About
-            </Link>
             
-            {/* Mobile dropdown items displayed flat in mobile menu */}
-            <Link
-              to="/faq"
-              className="transition-colors hover:text-thryvance-green text-gray-700"
-              onClick={toggleMenu}
-            >
-              FAQ
-            </Link>
-            <Link
-              to="/donate"
-              className="transition-colors hover:text-thryvance-green text-gray-700"
-              onClick={toggleMenu}
-            >
-              Donate
-            </Link>
+            {/* Mobile About Us section */}
+            <div className="pt-2 pb-1 border-t border-gray-100">
+              <p className="text-gray-500 text-sm mb-2">About Us</p>
+              <div className="flex flex-col space-y-2 pl-2">
+                <Link
+                  to="/about"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  About Us
+                </Link>
+                <Link
+                  to="/values"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  Our Values
+                </Link>
+                <Link
+                  to="/faq"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  FAQ
+                </Link>
+                <Link
+                  to="/subscribe"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  Stay Updated
+                </Link>
+              </div>
+            </div>
+            
+            {/* Mobile Get Involved section */}
+            <div className="pt-1 pb-2 border-b border-gray-100">
+              <p className="text-gray-500 text-sm mb-2">Get Involved</p>
+              <div className="flex flex-col space-y-2 pl-2">
+                <Link
+                  to="/partner-with-us"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  Partner With Us
+                </Link>
+                <Link
+                  to="/volunteer"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  Volunteer
+                </Link>
+                <Link
+                  to="/sponsor-project"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  Sponsor a Project
+                </Link>
+                <Link
+                  to="/donate"
+                  className="transition-colors hover:text-thryvance-green text-gray-700"
+                  onClick={toggleMenu}
+                >
+                  Donate
+                </Link>
+              </div>
+            </div>
             
             {isAuthenticated ? (
               <>
