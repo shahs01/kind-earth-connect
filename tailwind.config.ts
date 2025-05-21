@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+                thryvance: {
+                    'green-light': '#E3F2E9',
+                    'green': '#4CAF72',
+                    'green-dark': '#3A8457',
+                    'blue-light': '#E5F0F9',
+                    'blue': '#4A90C0',
+                    'blue-dark': '#3A729A',
+                    'neutral-light': '#F7F7F5',
+                    'neutral': '#E5E5E3',
+                    'neutral-dark': '#707070'
+                }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,12 +96,21 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+                'float': {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-10px)' }
+                }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+				'accordion-up': 'accordion-up 0.2s ease-out',
+                'float': 'float 6s ease-in-out infinite'
+			},
+            backgroundImage: {
+                'hero-pattern': 'linear-gradient(120deg, #E3F2E9 0%, #E5F0F9 100%)',
+                'card-pattern': 'linear-gradient(to top, #E6E9F0 0%, #EEF1F5 100%)',
+            }
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

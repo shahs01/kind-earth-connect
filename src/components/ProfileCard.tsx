@@ -1,0 +1,115 @@
+
+import { User } from "@/types";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { User as UserIcon, MapPin, Calendar, Heart, Flag, Star, Shield, Check } from "lucide-react";
+
+interface ProfileCardProps {
+  user: User;
+  isOwnProfile?: boolean;
+}
+
+const ProfileCard = ({ user, isOwnProfile = false }: ProfileCardProps) => {
+  return (
+    <Card className="overflow-hidden shadow-md">
+      <CardHeader className="bg-gradient-to-r from-thryvance-green-light to-thryvance-blue-light pb-16 relative">
+        {isOwnProfile && (
+          <Button variant="ghost" size="sm" className="absolute top-4 right-4 bg-white/80 hover:bg-white text-gray-700">
+            Edit Profile
+          </Button>
+        )}
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        <div className="flex flex-col items-center -mt-12">
+          <div className="h-24 w-24 rounded-full bg-thryvance-neutral flex items-center justify-center border-4 border-white shadow-md">
+            {user.avatar ? (
+              <img 
+                src={user.avatar} 
+                alt={user.name} 
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <UserIcon className="h-12 w-12 text-thryvance-neutral-dark" />
+            )}
+          </div>
+          
+          <div className="text-center mt-3">
+            <h2 className="text-xl font-bold">{user.name}</h2>
+            
+            <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span>{user.location || "No location set"}</span>
+            </div>
+            
+            <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span>Member since {user.createdAt.toLocaleDateString()}</span>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {user.verifiedStatus && (
+                <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-green/10 text-thryvance-green-dark border-thryvance-green/20">
+                  <Check className="h-3 w-3" />
+                  Verified
+                </Badge>
+              )}
+              
+              <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-blue/10 text-thryvance-blue-dark border-thryvance-blue/20">
+                <Star className="h-3 w-3" />
+                {user.trustScore} Trust Score
+              </Badge>
+            </div>
+            
+            {user.bio && (
+              <p className="text-gray-600 mt-4 text-sm">{user.bio}</p>
+            )}
+          </div>
+          
+          <div className="w-full grid grid-cols-2 gap-4 mt-6">
+            <div className="bg-thryvance-green-light/50 p-4 rounded-lg text-center">
+              <p className="text-2xl font-bold text-thryvance-green-dark">{user.helpOffered}</p>
+              <p className="text-sm text-gray-600">Help Offered</p>
+            </div>
+            
+            <div className="bg-thryvance-blue-light/50 p-4 rounded-lg text-center">
+              <p className="text-2xl font-bold text-thryvance-blue-dark">{user.helpReceived}</p>
+              <p className="text-sm text-gray-600">Help Received</p>
+            </div>
+          </div>
+          
+          <div className="w-full mt-6">
+            <h3 className="text-lg font-semibold mb-2">Trust Indicators</h3>
+            <div className="bg-thryvance-neutral-light p-4 rounded-lg">
+              <ul className="space-y-3">
+                <li className="flex items-center gap-2 text-sm">
+                  <Shield className="h-4 w-4 text-thryvance-green" />
+                  <span>Email verified</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Heart className="h-4 w-4 text-thryvance-green" />
+                  <span>Contributed to 12 community projects</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Flag className="h-4 w-4 text-thryvance-green" />
+                  <span>Member for 1 year and 3 months</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      
+      {!isOwnProfile && (
+        <CardFooter className="flex justify-center border-t pt-4">
+          <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
+            Connect with {user.name.split(" ")[0]}
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  );
+};
+
+export default ProfileCard;
