@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import Logo from "./Logo";
 
@@ -79,16 +80,34 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Contact Us</h3>
-            <p className="text-gray-600 mb-2">
-              Questions? Suggestions? Concerns?
-            </p>
-            <Link 
-              to="/contact"
-              className="text-thryvance-blue hover:text-thryvance-blue-dark transition-colors"
-            >
-              Get in touch →
-            </Link>
+            <h3 className="font-semibold mb-4">Support Us</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/donate" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                  Donate
+                </Link>
+              </li>
+              <li>
+                <Link to="/volunteer" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                  Volunteer
+                </Link>
+              </li>
+              <li>
+                <Link to="/sponsor-project" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                  Sponsor a Project
+                </Link>
+              </li>
+              <li>
+                <Link to="/partner-with-us" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                  Partner with Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/donate-goods" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                  Donate Goods
+                </Link>
+              </li>
+            </ul>
             
             <div className="mt-6">
               <p className="text-gray-600">

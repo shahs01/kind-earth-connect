@@ -23,6 +23,15 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Messages from "@/pages/Messages";
 import Favorites from "@/pages/Favorites";
 import Notifications from "@/pages/Notifications";
+import FAQ from "@/pages/FAQ";
+import Donate from "@/pages/Donate";
+import Volunteer from "@/pages/Volunteer";
+import SponsorProject from "@/pages/SponsorProject";
+import PartnerWithUs from "@/pages/PartnerWithUs";
+import DonateGoods from "@/pages/DonateGoods";
+import Contact from "@/pages/Contact";
+import Subscribe from "@/pages/Subscribe";
+import MonthlyGiving from "@/pages/MonthlyGiving";
 
 const App = () => {
   return (
@@ -39,6 +48,15 @@ const App = () => {
           <Route path="/about" element={<About />} />
           <Route path="/community" element={<Community />} />
           <Route path="/nonprofit-directory" element={<NonprofitDirectory />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/donate" element={<Donate />} />
+          <Route path="/volunteer" element={<Volunteer />} />
+          <Route path="/sponsor-project" element={<SponsorProject />} />
+          <Route path="/partner-with-us" element={<PartnerWithUs />} />
+          <Route path="/donate-goods" element={<DonateGoods />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/monthly-giving" element={<MonthlyGiving />} />
           
           {/* Routes that require just authentication */}
           <Route element={<ProtectedRoute requireVerified={false} />}>

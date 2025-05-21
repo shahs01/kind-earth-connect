@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User, LogOut, Mail, Settings } from "lucide-react";
+import { Menu, X, User, LogOut, Mail, Settings, Heart, HelpCircle, Info, ChevronDown } from "lucide-react";
 import Logo from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -73,6 +73,37 @@ const Navbar = () => {
           >
             Nonprofits
           </Link>
+          
+          {/* New dropdown menu for additional links */}
+          <div className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center transition-colors hover:text-thryvance-green text-gray-700 focus:outline-none">
+                <span>More</span>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link to="/about" className="flex items-center cursor-pointer w-full">
+                    <Info className="mr-2 h-4 w-4" />
+                    <span>About Us</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/faq" className="flex items-center cursor-pointer w-full">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    <span>FAQ</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/donate" className="flex items-center cursor-pointer w-full">
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>Donate</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          
           <Link
             to="/about"
             className={`transition-colors hover:text-thryvance-green ${
@@ -172,6 +203,9 @@ const Navbar = () => {
               <Button asChild>
                 <Link to="/signup">Sign Up</Link>
               </Button>
+              <Button variant="outline" className="bg-thryvance-green-light text-thryvance-green hover:bg-thryvance-green hover:text-white" asChild>
+                <Link to="/donate">Donate</Link>
+              </Button>
             </div>
           )}
         </nav>
@@ -232,6 +266,22 @@ const Navbar = () => {
               onClick={toggleMenu}
             >
               About
+            </Link>
+            
+            {/* Mobile dropdown items displayed flat in mobile menu */}
+            <Link
+              to="/faq"
+              className="transition-colors hover:text-thryvance-green text-gray-700"
+              onClick={toggleMenu}
+            >
+              FAQ
+            </Link>
+            <Link
+              to="/donate"
+              className="transition-colors hover:text-thryvance-green text-gray-700"
+              onClick={toggleMenu}
+            >
+              Donate
             </Link>
             
             {isAuthenticated ? (
@@ -296,6 +346,15 @@ const Navbar = () => {
                 </Button>
                 <Button variant="outline" className="w-full" size="sm" asChild onClick={toggleMenu}>
                   <Link to="/login">Log In</Link>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-thryvance-green-light text-thryvance-green hover:bg-thryvance-green hover:text-white" 
+                  size="sm" 
+                  asChild
+                  onClick={toggleMenu}
+                >
+                  <Link to="/donate">Donate</Link>
                 </Button>
               </div>
             )}
