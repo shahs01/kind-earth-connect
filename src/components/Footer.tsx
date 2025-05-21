@@ -1,6 +1,5 @@
-
 import { Link } from "react-router-dom";
-import { Heart } from "lucide-react";
+import Logo from "./Logo";
 
 const Footer = () => {
   return (
@@ -8,10 +7,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="h-6 w-6 text-thryvance-green" />
-              <span className="text-xl font-bold text-thryvance-green-dark">Thryvance</span>
-            </div>
+            <Logo className="mb-4" />
             <p className="text-gray-600 mb-4">
               Building stronger communities through mutual support and kindness.
             </p>

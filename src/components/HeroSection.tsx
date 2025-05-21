@@ -1,7 +1,8 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Users } from "lucide-react";
+import { Users, Sprout } from "lucide-react";
+import Logo from "./Logo";
 
 const HeroSection = () => {
   return (
@@ -10,7 +11,7 @@ const HeroSection = () => {
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 backdrop-blur-sm shadow-sm">
-              <Heart className="h-4 w-4 text-thryvance-green" />
+              <Sprout className="h-4 w-4 text-thryvance-green" />
               <span className="text-sm font-medium">Community Support Platform</span>
             </div>
             
@@ -51,9 +52,9 @@ const HeroSection = () => {
               <div className="absolute -top-6 -left-6 w-32 h-32 bg-thryvance-blue-light rounded-full opacity-50"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-thryvance-green-light rounded-full opacity-50"></div>
               <img 
-                src="https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?auto=format&fit=crop&q=80" 
-                alt="People helping in community" 
-                className="w-full h-auto rounded-xl shadow-xl relative z-10 object-cover"
+                src="/lovable-uploads/11351756-e1f5-4edf-a34a-d94f3880d8cf.png" 
+                alt="Thryvance Logo" 
+                className="w-full h-auto rounded-xl shadow-xl relative z-10 object-contain bg-thryvance-neutral-light p-12"
               />
             </div>
           </div>

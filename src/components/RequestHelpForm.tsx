@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Image, X } from "lucide-react";
+import { Sprout, Image, X } from "lucide-react";
 
 const categories = [
   "Home Repair",
@@ -122,7 +121,7 @@ const RequestHelpForm = () => {
     <Card className="shadow-md max-w-2xl mx-auto">
       <CardHeader className="text-center">
         <div className="mx-auto mb-2">
-          <Heart className="h-10 w-10 text-thryvance-blue" />
+          <Sprout className="h-10 w-10 text-thryvance-green" />
         </div>
         <CardTitle className="text-2xl">Request Support</CardTitle>
         <CardDescription>
@@ -238,7 +237,7 @@ const RequestHelpForm = () => {
             </div>
           </div>
           
-          <Button type="submit" className="w-full bg-thryvance-blue hover:bg-thryvance-blue-dark">
+          <Button type="submit" className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
             Submit Request
           </Button>
         </form>
