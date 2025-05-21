@@ -7,14 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Post, User } from "@/types";
-import { SettingsForm } from "@/components/SettingsForm";
+import AccountSettings from "@/components/AccountSettings";
 import PostActionMenu from "@/components/PostActionMenu";
 import Reviews from "@/components/Reviews";
 import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { Calendar, MapPin } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const EmptyState = ({ message }: { message: string }) => (
   <div className="text-center py-12 px-6">
@@ -23,11 +22,21 @@ const EmptyState = ({ message }: { message: string }) => (
 );
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, emailVerified } = useAuth();
   const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOwnProfile] = useState(true);
+  const [currentTab, setCurrentTab] = useState("activity");
+  
+  // Ensure we have a user before proceeding
+  // (this should be guaranteed by ProtectedRoute, but just to be safe)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     const loadUserPosts = () => {
@@ -95,12 +104,6 @@ const Profile = () => {
     }
   };
 
-  // If there's no user (which shouldn't happen due to ProtectedRoute)
-  // But we'll handle it just in case
-  if (!user) {
-    return <div>Loading profile...</div>;
-  }
-
   const activePosts = posts.filter(post => post.status !== "deleted");
   const offerPosts = posts.filter(post => post.type === "offer" && post.status !== "deleted");
   const requestPosts = posts.filter(post => post.type === "request" && post.status !== "deleted");
@@ -109,23 +112,35 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow bg-thryvance-neutral-light py-10">
+        {!emailVerified && (
+          <div className="container mx-auto px-4 mb-6">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800">
+              <div className="flex items-start gap-2">
+                <div className="flex-shrink-0 mt-0.5">
+                  <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium">Email verification required</h3>
+                  <p className="mt-1 text-sm">
+                    Your email address is not verified. Some features may be limited. Please check your inbox or{" "}
+                    <a href="/verify-email" className="underline font-medium">verify your email now</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
-              <ProfileCard user={user} isOwnProfile={isOwnProfile} />
-              
-              {!isOwnProfile && (
-                <Button 
-                  onClick={() => setIsRateDialogOpen(true)}
-                  className="w-full mt-4 bg-thryvance-blue hover:bg-thryvance-blue-dark"
-                >
-                  Rate this user
-                </Button>
-              )}
+              <ProfileCard user={user} isOwnProfile={true} />
             </div>
             
             <div className="md:col-span-2">
-              <Tabs defaultValue="activity">
+              <Tabs value={currentTab} onValueChange={setCurrentTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="activity">Activity</TabsTrigger>
                   <TabsTrigger value="offers">My Offers</TabsTrigger>
@@ -142,6 +157,7 @@ const Profile = () => {
                       
                       {isLoading ? (
                         <div className="py-8 text-center">
+                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-thryvance-green" />
                           <p className="text-gray-500">Loading activity...</p>
                         </div>
                       ) : activePosts.length > 0 ? (
@@ -158,12 +174,10 @@ const Profile = () => {
                                   {getStatusBadge(post.status)}
                                 </div>
                                 
-                                {isOwnProfile && (
-                                  <PostActionMenu 
-                                    post={post} 
-                                    onStatusChange={handlePostStatusChange} 
-                                  />
-                                )}
+                                <PostActionMenu 
+                                  post={post} 
+                                  onStatusChange={handlePostStatusChange} 
+                                />
                               </div>
                               <h4 className="font-medium">{post.title}</h4>
                               <p className="text-gray-600 text-sm mt-1">{post.description}</p>
@@ -205,6 +219,7 @@ const Profile = () => {
                     <CardContent className="p-6 pt-0">
                       {isLoading ? (
                         <div className="py-8 text-center">
+                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-thryvance-green" />
                           <p className="text-gray-500">Loading offers...</p>
                         </div>
                       ) : offerPosts.length > 0 ? (
@@ -247,6 +262,7 @@ const Profile = () => {
                     <CardContent className="p-6 pt-0">
                       {isLoading ? (
                         <div className="py-8 text-center">
+                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-thryvance-green" />
                           <p className="text-gray-500">Loading requests...</p>
                         </div>
                       ) : requestPosts.length > 0 ? (
@@ -290,7 +306,7 @@ const Profile = () => {
                 </TabsContent>
                 
                 <TabsContent value="settings">
-                  <SettingsForm user={user} />
+                  <AccountSettings />
                 </TabsContent>
               </Tabs>
             </div>

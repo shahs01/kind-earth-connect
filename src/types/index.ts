@@ -1,6 +1,6 @@
-
 export interface User {
   id: string;
+  username: string; // Added username field
   name: string;
   email: string;
   avatar: string;
@@ -11,8 +11,20 @@ export interface User {
   helpOffered: number;
   helpReceived: number;
   verifiedStatus: boolean;
+  emailVerified: boolean; // Added email verification status
+  loginAttempts: number; // Added for security
+  lastLoginAttempt: Date | null; // Added for security
+  trustBadges: string[]; // Added for bonus feature
   volunteerHours?: number;
-  reviewsGiven?: Review[]; // Added reviews given by this user
+  reviewsGiven?: Review[];
+  notificationPreferences?: NotificationPreferences; // Added for notification management
+}
+
+export interface NotificationPreferences {
+  emailUpdates: boolean;
+  messageNotifications: boolean;
+  helpRequestAlerts: boolean;
+  marketingEmails: boolean;
 }
 
 export interface Post {
@@ -57,4 +69,31 @@ export interface Nonprofit {
   phoneNumber?: string; // Added optional phoneNumber property
   email?: string; // Added optional email property
   verified: boolean;
+}
+
+// Added for authentication validation
+export interface AuthValidationErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  name?: string;
+  location?: string;
+  general?: string;
+}
+
+// Updated interface for signup data
+export interface SignUpData {
+  username: string;
+  name: string;
+  email: string;
+  password: string;
+  location: string;
+}
+
+// Added for password reset
+export interface PasswordResetData {
+  email: string;
+  token?: string;
+  newPassword?: string;
 }

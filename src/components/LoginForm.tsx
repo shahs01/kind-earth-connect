@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, Github, Mail, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -24,8 +25,8 @@ import {
 // Define form schema with Zod
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
-  rememberMe: z.boolean().optional(),
+  password: z.string().min(1, { message: "Password is required" }),
+  rememberMe: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -38,7 +39,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Get the page they were trying to visit before being redirected
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from?.pathname || "/profile";
   
   // Initialize form
   const form = useForm<FormData>({
@@ -54,7 +55,7 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, data.rememberMe);
       // Navigate to the page they were trying to access or home
       navigate(from, { replace: true });
     } catch (error) {
@@ -179,6 +180,7 @@ const LoginForm = () => {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input 
+                          type="email"
                           placeholder="Enter your email" 
                           {...field} 
                           disabled={isLoading}
@@ -219,15 +221,17 @@ const LoginForm = () => {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-2 space-y-0">
                       <FormControl>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={field.value}
-                          onChange={field.onChange}
-                          className="rounded text-thryvance-green focus:ring-thryvance-green"
+                          onCheckedChange={field.onChange}
                           disabled={isLoading}
                         />
                       </FormControl>
-                      <FormLabel className="text-sm font-normal">Remember me</FormLabel>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-normal">
+                          Remember me for 30 days
+                        </FormLabel>
+                      </div>
                     </FormItem>
                   )}
                 />

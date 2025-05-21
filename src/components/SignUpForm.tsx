@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -13,19 +13,30 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Github, Mail, Loader2 } from "lucide-react";
+import { Heart, Github, Mail, Loader2, Check, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { validateUsername, validateEmail, validatePassword } from "@/utils/validation";
 
 // Define form schema with Zod
 const formSchema = z.object({
+  username: z.string()
+    .min(3, { message: "Username must be at least 3 characters long" })
+    .max(20, { message: "Username cannot exceed 20 characters" })
+    .regex(/^[a-zA-Z0-9_-]+$/, { message: "Username can only contain letters, numbers, dashes and underscores" }),
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
-  confirmPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  password: z.string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+    .regex(/[0-9]/, { message: "Password must contain at least one number" })
+    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
+  confirmPassword: z.string().min(1, { message: "Please confirm your password" }),
   location: z.string().min(2, { message: "Location must be at least 2 characters" }),
 })
 .refine(data => data.password === data.confirmPassword, {
@@ -36,30 +47,84 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
-  const { signUp } = useAuth();
+  const { signUp, validateField } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
   
   // Initialize form
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      username: "",
       name: "",
       email: "",
       password: "",
       confirmPassword: "",
       location: "",
     },
+    mode: "onChange",
   });
+  
+  // Watch username and email for availability check
+  const username = form.watch("username");
+  const email = form.watch("email");
+  
+  // Check username availability with debounce
+  useEffect(() => {
+    if (!username || username.length < 3 || !validateUsername(username)) {
+      setUsernameAvailable(null);
+      return;
+    }
+    
+    setUsernameChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const error = await validateField("username", username);
+        setUsernameAvailable(!error);
+      } catch (err) {
+        setUsernameAvailable(false);
+      } finally {
+        setUsernameChecking(false);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [username, validateField]);
+  
+  // Check email availability with debounce
+  useEffect(() => {
+    if (!email || !validateEmail(email)) {
+      setEmailAvailable(null);
+      return;
+    }
+    
+    setEmailChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const error = await validateField("email", email);
+        setEmailAvailable(!error);
+      } catch (err) {
+        setEmailAvailable(false);
+      } finally {
+        setEmailChecking(false);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [email, validateField]);
   
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     
     try {
-      // Fix: Create a properly typed object for signUp instead of using destructuring
-      // which can make properties optional
+      // Create signup data with all required fields
       const signUpData = {
+        username: data.username,
         name: data.name,
         email: data.email,
         password: data.password,
@@ -67,9 +132,10 @@ const SignUpForm = () => {
       };
       
       await signUp(signUpData);
-      navigate('/');
     } catch (error) {
       // Error is already handled in the auth context
+      console.error("Signup error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -128,6 +194,7 @@ const SignUpForm = () => {
                 </svg>
                 Google
               </Button>
+              
               <Button 
                 variant="outline" 
                 className="w-full" 
@@ -184,6 +251,53 @@ const SignUpForm = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <div className="relative">
+                        <FormControl>
+                          <Input 
+                            placeholder="Choose a username" 
+                            {...field} 
+                            disabled={isLoading}
+                            className={
+                              usernameAvailable === true
+                                ? "pr-8 border-green-500 focus-visible:ring-green-500"
+                                : usernameAvailable === false
+                                ? "pr-8 border-red-500 focus-visible:ring-red-500"
+                                : "pr-8"
+                            }
+                          />
+                        </FormControl>
+                        
+                        {/* Username availability indicator */}
+                        {usernameChecking && (
+                          <div className="absolute right-3 top-2.5">
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          </div>
+                        )}
+                        {!usernameChecking && usernameAvailable === true && (
+                          <div className="absolute right-3 top-2.5">
+                            <Check className="h-4 w-4 text-green-500" />
+                          </div>
+                        )}
+                        {!usernameChecking && usernameAvailable === false && (
+                          <div className="absolute right-3 top-2.5">
+                            <X className="h-4 w-4 text-red-500" />
+                          </div>
+                        )}
+                      </div>
+                      <FormDescription className="text-xs">
+                        3-20 characters, letters, numbers, dashes (-) and underscores (_) only
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -206,14 +320,40 @@ const SignUpForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="email"
-                          placeholder="Enter your email" 
-                          {...field} 
-                          disabled={isLoading}
-                        />
-                      </FormControl>
+                      <div className="relative">
+                        <FormControl>
+                          <Input 
+                            type="email"
+                            placeholder="Enter your email" 
+                            {...field}
+                            disabled={isLoading}
+                            className={
+                              emailAvailable === true
+                                ? "pr-8 border-green-500 focus-visible:ring-green-500"
+                                : emailAvailable === false
+                                ? "pr-8 border-red-500 focus-visible:ring-red-500"
+                                : "pr-8"
+                            }
+                          />
+                        </FormControl>
+                        
+                        {/* Email availability indicator */}
+                        {emailChecking && (
+                          <div className="absolute right-3 top-2.5">
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          </div>
+                        )}
+                        {!emailChecking && emailAvailable === true && (
+                          <div className="absolute right-3 top-2.5">
+                            <Check className="h-4 w-4 text-green-500" />
+                          </div>
+                        )}
+                        {!emailChecking && emailAvailable === false && (
+                          <div className="absolute right-3 top-2.5">
+                            <X className="h-4 w-4 text-red-500" />
+                          </div>
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -233,6 +373,26 @@ const SignUpForm = () => {
                           disabled={isLoading}
                         />
                       </FormControl>
+                      <FormDescription className="text-xs space-y-1">
+                        <p>Password must include:</p>
+                        <ul className="list-disc list-inside pl-2 text-xs space-y-0.5">
+                          <li className={field.value.length >= 8 ? "text-green-600" : ""}>
+                            At least 8 characters
+                          </li>
+                          <li className={/[A-Z]/.test(field.value) ? "text-green-600" : ""}>
+                            One uppercase letter
+                          </li>
+                          <li className={/[a-z]/.test(field.value) ? "text-green-600" : ""}>
+                            One lowercase letter
+                          </li>
+                          <li className={/[0-9]/.test(field.value) ? "text-green-600" : ""}>
+                            One number
+                          </li>
+                          <li className={/[^A-Za-z0-9]/.test(field.value) ? "text-green-600" : ""}>
+                            One special character
+                          </li>
+                        </ul>
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -278,7 +438,7 @@ const SignUpForm = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-thryvance-green hover:bg-thryvance-green-dark flex items-center gap-2"
-                  disabled={isLoading}
+                  disabled={isLoading || !usernameAvailable || !emailAvailable}
                 >
                   {isLoading ? (
                     <>
@@ -310,4 +470,3 @@ const SignUpForm = () => {
 };
 
 export default SignUpForm;
-
