@@ -181,10 +181,18 @@ export function useMessages() {
   const sendMessage = async (receiverId: string, content: string) => {
     setLoading(true);
     try {
+      // Get the authenticated user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("Not authenticated");
+      }
+      
       const { data, error } = await supabase
         .from('messages')
         .insert({
           receiver_id: receiverId,
+          sender_id: user.id,
           content
         })
         .select();

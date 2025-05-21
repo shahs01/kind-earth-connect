@@ -81,10 +81,20 @@ export function useFavorites() {
   const addFavorite = async (postId: string) => {
     setLoading(true);
     try {
-      // Must include user_id in the insert
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to add favorites");
+      }
+      
+      // Include user_id in the insert
       const { data, error } = await supabase
         .from('favorites')
-        .insert({ post_id: postId })
+        .insert({
+          post_id: postId,
+          user_id: user.id
+        })
         .select();
       
       if (error) throw error;

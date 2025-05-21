@@ -127,9 +127,19 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to add favorites");
+      }
+      
       const { error } = await supabase
         .from('favorites')
-        .insert({ post_id: postId });
+        .insert({
+          post_id: postId,
+          user_id: user.id
+        });
       
       if (error) throw error;
       
@@ -158,11 +168,19 @@ export function useProfileManagement() {
     try {
       setLoading(true);
       
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to remove favorites");
+      }
+      
       // First, find the favorite id
       const { data: favorite, error: findError } = await supabase
         .from('favorites')
         .select('id')
         .eq('post_id', postId)
+        .eq('user_id', user.id)
         .single();
       
       if (findError) throw findError;

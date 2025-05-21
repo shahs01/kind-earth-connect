@@ -47,7 +47,7 @@ export default function AdminPosts() {
         .from('posts')
         .select(`
           *,
-          user:user_id (
+          profiles:user_id (
             username,
             name,
             avatar
@@ -57,7 +57,13 @@ export default function AdminPosts() {
       
       if (error) throw error;
       
-      setPosts(data || []);
+      // Transform the data to match the Post interface
+      const formattedPosts: Post[] = data?.map((post: any) => ({
+        ...post,
+        user: post.profiles || { username: 'unknown', name: 'Unknown User', avatar: '' }
+      })) || [];
+      
+      setPosts(formattedPosts);
     } catch (error: any) {
       console.error("Error loading posts:", error);
       toast({
@@ -216,8 +222,8 @@ export default function AdminPosts() {
                     <CardFooter className="border-t bg-gray-50 flex justify-between">
                       <div className="flex items-center">
                         <Badge variant={
-                          post.status === 'active' ? 'success' :
-                          post.status === 'pending' ? 'warning' :
+                          post.status === 'active' ? 'outline' :
+                          post.status === 'pending' ? 'secondary' :
                           'destructive'
                         }>
                           {post.status}
