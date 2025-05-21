@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
@@ -10,6 +9,7 @@ import { Post, User } from "@/types";
 import { SettingsForm } from "@/components/SettingsForm";
 import PostActionMenu from "@/components/PostActionMenu";
 import Reviews from "@/components/Reviews";
+import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
 import { Button } from "@/components/ui/button";
 
@@ -128,6 +128,7 @@ const Profile = () => {
                   <TabsTrigger value="offers">My Offers</TabsTrigger>
                   <TabsTrigger value="requests">My Requests</TabsTrigger>
                   <TabsTrigger value="reviews">My Reviews</TabsTrigger>
+                  <TabsTrigger value="reviewsgiven">Reviews Given</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
                 
@@ -259,6 +260,10 @@ const Profile = () => {
                 
                 <TabsContent value="reviews">
                   <Reviews user={sampleUser} />
+                </TabsContent>
+                
+                <TabsContent value="reviewsgiven">
+                  <ReviewsGiven user={sampleUser} />
                 </TabsContent>
                 
                 <TabsContent value="settings">

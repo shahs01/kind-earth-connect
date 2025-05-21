@@ -1,6 +1,3 @@
-
-
-
 export interface User {
   id: string;
   name: string;
@@ -13,6 +10,7 @@ export interface User {
   helpOffered: number;
   helpReceived: number;
   verifiedStatus: boolean;
+  reviewsGiven?: Review[]; // Added reviews given by this user
 }
 
 export interface Post {
@@ -57,4 +55,3 @@ export interface Nonprofit {
   email?: string; // Added optional email property
   verified: boolean;
 }
-
