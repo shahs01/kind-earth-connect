@@ -8,6 +8,7 @@ import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Post {
   id: string;
@@ -78,9 +79,27 @@ const UserPosts = ({ userId }: UserPostsProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mr-2" />
-        <span>Loading posts...</span>
+      <div className="space-y-6 my-4">
+        <h2 className="text-2xl font-bold">
+          {isOwnProfile ? "My Posts" : "User's Posts"}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/4 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
+                <div className="flex gap-2 mt-4">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
