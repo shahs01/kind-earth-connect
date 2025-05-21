@@ -79,7 +79,7 @@ export function useProfileManagement(user: UserType | null) {
   async function deleteAccount(): Promise<void> {
     try {
       // Delete the user account
-      const { error } = await supabase.rpc('delete_user');
+      const { error } = await supabase.rpc('delete_user', {});
       
       if (error) {
         console.error("Error deleting account:", error);
