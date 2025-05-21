@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -7,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HandShake, Users, Search, MapPin, Filter } from "lucide-react";
+import { Handshake, Users, Search, MapPin, Filter } from "lucide-react";
 
 const Community = () => {
   const [searchQuery, setSearchQuery] = useState("");
