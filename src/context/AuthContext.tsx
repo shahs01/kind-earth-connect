@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { User as UserType } from "@/types";
 import { toast } from "sonner";
+import { validatePassword } from "@/utils/validation";
 
 interface AuthContextProps {
   user: UserType | null;
@@ -230,6 +231,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         // This is the confirm password reset path
         const { newPassword } = emailOrData;
+
+        // Validate password meets requirements
+        if (!validatePassword(newPassword)) {
+          toast.error("Password must contain at least one uppercase letter, lowercase letter, number, and special character");
+          return;
+        }
         
         // For password recovery, we need to set a new password
         const { error } = await supabase.auth.updateUser({ 
@@ -249,7 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function requestPasswordReset(email: string) {
+  async function requestPasswordReset(email: string): Promise<void> {
     // Call resetPassword with the email string
     return resetPassword(email);
   }
