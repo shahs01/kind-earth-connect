@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +17,7 @@ interface AuthContextProps {
   isLoading: boolean;
   emailVerified: boolean;
 
-  // Combined function to handle both requesting a reset and setting a new password
+  // Define the parameter type as a union type
   resetPassword: (
     emailOrData: string | { email: string; token: string; newPassword: string }
   ) => Promise<void>;
