@@ -3,6 +3,20 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
+// Define interface for the post object to include all possible properties
+interface PostData {
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  type: "offer" | "request";
+  user_id: string;
+  created_at: string;
+  status: string;
+  availability?: string;
+  timeframe?: string;
+}
+
 export const useProfileManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -50,7 +64,7 @@ export const useProfileManagement = () => {
       }
       
       // Map the form data to the database columns
-      const post = {
+      const post: PostData = {
         title: postData.title,
         description: postData.description,
         category: postData.category,
