@@ -123,6 +123,7 @@ export function useMessages() {
       setConversations(formattedConversations);
       return formattedConversations;
     } catch (error: any) {
+      console.error("Error fetching conversations:", error);
       toast({
         title: "Error fetching conversations",
         description: error.message,
@@ -167,6 +168,7 @@ export function useMessages() {
       
       return data;
     } catch (error: any) {
+      console.error("Error fetching messages:", error);
       toast({
         title: "Error fetching messages",
         description: error.message,
@@ -199,17 +201,20 @@ export function useMessages() {
       
       if (error) throw error;
       
-      // Refresh messages
-      await fetchMessages(receiverId);
+      // Add to messages state immediately without refetching
+      if (data && data.length > 0) {
+        setMessages(prev => [...prev, data[0]]);
+      }
       
       return data?.[0];
     } catch (error: any) {
+      console.error("Error sending message:", error);
       toast({
         title: "Error sending message",
         description: error.message,
         variant: "destructive",
       });
-      return null;
+      throw error;
     } finally {
       setLoading(false);
     }

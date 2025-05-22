@@ -4,11 +4,20 @@ import { Card, CardContent, CardHeader, CardFooter, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, MapPin, Clock, User, AlertCircle } from "lucide-react";
+import { MessageSquare, MapPin, Clock, User, AlertCircle, Send } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import ProfileDialog from "@/components/ProfileDialog";
 import { User as UserType } from "@/types";
+import { 
+  Dialog, 
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProfileData {
   name?: string | null;
@@ -48,6 +57,11 @@ const PostsList = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedPostTitle, setSelectedPostTitle] = useState<string>("");
+  const [messageContent, setMessageContent] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -133,7 +147,7 @@ const PostsList = ({
     fetchPosts();
   }, [searchQuery, categoryFilter, typeFilter, locationFilter, sortBy, toast]);
 
-  const handleContact = async (userId: string) => {
+  const handleContact = async (userId: string, postTitle: string) => {
     try {
       // Check if user is authenticated
       const { data } = await supabase.auth.getSession();
@@ -147,8 +161,10 @@ const PostsList = ({
         return;
       }
 
-      // If authenticated, navigate to the messages page with the user ID
-      navigate(`/messages/${userId}`);
+      // Open the message dialog
+      setSelectedUserId(userId);
+      setSelectedPostTitle(postTitle);
+      setMessageDialogOpen(true);
     } catch (err) {
       console.error("Error getting user data:", err);
       toast({
@@ -157,7 +173,60 @@ const PostsList = ({
         variant: "destructive"
       });
     }
-  }
+  };
+
+  const sendMessage = async () => {
+    if (!selectedUserId || !messageContent.trim()) return;
+    
+    try {
+      setSendingMessage(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to send messages");
+      }
+      
+      // Add post title to the message if it exists
+      const messageWithContext = selectedPostTitle 
+        ? `Regarding: "${selectedPostTitle}"\n\n${messageContent}` 
+        : messageContent;
+      
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: selectedUserId,
+          content: messageWithContext
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent successfully!",
+      });
+      
+      // Close dialog and reset
+      setMessageDialogOpen(false);
+      setMessageContent("");
+      setSelectedUserId(null);
+      setSelectedPostTitle("");
+      
+      // Navigate to messages
+      navigate('/messages');
+    } catch (err: any) {
+      console.error("Error sending message:", err);
+      toast({
+        title: "Error sending message",
+        description: err.message || "Could not send message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   const handleViewProfile = async (userId: string) => {
     try {
@@ -325,7 +394,7 @@ const PostsList = ({
               <Button 
                 size="sm" 
                 className="flex items-center gap-1"
-                onClick={() => handleContact(post.user_id)}
+                onClick={() => handleContact(post.user_id, post.title)}
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 <span>Contact</span>
@@ -340,6 +409,50 @@ const PostsList = ({
         open={isProfileOpen} 
         onOpenChange={setIsProfileOpen} 
       />
+
+      {/* Quick Message Dialog */}
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Message</DialogTitle>
+            <DialogDescription>
+              {selectedPostTitle ? `About: ${selectedPostTitle}` : "Send a direct message"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Write your message here..."
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              className="min-h-[120px]"
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setMessageDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={sendMessage}
+              disabled={!messageContent.trim() || sendingMessage}
+              className="bg-thryvance-green hover:bg-thryvance-green-dark"
+            >
+              {sendingMessage ? (
+                <>Sending...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Message
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

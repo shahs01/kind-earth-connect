@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, X } from "lucide-react";
+import { MapPin, Calendar, X, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResultCardProps {
   item: {
@@ -24,13 +27,78 @@ interface ResultCardProps {
     description: string;
     postedBy: string;
     postedDate: string;
+    userId?: string; // Add userId for messaging
   };
 }
 
 const ResultCard = ({ item }: ResultCardProps) => {
   const isOffer = item.id.startsWith('o');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const handleContact = () => {
+    if (!isAuthenticated) return;
+    
+    // If we have the user's ID, open the message dialog
+    if (item.userId) {
+      setMessageDialogOpen(true);
+    } else {
+      // Navigate to messages page as fallback
+      navigate('/messages');
+    }
+  };
+  
+  const sendMessage = async () => {
+    if (!item.userId || !messageContent.trim()) return;
+    
+    try {
+      setSendingMessage(true);
+      
+      if (!user) {
+        throw new Error("You must be logged in to send messages");
+      }
+      
+      // Add post title to the message
+      const messageWithContext = `Regarding: "${item.title}"\n\n${messageContent}`;
+      
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: item.userId,
+          content: messageWithContext
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent successfully!",
+      });
+      
+      // Close dialog and reset
+      setMessageDialogOpen(false);
+      setMessageContent("");
+      
+      // Navigate to messages
+      navigate('/messages');
+    } catch (err: any) {
+      console.error("Error sending message:", err);
+      toast({
+        title: "Error sending message",
+        description: err.message || "Could not send message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
   
   return (
     <>
@@ -67,6 +135,7 @@ const ResultCard = ({ item }: ResultCardProps) => {
         </CardFooter>
       </Card>
 
+      {/* Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -113,7 +182,10 @@ const ResultCard = ({ item }: ResultCardProps) => {
                   </div>
                 </div>
               ) : (
-                <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
+                <Button 
+                  className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
+                  onClick={handleContact}
+                >
                   Contact {item.postedBy}
                 </Button>
               )}
@@ -126,6 +198,52 @@ const ResultCard = ({ item }: ResultCardProps) => {
           </DialogClose>
         </DialogContent>
       </Dialog>
+      
+      {/* Message Dialog */}
+      {item.userId && (
+        <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Message to {item.postedBy}</DialogTitle>
+              <DialogDescription>
+                Regarding: {item.title}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <Textarea
+                placeholder="Write your message here..."
+                value={messageContent}
+                onChange={(e) => setMessageContent(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setMessageDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={sendMessage}
+                disabled={!messageContent.trim() || sendingMessage}
+                className="bg-thryvance-green hover:bg-thryvance-green-dark"
+              >
+                {sendingMessage ? (
+                  <>Sending...</>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Message
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };

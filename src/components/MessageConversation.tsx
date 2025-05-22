@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { User as UserType } from "@/types";
 import ProfileDialog from "@/components/ProfileDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const MessageConversation = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -22,6 +23,7 @@ const MessageConversation = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     if (!user) {
@@ -48,6 +50,12 @@ const MessageConversation = () => {
             // If message is from the current conversation, refresh messages
             if (payload.new.sender_id === userId) {
               fetchMessages(userId);
+            } else {
+              // If from someone else, show a notification
+              toast({
+                title: "New message",
+                description: "You received a new message from another conversation",
+              });
             }
           }
         )
@@ -98,6 +106,11 @@ const MessageConversation = () => {
       setOtherUser(userData);
     } catch (error) {
       console.error("Error fetching user:", error);
+      toast({
+        title: "Error",
+        description: "Could not load user information",
+        variant: "destructive"
+      });
     }
   };
   
@@ -105,9 +118,20 @@ const MessageConversation = () => {
     if (!newMessage.trim() || !userId) return;
     
     setSending(true);
-    await sendMessage(userId, newMessage.trim());
-    setNewMessage("");
-    setSending(false);
+    try {
+      await sendMessage(userId, newMessage.trim());
+      setNewMessage("");
+      scrollToBottom();
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSending(false);
+    }
   };
   
   const scrollToBottom = () => {
@@ -117,6 +141,13 @@ const MessageConversation = () => {
   const handleViewProfile = () => {
     if (otherUser) {
       setIsProfileOpen(true);
+    }
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
   
@@ -173,7 +204,7 @@ const MessageConversation = () => {
                         : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    <p>{message.content}</p>
+                    <p className="whitespace-pre-line">{message.content}</p>
                     <div
                       className={`text-xs mt-1 ${
                         message.sender_id === user?.id ? 'text-green-100' : 'text-gray-500'
@@ -201,11 +232,17 @@ const MessageConversation = () => {
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Type your message..."
               disabled={sending || loading}
               className="flex-1"
+              autoFocus
             />
-            <Button type="submit" disabled={sending || !newMessage.trim() || loading}>
+            <Button 
+              type="submit" 
+              disabled={sending || !newMessage.trim() || loading}
+              className="bg-thryvance-green hover:bg-thryvance-green-dark"
+            >
               {sending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
