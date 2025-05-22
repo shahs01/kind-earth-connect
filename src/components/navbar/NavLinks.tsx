@@ -25,7 +25,7 @@ const NavLinks = ({ isActive }: NavLinksProps) => {
           isActive("/community") ? "text-thryvance-green font-medium" : "text-gray-700"
         }`}
       >
-        Community
+        Community & Help
       </Link>
       
       {/* Create Posting button */}

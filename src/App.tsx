@@ -26,7 +26,6 @@ import Donate from "./pages/Donate";
 import Favorites from "./pages/Favorites";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
-import SearchHelp from "./pages/SearchHelp";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -76,7 +75,8 @@ function App() {
         <Route path="/offer-help" element={<OfferHelp />} />
         <Route path="/request-help" element={<RequestHelp />} />
         <Route path="/nonprofit-directory" element={<NonprofitDirectory />} />
-        <Route path="/search-help" element={<SearchHelp />} />
+        {/* Redirect from search-help to community page */}
+        <Route path="/search-help" element={<Navigate to="/community" replace />} />
         <Route path="/donate" element={<Donate />} />
         <Route path="/partner-with-us" element={<PartnerWithUs />} />
         <Route path="/sponsor-project" element={<SponsorProject />} />

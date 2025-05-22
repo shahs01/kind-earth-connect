@@ -24,11 +24,11 @@ import {
 import NotificationIndicator from "../NotificationIndicator";
 
 const UserMenu = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate("/");
   };
 
@@ -55,13 +55,13 @@ const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 px-2 flex items-center gap-2">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.photoURL || ""} />
+            <AvatarImage src={user.avatar || ""} />
             <AvatarFallback className="bg-thryvance-blue text-white">
-              {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+              {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
           <span className="hidden md:inline-block text-sm font-medium">
-            {user.displayName || user.email?.split("@")[0] || "User"}
+            {user.name || user.email?.split("@")[0] || "User"}
           </span>
           <ChevronDown className="h-4 w-4 text-gray-500" />
           <NotificationIndicator />
