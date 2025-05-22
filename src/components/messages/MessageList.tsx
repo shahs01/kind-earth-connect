@@ -15,23 +15,21 @@ interface MessageListProps {
 const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  // Only scroll to bottom when new messages are added, not on every render
+  // Only scroll to bottom when new messages are added or on initial load
   useEffect(() => {
     if (messages.length > 0) {
-      // Use a small timeout to ensure the DOM has updated
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 100);
+      const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+          // Use scrollIntoView with behavior: 'auto' to prevent global page scrolling
+          messagesEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+        }
+      };
       
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame for smoother scrolling
+      const animFrame = requestAnimationFrame(scrollToBottom);
+      return () => cancelAnimationFrame(animFrame);
     }
-  }, [messages.length]); // Only depend on message count, not the messages array itself
+  }, [messages.length]);
 
   if (loading && messages.length === 0) {
     return (
@@ -80,6 +78,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
               >
                 {!isCurrentUser && (
                   <Avatar className="h-6 w-6">
+                    <AvatarImage src={message.sender?.avatar} />
                     <AvatarFallback>
                       <UserIcon className="h-3 w-3" />
                     </AvatarFallback>
@@ -105,6 +104,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 
                 {isCurrentUser && (
                   <Avatar className="h-6 w-6">
+                    <AvatarImage src={message.sender?.avatar} />
                     <AvatarFallback>
                       <UserIcon className="h-3 w-3" />
                     </AvatarFallback>

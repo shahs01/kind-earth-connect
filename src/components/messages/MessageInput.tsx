@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MessageInputProps {
   sending: boolean;
@@ -18,14 +17,14 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     if (!loading && inputRef.current) {
-      // Use a shorter timeout to make input focus faster
-      const timer = setTimeout(() => {
+      // Use requestAnimationFrame for smoother focus
+      const animFrame = requestAnimationFrame(() => {
         if (inputRef.current) {
           inputRef.current.focus();
         }
-      }, 100);
+      });
       
-      return () => clearTimeout(timer);
+      return () => cancelAnimationFrame(animFrame);
     }
   }, [loading]);
 
@@ -51,7 +50,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           e.preventDefault();
           handleSendMessage();
         }}
-        className="flex space-x-2"
+        className="flex items-center space-x-2"
       >
         <Input
           ref={inputRef}
@@ -66,7 +65,6 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
         <Button 
           type="submit" 
           disabled={sending || !newMessage.trim() || loading}
-          variant="default"
         >
           {sending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
