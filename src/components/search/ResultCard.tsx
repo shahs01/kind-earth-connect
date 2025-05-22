@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -170,7 +169,7 @@ const ResultCard = ({ item }: ResultCardProps) => {
               {!isAuthenticated ? (
                 <div className="space-y-3">
                   <p className="text-sm text-gray-700">
-                    You need to log in to contact this person or respond to this post.
+                    You need to log in to message this person or respond to this post.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Button asChild className="w-full sm:w-auto">
@@ -186,7 +185,7 @@ const ResultCard = ({ item }: ResultCardProps) => {
                   className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
                   onClick={handleContact}
                 >
-                  Contact {item.postedBy}
+                  Message {item.postedBy}
                 </Button>
               )}
             </div>

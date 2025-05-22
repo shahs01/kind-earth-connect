@@ -8,7 +8,7 @@ import { Message } from "@/hooks/useConversations";
 import { useConversationProfile } from "./hooks/useConversationProfile";
 import { useConversationReconnect } from "./hooks/useConversationReconnect";
 import { useConversationMessages } from "./hooks/useConversationMessages";
-import { supabase } from "@/integrations/supabase/client"; // Added missing import
+import { supabase } from "@/integrations/supabase/client";
 
 export const useConversation = (userId: string | undefined) => {
   const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError, sending } = useMessages();
@@ -104,7 +104,11 @@ export const useConversation = (userId: string | undefined) => {
       if (channelRef.current) {
         console.log("Removing channel on conversation change or unmount");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Use Object.defineProperty to set the ref to null
+        Object.defineProperty(channelRef, 'current', {
+          value: null,
+          writable: true
+        });
       }
     };
   }, [userId, user, fetchMessages, markMessagesAsRead, setConnectionError, setupRealtimeSubscription, fetchOtherUser]);
