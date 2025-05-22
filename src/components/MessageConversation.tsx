@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
@@ -7,7 +8,6 @@ import MessageList from "@/components/messages/MessageList";
 import MessageInput from "@/components/messages/MessageInput";
 import ConnectionErrorDisplay from "@/components/messages/ConnectionErrorDisplay";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface MessageConversationProps {
   onViewProfile?: (userId: string) => void;

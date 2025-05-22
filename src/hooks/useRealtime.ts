@@ -10,7 +10,7 @@ interface UseRealtimeProps {
   currentUserId?: string;
   onMessageReceived?: (message: Message) => void;
   setConnectionError: (error: boolean) => void;
-  channelRef?: React.RefObject<any>; // Added channelRef as an optional prop
+  channelRef?: React.RefObject<any>;
 }
 
 export function useRealtime({ 
@@ -18,7 +18,7 @@ export function useRealtime({
   currentUserId, 
   onMessageReceived, 
   setConnectionError,
-  channelRef: externalChannelRef // Renamed to avoid conflict
+  channelRef: externalChannelRef
 }: UseRealtimeProps) {
   // Use external channelRef if provided, otherwise create our own
   const internalChannelRef = useRef<any>(null);
@@ -46,11 +46,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        // Create a new ref instead of modifying the current property directly
-        Object.defineProperty(channelRef, 'current', {
-          value: null,
-          writable: true
-        });
+        channelRef.current = null;
       }
       
       // Create a unique channel name that remains consistent regardless of which user is first
@@ -99,11 +95,8 @@ export function useRealtime({
           }
         });
       
-      // Store the channel reference without directly assigning to .current
-      Object.defineProperty(channelRef, 'current', {
-        value: channel,
-        writable: true
-      });
+      // Store the channel reference
+      channelRef.current = channel;
       
       return channel;
     } catch (err) {
@@ -123,11 +116,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
-        // Create a new ref instead of modifying the current property directly
-        Object.defineProperty(channelRef, 'current', {
-          value: null,
-          writable: true
-        });
+        channelRef.current = null;
       }
     };
   }, [userId, currentUserId, setupRealtimeSubscription]);
@@ -158,11 +147,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
-        // Create a new ref instead of modifying the current property directly
-        Object.defineProperty(channelRef, 'current', {
-          value: null,
-          writable: true
-        });
+        channelRef.current = null;
       }
       
       // Create a unique channel name for the user
@@ -201,11 +186,8 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
           }
         });
       
-      // Store the channel reference without directly assigning to .current
-      Object.defineProperty(channelRef, 'current', {
-        value: channel,
-        writable: true
-      });
+      // Store the channel reference
+      channelRef.current = channel;
       
       return channel;
     } catch (err) {
@@ -218,17 +200,13 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
 
   // Set up subscription when user changes
   useEffect(() => {
-    const subscription = setupGlobalNotifications();
+    setupGlobalNotifications();
     
     return () => {
       if (channelRef.current) {
         console.log("Removing global notification channel on unmount");
         supabase.removeChannel(channelRef.current);
-        // Create a new ref instead of modifying the current property directly
-        Object.defineProperty(channelRef, 'current', {
-          value: null,
-          writable: true
-        });
+        channelRef.current = null;
       }
     };
   }, [currentUser?.id, setupGlobalNotifications]);
