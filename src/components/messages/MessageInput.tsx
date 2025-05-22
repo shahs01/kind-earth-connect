@@ -16,12 +16,16 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
 
   // Focus input when component mounts or conversation changes
   useEffect(() => {
+    console.log("MessageInput mounted or loading state changed:", { loading, isFocused: document.activeElement === inputRef.current });
+    
     if (!loading && inputRef.current) {
+      // Delayed focus to ensure DOM is ready
       const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
+          console.log("Input focused after delay");
         }
-      }, 100);
+      }, 200);
       
       return () => clearTimeout(timer);
     }
@@ -60,6 +64,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           disabled={sending || loading}
           className="flex-1"
           autoComplete="off"
+          aria-label="Message input"
         />
         <Button 
           type="submit" 

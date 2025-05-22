@@ -9,6 +9,11 @@ export function useMessagesList() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [connectionError, setConnectionError] = useState(false);
   const { toast } = useToast();
+  
+  // Track when the messages state is reset
+  useEffect(() => {
+    console.log("Messages state initialized/reset");
+  }, []);
 
   const fetchMessages = useCallback(async (userId: string) => {
     if (!userId) {

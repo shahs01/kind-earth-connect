@@ -49,6 +49,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   // Reset state when userId changes
   useEffect(() => {
+    console.log("MessageConversation: userId changed to:", userId);
     setFetchError(false);
   }, [userId]);
   

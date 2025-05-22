@@ -14,14 +14,21 @@ interface MessageListProps {
 
 const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Only scroll to bottom when new messages are added or on initial load
   useEffect(() => {
+    console.log("MessageList updating with messages count:", messages.length);
+    
     if (messages.length > 0) {
       const scrollToBottom = () => {
-        if (messagesEndRef.current) {
-          // Use scrollIntoView with block: 'end' to scroll only within the container
-          messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        if (messagesEndRef.current && containerRef.current) {
+          // Use scrollIntoView with behavior smooth to avoid page jumping
+          messagesEndRef.current.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "end" 
+          });
+          console.log("Scrolled to bottom of message container");
         }
       };
       
@@ -59,7 +66,11 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   });
 
   return (
-    <div className="space-y-4 pb-2" data-testid="messages-container">
+    <div 
+      className="space-y-4 pb-2" 
+      data-testid="messages-container"
+      ref={containerRef}
+    >
       {Object.entries(messagesByDate).map(([date, dateMessages]) => (
         <div key={date} className="space-y-4">
           <div className="flex justify-center">

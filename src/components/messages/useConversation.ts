@@ -19,6 +19,17 @@ const useConversation = (userId?: string) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const previousUserIdRef = useRef<string | undefined>(undefined);
   const loadingRef = useRef<boolean>(false);
+  const isMountedRef = useRef<boolean>(true);
+  
+  // Log when conversation is accessed
+  useEffect(() => {
+    console.log("useConversation hook initialized with userId:", userId);
+    
+    return () => {
+      console.log("useConversation hook cleanup for userId:", userId);
+      isMountedRef.current = false;
+    };
+  }, [userId]);
   
   const {
     otherUser,
@@ -35,7 +46,8 @@ const useConversation = (userId?: string) => {
     fetchMessages,
     sendMessage,
     markMessagesAsRead, 
-    sending
+    sending,
+    setMessages
   } = useMessages();
 
   // When a new message is received via realtime, add it to the messages list
@@ -69,6 +81,14 @@ const useConversation = (userId?: string) => {
     setConnectionError
   );
 
+  // Clear messages when switching conversations
+  useEffect(() => {
+    if (previousUserIdRef.current !== userId) {
+      console.log("Conversation changed, clearing message state");
+      setMessages([]);
+    }
+  }, [userId, setMessages]);
+
   // Clean up previous connection when switching conversations
   useEffect(() => {
     // If the userId has changed and there was a previous channel
@@ -83,7 +103,7 @@ const useConversation = (userId?: string) => {
 
   // Fetch messages and set up realtime when the component mounts or userId changes
   useEffect(() => {
-    if (!userId || !user?.id) return;
+    if (!userId || !user?.id || !isMountedRef.current) return;
     
     // Prevent multiple concurrent loads
     if (loadingRef.current) return;
@@ -100,13 +120,17 @@ const useConversation = (userId?: string) => {
         // Step 1: Fetch other user profile first
         await fetchOtherUser(userId);
         
+        if (!isMountedRef.current) return;
+        
         // Step 2: Fetch messages
         await fetchMessages(userId);
+        
+        if (!isMountedRef.current) return;
         
         // Step 3: Setup realtime only after messages are loaded
         console.log("Setting up realtime for conversation:", userId);
         const channel = setupRealtimeSubscription();
-        if (channel) {
+        if (channel && isMountedRef.current) {
           channelRef.current = channel;
         }
         console.log("Realtime channel set up:", !!channel);
@@ -114,12 +138,18 @@ const useConversation = (userId?: string) => {
         // Step 4: Mark messages as read
         await markMessagesAsRead(userId);
         
-        setConnectionError(false);
+        if (isMountedRef.current) {
+          setConnectionError(false);
+        }
       } catch (error) {
         console.error("Error loading conversation:", error);
-        setConnectionError(true);
+        if (isMountedRef.current) {
+          setConnectionError(true);
+        }
       } finally {
-        loadingRef.current = false;
+        if (isMountedRef.current) {
+          loadingRef.current = false;
+        }
       }
     };
     
@@ -149,6 +179,7 @@ const useConversation = (userId?: string) => {
     isReconnecting,
     handleSendMessage: (content: string) => {
       if (userId) {
+        console.log("Handling send message to userId:", userId, "content:", content.substring(0, 20) + (content.length > 20 ? '...' : ''));
         return handleSendMessage(userId, content);
       }
       return Promise.reject(new Error("No user ID provided"));
