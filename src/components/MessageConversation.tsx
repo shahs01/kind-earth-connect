@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMessages, Message } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
