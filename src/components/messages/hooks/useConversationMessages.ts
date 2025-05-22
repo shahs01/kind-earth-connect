@@ -12,7 +12,7 @@ export function useConversationMessages(
   const handleSendMessage = useCallback(async (userId: string, message: string) => {
     if (!message.trim() || !userId) {
       console.log("Cannot send empty message or missing userId");
-      return;
+      return null;
     }
     
     console.log("Sending message to userId:", userId, "content:", message);
@@ -24,10 +24,6 @@ export function useConversationMessages(
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
       
-      // Refresh messages after sending to ensure we have the latest
-      console.log("Refreshing messages after sending");
-      await fetchMessages(userId);
-      
       return sentMessage;
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -37,8 +33,9 @@ export function useConversationMessages(
         description: "Failed to send message. Please try again.",
         variant: "destructive"
       });
+      return null;
     }
-  }, [sendMessage, fetchMessages, setConnectionError, toast]);
+  }, [sendMessage, setConnectionError, toast]);
 
   return {
     handleSendMessage

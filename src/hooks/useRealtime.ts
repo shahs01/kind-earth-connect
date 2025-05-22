@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RealtimeOptions {
@@ -29,6 +29,13 @@ export function useRealtime({
       console.log("Setting up realtime for conversation between:", currentUserId, "and", userId);
       setIsConnecting(true);
       setConnectionError(false);
+      
+      // Clean up any existing channel first
+      if (channelRef.current) {
+        console.log("Removing existing channel before creating a new one");
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       
       // Create channel name based on user IDs
       // Sort IDs to ensure consistent channel names regardless of sender/receiver
@@ -67,8 +74,7 @@ export function useRealtime({
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
-            // Instead of directly modifying channelRef.current, store the channel in a variable
-            // that the parent component can access
+            channelRef.current = channel;
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
             setConnectionError(true);
@@ -80,6 +86,7 @@ export function useRealtime({
           }
         });
       
+      // Store the channel in the channelRef
       return channel;
     } catch (err) {
       console.error("Error setting up realtime:", err);
@@ -88,16 +95,6 @@ export function useRealtime({
       return null;
     }
   }, [userId, currentUserId, onMessageReceived, setConnectionError, channelRef]);
-  
-  useEffect(() => {
-    // Cleanup on unmount
-    return () => {
-      if (channelRef?.current) {
-        console.log("Removing channel on useRealtime unmount");
-        supabase.removeChannel(channelRef.current);
-      }
-    };
-  }, [channelRef]);
   
   return {
     setupRealtimeSubscription,
@@ -110,7 +107,7 @@ export function useGlobalMessageNotifications(
   onNewMessage: () => void
 ) {
   const [isConnecting, setIsConnecting] = useState(false);
-  const channelRef = useRef<any>(null);
+  const [channel, setChannel] = useState<any>(null);
   
   const setupGlobalNotifications = useCallback(() => {
     if (!user?.id) {
@@ -121,7 +118,12 @@ export function useGlobalMessageNotifications(
     try {
       console.log("Setting up global message notifications for user:", user.id);
       
-      const channel = supabase.channel(`private:user:${user.id}`, {
+      // Clean up any existing channel first
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      
+      const newChannel = supabase.channel(`private:user:${user.id}`, {
         config: {
           presence: {
             key: user.id,
@@ -129,7 +131,7 @@ export function useGlobalMessageNotifications(
         },
       });
       
-      channel
+      newChannel
         .on(
           'postgres_changes',
           { 
@@ -146,31 +148,30 @@ export function useGlobalMessageNotifications(
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to global message notifications");
-            // Use the mutable ref pattern correctly
-            channelRef.current = channel;
+            setChannel(newChannel);
           }
         });
       
-      return channel;
+      return newChannel;
     } catch (error) {
       console.error("Error setting up global message notifications:", error);
       return null;
     }
-  }, [user?.id, onNewMessage]);
+  }, [user?.id, onNewMessage, channel]);
   
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (channelRef.current) {
+      if (channel) {
         console.log("Removing channel on useGlobalMessageNotifications unmount");
-        supabase.removeChannel(channelRef.current);
+        supabase.removeChannel(channel);
       }
     };
-  }, []);
+  }, [channel]);
   
   return {
     setupGlobalNotifications,
     isConnecting,
-    channelRef
+    channel
   };
 }

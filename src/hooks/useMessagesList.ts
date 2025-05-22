@@ -96,8 +96,8 @@ export function useMessagesList() {
     });
   }, []);
 
+  // Reset messages when component unmounts to avoid state bleed between conversations
   useEffect(() => {
-    // Cleanup function that ensures we reset messages when component unmounts
     return () => {
       console.log("Cleanup: resetting messages state");
       setMessages([]);
