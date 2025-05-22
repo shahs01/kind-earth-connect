@@ -89,8 +89,10 @@ export function useMessagesList() {
         console.log("Message already exists in state, not adding duplicate");
         return prev;
       }
-      console.log("Adding new message to state");
-      return [...prev, newMessage];
+      console.log("Adding new message to state, current count:", prev.length);
+      const updated = [...prev, newMessage];
+      console.log("New messages count:", updated.length);
+      return updated;
     });
   }, []);
 

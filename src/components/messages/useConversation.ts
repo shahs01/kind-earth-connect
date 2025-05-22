@@ -17,22 +17,22 @@ export const useConversation = (userId: string | undefined) => {
   const { toast } = useToast();
   
   const handleMessageReceived = useCallback((newMessage: Message) => {
-    if (userId) {
-      console.log("Handling received message:", newMessage);
-      
-      // Mark as read if the received message is from the current conversation partner
-      if (newMessage.sender_id === userId && user?.id === newMessage.receiver_id) {
-        console.log("Marking message as read, it's from current conversation partner");
-        markMessagesAsRead(userId);
-      }
-      
-      // Refresh messages to include the new one
-      console.log("Refreshing messages after receiving new message");
-      fetchMessages(userId);
+    if (!userId || !user) return;
+    
+    console.log("Conversation: Received message via real-time:", newMessage);
+    
+    // Mark as read if the received message is from the current conversation partner
+    if (newMessage.sender_id === userId && user.id === newMessage.receiver_id) {
+      console.log("Marking message as read, it's from current conversation partner");
+      markMessagesAsRead(userId);
     }
-  }, [userId, fetchMessages, markMessagesAsRead, user?.id]);
+    
+    // Refresh messages to include the new one
+    console.log("Refreshing messages after receiving new message");
+    fetchMessages(userId);
+  }, [userId, fetchMessages, markMessagesAsRead, user]);
   
-  const { setupRealtimeSubscription, channelRef, isConnecting } = useRealtime({
+  const { setupRealtimeSubscription, isConnecting } = useRealtime({
     userId,
     currentUserId: user?.id,
     onMessageReceived: handleMessageReceived,
@@ -53,7 +53,9 @@ export const useConversation = (userId: string | undefined) => {
       try {
         console.log("Loading initial messages for conversation");
         setIsReconnecting(false);
-        await fetchMessages(userId);
+        const messagesData = await fetchMessages(userId);
+        console.log("Initial messages loaded:", messagesData?.length);
+        
         await markMessagesAsRead(userId);
       } catch (err) {
         console.error("Error loading messages:", err);

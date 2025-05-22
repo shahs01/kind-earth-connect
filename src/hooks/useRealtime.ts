@@ -45,10 +45,12 @@ export function useRealtime({
       }
       
       // Create a unique channel name that remains consistent regardless of which user is first
-      // Sort IDs to ensure same channel name regardless of sender/receiver order
-      const ids = [currentUserId, userId].sort();
-      const channelName = `messages:${ids[0]}-${ids[1]}`;
+      const channelName = `messages:${currentUserId}-${userId}`;
       console.log(`Creating new channel: ${channelName}`);
+      
+      // This filter ensures we only get messages between these two users
+      const filter = `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId}))`;
+      console.log("Using filter:", filter);
       
       const channel = supabase
         .channel(channelName)
@@ -58,12 +60,15 @@ export function useRealtime({
             event: 'INSERT',
             schema: 'public',
             table: 'messages',
-            filter: `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId}))`
+            filter: filter
           },
           (payload) => {
             console.log("Received real-time message update:", payload);
             if (onMessageReceived && payload.new) {
-              onMessageReceived(payload.new as Message);
+              // Explicitly cast the payload to Message type
+              const newMessage = payload.new as Message;
+              console.log("Processing received message:", newMessage);
+              onMessageReceived(newMessage);
             }
           }
         )
@@ -99,7 +104,7 @@ export function useRealtime({
   // Set up subscription when parameters change
   useEffect(() => {
     console.log("Setting up real-time subscription with userId:", userId, "currentUserId:", currentUserId);
-    setupRealtimeSubscription();
+    const channel = setupRealtimeSubscription();
     
     return () => {
       if (channelRef.current) {
