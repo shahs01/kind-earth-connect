@@ -175,7 +175,7 @@ const Messages = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const globalChannelRef = useRef<any>(null);
+  const globalChannelRef = useRef<RealtimeChannel | null>(null);
   
   console.log("Messages component rendering with route:", location.pathname, "userId param:", userId);
 
@@ -184,10 +184,17 @@ const Messages = () => {
     fetchConversations();
   };
 
-  const { setupGlobalNotifications, isConnecting, channel, channelRef } = useGlobalMessageNotifications(
+  const { setupGlobalNotifications, isConnecting, channel } = useGlobalMessageNotifications(
     user, 
     handleNewMessage
   );
+  
+  // Update the ref when channel changes
+  useEffect(() => {
+    if (channel) {
+      globalChannelRef.current = channel;
+    }
+  }, [channel]);
   
   useEffect(() => {
     const checkAuth = async () => {

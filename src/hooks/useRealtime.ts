@@ -8,7 +8,7 @@ interface RealtimeOptions {
   currentUserId?: string;
   onMessageReceived: (message: any) => void;
   setConnectionError: (value: boolean) => void;
-  channelRef: React.RefObject<any>;
+  channelRef: React.MutableRefObject<RealtimeChannel | null>;
 }
 
 export function useRealtime({
@@ -35,7 +35,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify channelRef.current, it will be updated when we return the new channel
+        // Don't directly modify channelRef.current
       }
       
       // Create channel name based on user IDs
@@ -76,7 +76,6 @@ export function useRealtime({
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
             // Return the channel instead of directly modifying the ref
-            // The parent component will handle updating the ref
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
             setConnectionError(true);
@@ -109,7 +108,7 @@ export function useGlobalMessageNotifications(
   onNewMessage: () => void
 ) {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [channel, setChannel] = useState<any>(null);
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   
   const setupGlobalNotifications = useCallback(() => {
@@ -124,7 +123,7 @@ export function useGlobalMessageNotifications(
       // Clean up any existing channel first
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Don't directly modify channelRef.current
       }
       
       const newChannel = supabase.channel(`private:user:${user.id}`, {
@@ -153,7 +152,6 @@ export function useGlobalMessageNotifications(
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to global message notifications");
             setChannel(newChannel);
-            // Update ref through state change in an effect
           }
         });
       
@@ -177,7 +175,7 @@ export function useGlobalMessageNotifications(
       if (channelRef.current) {
         console.log("Removing channel on useGlobalMessageNotifications unmount");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Don't directly modify channelRef.current
       }
     };
   }, []);

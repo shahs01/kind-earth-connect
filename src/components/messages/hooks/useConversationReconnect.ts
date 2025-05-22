@@ -2,15 +2,16 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 type FetchMessagesFunction = (userId: string) => Promise<any>;
-type SetupRealtimeFunction = () => any;
+type SetupRealtimeFunction = () => RealtimeChannel | null;
 
 export function useConversationReconnect(
   fetchMessages: FetchMessagesFunction,
   setupRealtime: SetupRealtimeFunction,
   userId: string | undefined,
-  channelRef: React.RefObject<any>,
+  channelRef: React.MutableRefObject<RealtimeChannel | null>,
   setConnectionError: (value: boolean) => void
 ) {
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -31,7 +32,7 @@ export function useConversationReconnect(
       if (channelRef.current) {
         console.log("Cleaning up existing channel before reconnecting");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Instead of directly modifying, set channelRef.current to null via a parent component
       }
       
       // Refetch messages
@@ -44,12 +45,13 @@ export function useConversationReconnect(
       
       if (channel) {
         console.log("Successfully reconnected and established new channel");
-        // The parent component will handle updating the ref
+        // Return the channel so the parent component can set channelRef.current
         toast({
           title: "Reconnected",
           description: "Chat connection restored successfully"
         });
         setConnectionError(false);
+        return channel;
       } else {
         throw new Error("Failed to establish new channel connection");
       }
@@ -61,6 +63,7 @@ export function useConversationReconnect(
         description: "Unable to restore chat connection. Please try again.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsReconnecting(false);
     }
