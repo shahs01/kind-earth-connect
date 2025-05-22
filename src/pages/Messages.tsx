@@ -43,9 +43,14 @@ const NewMessageForm = () => {
   const searchUsers = async () => {
     setLoading(true);
     try {
+      console.log("Searching users with term:", searchTerm);
       // Get current user ID
       const { data: authData } = await supabase.auth.getSession();
       const currentUserId = authData.session?.user?.id;
+
+      if (!currentUserId) {
+        console.warn("No authenticated user found when searching");
+      }
 
       // Search for users
       const { data, error } = await supabase
@@ -55,7 +60,12 @@ const NewMessageForm = () => {
         .neq('id', currentUserId || '')
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error searching users:", error);
+        throw error;
+      }
+
+      console.log("Users search results:", data?.length);
 
       if (data) {
         const formattedUsers: User[] = data.map(user => ({
@@ -93,6 +103,7 @@ const NewMessageForm = () => {
   };
 
   const handleSelectUser = (userId: string) => {
+    console.log("Selected user:", userId);
     navigate(`/messages/${userId}`);
   };
 
@@ -155,10 +166,12 @@ const Messages = () => {
   useEffect(() => {
     // Check if user is logged in
     if (!user) {
+      console.log("User not logged in, redirecting to login");
       navigate('/login');
       return;
     }
 
+    console.log("Messages component mounted, fetching conversations");
     // Fetch conversations when component loads
     fetchConversations();
     
@@ -173,7 +186,8 @@ const Messages = () => {
           table: 'messages',
           filter: `receiver_id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
+          console.log("New message received via real-time:", payload);
           // When a new message arrives, update conversations list
           fetchConversations();
           
@@ -188,12 +202,16 @@ const Messages = () => {
       )
       .subscribe();
     
+    console.log("Real-time subscription for new messages set up");
+    
     return () => {
+      console.log("Cleaning up Messages component");
       supabase.removeChannel(channel);
     };
-  }, [user, navigate, location.pathname]);
+  }, [user, navigate, location.pathname, fetchConversations]);
   
   const handleSelectConversation = (userId: string) => {
+    console.log("Selecting conversation with user:", userId);
     navigate(`/messages/${userId}`);
     setIsNewMessageOpen(false);
   };
@@ -204,6 +222,7 @@ const Messages = () => {
   
   const handleViewProfile = async (userId: string) => {
     try {
+      console.log("Viewing profile of user:", userId);
       const profileData = await fetchUserProfile(userId);
       setSelectedProfile(profileData);
       setIsProfileOpen(true);

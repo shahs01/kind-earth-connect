@@ -35,52 +35,67 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       return;
     }
 
-    if (userId) {
-      // Ensure we have the latest messages
-      fetchMessages(userId);
-      fetchOtherUser(userId);
-      
-      // Mark messages as read when conversation is opened
-      markMessagesAsRead(userId);
-      
-      // Set up real-time subscription for new messages
-      const channel = supabase
-        .channel('messages-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages'
-          },
-          (payload) => {
-            const newMessage = payload.new as Message;
-            
-            // If message is related to the current conversation, refresh messages
-            if ((newMessage.sender_id === userId && newMessage.receiver_id === user.id) ||
-                (newMessage.sender_id === user.id && newMessage.receiver_id === userId)) {
-              fetchMessages(userId);
-              
-              // If we received the message, mark it as read
-              if (newMessage.sender_id === userId && newMessage.receiver_id === user.id) {
-                markMessagesAsRead(userId);
-              }
-            } else if (newMessage.receiver_id === user.id) {
-              // If from someone else, show a notification
-              toast({
-                title: "New message",
-                description: "You received a new message from another conversation",
-              });
-            }
-          }
-        )
-        .subscribe();
-      
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    if (!userId) {
+      return; // Exit early if there's no userId
     }
-  }, [userId, user?.id, user, fetchMessages, markMessagesAsRead]);
+
+    console.log("Setting up message conversation with userId:", userId);
+    
+    // Ensure we have the latest messages
+    fetchMessages(userId)
+      .then(() => {
+        console.log("Messages fetched successfully");
+        // Mark messages as read when conversation is opened
+        return markMessagesAsRead(userId);
+      })
+      .catch(err => {
+        console.error("Error fetching messages:", err);
+      });
+    
+    fetchOtherUser(userId);
+    
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel('messages-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log("Received real-time message update:", payload);
+          const newMessage = payload.new as Message;
+          
+          // If message is related to the current conversation, refresh messages
+          if ((newMessage.sender_id === userId && newMessage.receiver_id === user.id) ||
+              (newMessage.sender_id === user.id && newMessage.receiver_id === userId)) {
+            console.log("Refreshing messages for current conversation");
+            fetchMessages(userId);
+            
+            // If we received the message, mark it as read
+            if (newMessage.sender_id === userId && newMessage.receiver_id === user.id) {
+              markMessagesAsRead(userId);
+            }
+          } else if (newMessage.receiver_id === user.id) {
+            // If from someone else, show a notification
+            toast({
+              title: "New message",
+              description: "You received a new message from another conversation",
+            });
+          }
+        }
+      )
+      .subscribe();
+    
+    console.log("Real-time channel subscription set up");
+    
+    return () => {
+      console.log("Cleaning up message conversation");
+      supabase.removeChannel(channel);
+    };
+  }, [userId, user, fetchMessages, markMessagesAsRead]);
   
   useEffect(() => {
     scrollToBottom();
@@ -88,6 +103,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   const fetchOtherUser = async (userId: string) => {
     try {
+      console.log("Fetching user profile for:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -95,8 +111,11 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         .single();
       
       if (error) {
+        console.error("Error fetching user profile:", error);
         throw error;
       }
+      
+      console.log("User profile fetched:", data);
       
       const userData: UserType = {
         id: data.id,
@@ -130,11 +149,16 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   };
   
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !userId) return;
+    if (!newMessage.trim() || !userId) {
+      console.log("Cannot send empty message or missing userId");
+      return;
+    }
     
+    console.log("Sending message to userId:", userId);
     setSending(true);
     try {
       await sendMessage(userId, newMessage.trim());
+      console.log("Message sent successfully");
       setNewMessage("");
       scrollToBottom();
     } catch (error) {

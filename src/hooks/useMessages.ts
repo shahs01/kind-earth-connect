@@ -50,17 +50,24 @@ export function useMessages() {
   const fetchConversations = useCallback(async () => {
     setLoading(true);
     try {
+      console.log("Fetching conversations");
       // First, get the authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error("Not authenticated");
         throw new Error("Not authenticated");
       }
       
       // Get the latest message with each user the current user has conversed with
       const { data, error } = await supabase.rpc('get_conversations');
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching conversations:", error);
+        throw error;
+      }
+      
+      console.log("Raw conversations data:", data);
       
       // Format conversations and fetch user details
       const formattedConversations: Conversation[] = [];
@@ -140,6 +147,7 @@ export function useMessages() {
         new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
       );
       
+      console.log("Formatted conversations:", formattedConversations);
       setConversations(formattedConversations);
       return formattedConversations;
     } catch (error: any) {
@@ -158,10 +166,12 @@ export function useMessages() {
   const fetchMessages = useCallback(async (userId: string) => {
     setLoading(true);
     try {
+      console.log("Fetching messages with userId:", userId);
       // Get the authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error("Not authenticated");
         throw new Error("Not authenticated");
       }
       
@@ -179,8 +189,12 @@ export function useMessages() {
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching messages:", error);
+        throw error;
+      }
       
+      console.log("Messages fetched:", data?.length);
       setMessages(data || []);
       
       // Mark messages as read
@@ -202,10 +216,12 @@ export function useMessages() {
   
   const sendMessage = useCallback(async (receiverId: string, content: string) => {
     try {
+      console.log("Sending message to:", receiverId, "content:", content);
       // Get the authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error("Not authenticated");
         throw new Error("Not authenticated");
       }
       
@@ -218,7 +234,12 @@ export function useMessages() {
         })
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error sending message:", error);
+        throw error;
+      }
+      
+      console.log("Message sent successfully:", data);
       
       // Add to messages state immediately without refetching
       if (data && data.length > 0) {
@@ -239,10 +260,12 @@ export function useMessages() {
   
   const markMessagesAsRead = useCallback(async (senderId: string) => {
     try {
+      console.log("Marking messages as read from sender:", senderId);
       // Get the authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error("Not authenticated");
         throw new Error("Not authenticated");
       }
       
@@ -254,7 +277,12 @@ export function useMessages() {
         .eq('receiver_id', user.id)
         .eq('read', false);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error marking messages as read:", error);
+        throw error;
+      }
+      
+      console.log("Messages marked as read");
       
       // Update the messages state to reflect the changes
       setMessages(prev => prev.map(msg => 

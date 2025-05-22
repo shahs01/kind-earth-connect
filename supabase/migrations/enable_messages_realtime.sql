@@ -39,3 +39,17 @@ CREATE POLICY "Users can update their own messages"
 ON public.messages 
 FOR UPDATE 
 USING (auth.uid() = sender_id);
+
+-- Make sure we have a read column with default value
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' 
+    AND table_name = 'messages' 
+    AND column_name = 'read'
+  ) THEN
+    ALTER TABLE public.messages ADD COLUMN read BOOLEAN DEFAULT false;
+  END IF;
+END
+$$;
