@@ -21,9 +21,12 @@ export default function useConversation(userId?: string) {
   // Get profile information for the other user
   const {
     otherUser,
-    loading: profileLoading,
-    reportUser,
-  } = useConversationProfile(userId);
+    profileLoading,
+    isProfileOpen: profileDialogOpen, 
+    setIsProfileOpen: setProfileDialogOpen,
+    fetchOtherUser,
+    handleReportUser
+  } = useConversationProfile();
 
   // Set up real-time messaging
   const {
@@ -137,6 +140,11 @@ export default function useConversation(userId?: string) {
         channelRef.current = channel;
       }
 
+      // Fetch the other user's profile
+      if (userId) {
+        fetchOtherUser(userId);
+      }
+
       // Clean up on unmount
       return () => {
         console.log("Cleaning up conversation real-time connection");
@@ -147,7 +155,7 @@ export default function useConversation(userId?: string) {
         }
       };
     }
-  }, [user?.id, userId, fetchMessages, setupRealtimeSubscription]);
+  }, [user?.id, userId, fetchMessages, setupRealtimeSubscription, fetchOtherUser]);
 
   // Handle sending messages through the messages hook
   const { handleSendMessage } = useConversationMessages(
@@ -189,7 +197,7 @@ export default function useConversation(userId?: string) {
     connectionError,
     isReconnecting,
     handleSendMessage: handleSend,
-    handleReportUser: reportUser,
+    handleReportUser,
     handleReconnect,
   };
 }
