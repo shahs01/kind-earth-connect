@@ -19,7 +19,9 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     }
   };
 
+  // Scroll to bottom when messages change
   useEffect(() => {
+    console.log("Messages changed, scrolling to bottom", messages.length);
     scrollToBottom();
   }, [messages]);
 
@@ -40,6 +42,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     );
   }
 
+  console.log("Rendering message list with", messages.length, "messages");
   return (
     <div className="space-y-4">
       {messages.map((message) => (

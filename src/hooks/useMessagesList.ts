@@ -57,10 +57,15 @@ export function useMessagesList() {
       setConnectionError(false);
       console.log("Messages fetched:", data?.length, data);
       
-      // Ensure we're not setting messages to null
-      setMessages(data || []);
-      
-      return data || [];
+      if (Array.isArray(data)) {
+        // Ensure we're not setting messages to null
+        setMessages(data);
+        return data;
+      } else {
+        console.error("Expected array of messages but got:", data);
+        setMessages([]);
+        return [];
+      }
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       setConnectionError(true);
@@ -76,10 +81,15 @@ export function useMessagesList() {
   }, [toast]);
 
   const addMessageToState = useCallback((newMessage: Message) => {
+    console.log("Adding message to state:", newMessage);
     setMessages(prev => {
       // Check if message already exists to avoid duplicates
       const exists = prev.some(msg => msg.id === newMessage.id);
-      if (exists) return prev;
+      if (exists) {
+        console.log("Message already exists in state, not adding duplicate");
+        return prev;
+      }
+      console.log("Adding new message to state");
       return [...prev, newMessage];
     });
   }, []);
@@ -87,6 +97,7 @@ export function useMessagesList() {
   useEffect(() => {
     // Cleanup function that ensures we reset messages when component unmounts
     return () => {
+      console.log("Cleanup: resetting messages state");
       setMessages([]);
     };
   }, []);

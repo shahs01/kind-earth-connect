@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
@@ -19,12 +18,16 @@ export const useConversation = (userId: string | undefined) => {
   
   const handleMessageReceived = useCallback((newMessage: Message) => {
     if (userId) {
-      console.log("Handling received message, fetching updated messages");
+      console.log("Handling received message:", newMessage);
+      
       // Mark as read if the received message is from the current conversation partner
       if (newMessage.sender_id === userId && user?.id === newMessage.receiver_id) {
+        console.log("Marking message as read, it's from current conversation partner");
         markMessagesAsRead(userId);
       }
+      
       // Refresh messages to include the new one
+      console.log("Refreshing messages after receiving new message");
       fetchMessages(userId);
     }
   }, [userId, fetchMessages, markMessagesAsRead, user?.id]);
@@ -38,13 +41,17 @@ export const useConversation = (userId: string | undefined) => {
   
   // Load messages when conversation changes
   useEffect(() => {
-    if (!user || !userId) return;
+    if (!user || !userId) {
+      console.log("Missing user or userId, cannot load conversation");
+      return;
+    }
     
     console.log(`Setting up message conversation with userId: ${userId}`);
     
     // Load initial messages
     const loadMessages = async () => {
       try {
+        console.log("Loading initial messages for conversation");
         setIsReconnecting(false);
         await fetchMessages(userId);
         await markMessagesAsRead(userId);
@@ -63,11 +70,13 @@ export const useConversation = (userId: string | undefined) => {
     fetchOtherUser(userId);
     
     // Set up real-time subscription
+    console.log("Setting up real-time subscription from useConversation");
     setupRealtimeSubscription();
     
     return () => {
       // Clean up subscription when component unmounts or userId changes
       if (channelRef.current) {
+        console.log("Removing channel on conversation change or unmount");
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -150,8 +159,10 @@ export const useConversation = (userId: string | undefined) => {
     try {
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
-      // Refresh messages after sending to ensure UI is updated
-      fetchMessages(userId);
+      
+      // Important: Refresh messages after sending to ensure UI is updated immediately
+      console.log("Refreshing messages after sending");
+      await fetchMessages(userId);
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({

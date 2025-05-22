@@ -1,3 +1,4 @@
+
 import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
@@ -22,8 +23,15 @@ export function useRealtime({
   const [isConnecting, setIsConnecting] = useState(false);
   
   const setupRealtimeSubscription = useCallback(() => {
-    if (!currentUserId || !userId) return null;
-    if (isConnecting) return null;
+    if (!currentUserId || !userId) {
+      console.log("Missing userId or currentUserId, cannot setup real-time subscription");
+      return null;
+    }
+    
+    if (isConnecting) {
+      console.log("Already setting up subscription, skipping duplicate attempt");
+      return null;
+    }
     
     console.log(`Setting up message conversation real-time subscription with userId: ${userId}`);
     setIsConnecting(true);
@@ -64,6 +72,7 @@ export function useRealtime({
           setIsConnecting(false);
           
           if (status === 'SUBSCRIBED') {
+            console.log(`Successfully subscribed to real-time updates for channel: ${channelName}`);
             setConnectionError(false);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(`Realtime subscription error for ${channelName}:`, status);
@@ -89,6 +98,7 @@ export function useRealtime({
 
   // Set up subscription when parameters change
   useEffect(() => {
+    console.log("Setting up real-time subscription with userId:", userId, "currentUserId:", currentUserId);
     setupRealtimeSubscription();
     
     return () => {
