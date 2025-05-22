@@ -20,14 +20,14 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     if (messages.length > 0) {
       const scrollToBottom = () => {
         if (messagesEndRef.current) {
-          // Use scrollIntoView with behavior: 'auto' to prevent global page scrolling
-          messagesEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+          // Use scrollIntoView with block: 'end' to scroll only within the container
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
         }
       };
       
-      // Use requestAnimationFrame for smoother scrolling
-      const animFrame = requestAnimationFrame(scrollToBottom);
-      return () => cancelAnimationFrame(animFrame);
+      // Small delay to prevent scrolling issues
+      const timer = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timer);
     }
   }, [messages.length]);
 

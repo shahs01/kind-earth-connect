@@ -17,14 +17,13 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     if (!loading && inputRef.current) {
-      // Use requestAnimationFrame for smoother focus
-      const animFrame = requestAnimationFrame(() => {
+      const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
         }
-      });
+      }, 100);
       
-      return () => cancelAnimationFrame(animFrame);
+      return () => clearTimeout(timer);
     }
   }, [loading]);
 
