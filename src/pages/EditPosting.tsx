@@ -1,420 +1,449 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Image, X, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { categories } from "@/data/searchHelpData";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const EditPosting = () => {
-  const { postId } = useParams<{ postId: string }>();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { postId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Form states
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  
+  // UI states
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
   
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    location: "",
-    category: "",
-    type: "offer", // Default to offer
-  });
-  
-  // Fetch existing post data
+  // Load existing post data
   useEffect(() => {
-    const fetchPost = async () => {
-      if (!postId || !user) return;
+    const loadPostData = async () => {
+      if (!postId) return;
       
-      setIsLoading(true);
       try {
-        const { data: post, error } = await supabase
+        setIsLoading(true);
+        setError("");
+        
+        const { data: post, error: postError } = await supabase
           .from('posts')
           .select('*')
           .eq('id', postId)
-          .eq('user_id', user.id)
           .single();
         
-        if (error) {
-          throw error;
+        if (postError) {
+          throw postError;
         }
         
         if (!post) {
-          toast({
-            title: "Post not found",
-            description: "The post you're trying to edit doesn't exist or you don't have permission to edit it.",
-            variant: "destructive"
-          });
-          navigate("/profile");
+          setError("Post not found");
           return;
         }
         
-        // Set form data
-        setFormData({
-          title: post.title || "",
-          description: post.description || "",
-          location: post.location || "",
-          category: post.category || "",
-          type: post.type || "offer",
-        });
-        
-        // Set existing photos
-        if (post.photos && Array.isArray(post.photos)) {
-          setExistingPhotos(post.photos);
+        // Check if the post belongs to the current user
+        if (post.user_id !== user?.id) {
+          setError("You don't have permission to edit this post");
+          navigate('/profile');
+          return;
         }
-      } catch (error) {
-        console.error("Error fetching post:", error);
+        
+        // Populate form fields
+        setTitle(post.title || '');
+        setDescription(post.description || '');
+        setType(post.type || '');
+        setCategory(post.category || '');
+        setLocation(post.location || '');
+        setPhotos(post.photos || []);
+        
+      } catch (err: any) {
+        console.error("Error loading post:", err);
+        setError(err.message || "Failed to load post data");
         toast({
+          variant: "destructive",
           title: "Error",
-          description: "Failed to load post details. Please try again later.",
-          variant: "destructive"
+          description: "Failed to load post data. Please try again.",
         });
-        navigate("/profile");
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchPost();
-  }, [postId, user, toast, navigate]);
+    loadPostData();
+  }, [postId, navigate, toast, user?.id]);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-  
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    
-    if (!fileList || photos.length + existingPhotos.length + fileList.length > 3) {
-      toast({
-        title: "Upload limit reached",
-        description: "You can only upload up to 3 photos total",
-        variant: "destructive"
-      });
-      return;
+  const handleNewPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Convert FileList to Array and append to newPhotos
+      const filesArray = Array.from(e.target.files);
+      setNewPhotos(prev => [...prev, ...filesArray]);
     }
-    
-    const newPhotos = [...photos];
-    const newPhotoUrls = [...photoPreviewUrls];
-    
-    Array.from(fileList).forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        newPhotos.push(file);
-        newPhotoUrls.push(URL.createObjectURL(file));
-      }
-    });
-    
-    setPhotos(newPhotos);
-    setPhotoPreviewUrls(newPhotoUrls);
-    
-    // Reset the input to allow selecting the same file again
-    e.target.value = "";
-  };
-  
-  const removePhoto = (index: number) => {
-    // Release the object URL to avoid memory leaks
-    URL.revokeObjectURL(photoPreviewUrls[index]);
-    
-    setPhotos(prev => prev.filter((_, i) => i !== index));
-    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
   
   const removeExistingPhoto = (index: number) => {
-    setExistingPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
   
-  const uploadPhotos = async () => {
-    if (photos.length === 0) return existingPhotos; // No new photos to upload
-    
-    try {
-      const uploadPromises = photos.map(async (photo) => {
-        const fileExt = photo.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `${user!.id}/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('post-photos')
-          .upload(filePath, photo);
-        
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        // Get the public URL
-        const { data } = supabase.storage
-          .from('post-photos')
-          .getPublicUrl(filePath);
-          
-        return data.publicUrl;
-      });
-      
-      const photoUrls = await Promise.all(uploadPromises);
-      return [...existingPhotos, ...photoUrls];
-    } catch (error) {
-      console.error("Error uploading photos:", error);
-      throw error;
-    }
+  const removeNewPhoto = (index: number) => {
+    setNewPhotos(prev => prev.filter((_, i) => i !== index));
   };
-
-  const handleSubmit = async (e: React.Event) => {
+  
+  // Upload photos to Supabase Storage
+  const uploadPhotos = async (): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+    
+    for (const file of newPhotos) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${user?.id}/${fileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('post_photos')
+        .upload(filePath, file);
+      
+      if (error) {
+        console.error('Error uploading photo:', error);
+        continue;
+      }
+      
+      const { data: publicUrlData } = supabase.storage
+        .from('post_photos')
+        .getPublicUrl(filePath);
+      
+      uploadedUrls.push(publicUrlData.publicUrl);
+    }
+    
+    return uploadedUrls;
+  };
+  
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!user) {
+    if (!title || !type) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to edit your post",
-        variant: "destructive"
+        variant: "destructive",
+        title: "Required Fields Missing",
+        description: "Please fill in all required fields.",
       });
       return;
     }
     
-    setIsSubmitting(true);
-    
     try {
-      // Upload any new photos
-      const allPhotos = await uploadPhotos();
+      setIsSaving(true);
       
-      // Update the post in Supabase
-      const { error } = await supabase
+      // Upload any new photos
+      let allPhotos = [...photos];
+      if (newPhotos.length > 0) {
+        const newPhotoUrls = await uploadPhotos();
+        allPhotos = [...photos, ...newPhotoUrls];
+      }
+      
+      // Update the post in the database
+      const { error: updateError } = await supabase
         .from('posts')
         .update({
-          title: formData.title,
-          description: formData.description,
-          location: formData.location,
-          category: formData.category,
+          title,
+          description,
+          type,
+          category,
+          location,
           photos: allPhotos,
+          // Don't change user_id or created_at
         })
-        .eq('id', postId)
-        .eq('user_id', user.id);
+        .eq('id', postId);
       
-      if (error) throw error;
+      if (updateError) {
+        throw updateError;
+      }
       
       toast({
-        title: "Success!",
-        description: "Your post has been updated.",
+        title: "Post Updated",
+        description: "Your post has been successfully updated.",
       });
       
-      // Navigate back to profile page
-      navigate("/profile");
-    } catch (error) {
-      console.error("Error updating post:", error);
+      // Redirect back to profile
+      navigate(`/profile/${user?.id}`);
+      
+    } catch (err: any) {
+      console.error("Error updating post:", err);
       toast({
-        title: "Error",
-        description: "Failed to update your post. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
+        title: "Update Failed",
+        description: err.message || "There was an error updating your post.",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
   
-  const categories = [
-    "Home Repairs",
-    "Tutoring",
-    "Rides & Transportation",
-    "Childcare",
-    "Elder Support",
-    "Meals & Food",
-    "Cleaning & Organization",
-    "Computer Help",
-    "Moving Assistance",
-    "Yard Work & Gardening",
-    "Pet Care",
-    "Financial Advice",
-    "Legal Assistance",
-    "Mental Health Support",
-    "Medical Support",
-    "Other"
-  ];
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow flex items-center justify-center">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-12 w-12 animate-spin text-thryvance-green mb-4" />
-            <p className="text-gray-600">Loading post details...</p>
+          <div className="flex flex-col items-center p-8">
+            <Loader2 className="h-10 w-10 animate-spin text-thryvance-green mb-4" />
+            <p>Loading post data...</p>
           </div>
         </main>
         <Footer />
       </div>
     );
   }
-
+  
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle className="text-red-500">Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{error}</p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate(-1)}>Go Back</Button>
+            </CardFooter>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      
+      <div className="bg-thryvance-blue-light py-10">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">Edit Your Post</h1>
+          <p className="text-gray-700 max-w-3xl">
+            Make changes to your post and save to update it.
+          </p>
+        </div>
+      </div>
+      
       <main className="flex-grow py-10 bg-thryvance-neutral-light">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Your Post</h1>
-            <p className="text-gray-700">Update the details of your post</p>
-          </div>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="container mx-auto px-4">
+          <Card className="w-full max-w-3xl mx-auto">
+            <form onSubmit={handleSubmit}>
+              <CardHeader>
+                <CardTitle>Edit Post Details</CardTitle>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
+                  <label htmlFor="title" className="block font-medium">
+                    Title <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder="Enter a clear title for your post"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a clear and descriptive title"
                     required
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      placeholder="Where is this help needed?"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select 
-                      value={formData.category}
-                      onValueChange={(value) => handleSelectChange("category", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(category => (
-                          <SelectItem key={category} value={category}>{category}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Type */}
+                <div className="space-y-2">
+                  <label htmlFor="type" className="block font-medium">
+                    Post Type <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={type}
+                    onValueChange={(value) => setType(value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select post type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="offer">Offering Help</SelectItem>
+                      <SelectItem value="request">Requesting Help</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
+                {/* Category */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <label htmlFor="category" className="block font-medium">
+                    Category
+                  </label>
+                  <Select
+                    value={category}
+                    onValueChange={(value) => setCategory(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Description */}
+                <div className="space-y-2">
+                  <label htmlFor="description" className="block font-medium">
+                    Description
+                  </label>
                   <Textarea
                     id="description"
-                    name="description"
-                    value={formData.description || ""}
-                    onChange={handleInputChange}
-                    placeholder="Provide details about what you're offering or requesting..."
-                    rows={5}
+                    value={description || ''}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Provide details about your offer or request"
+                    className="min-h-[150px]"
                   />
                 </div>
                 
-                {/* Photo Upload Section */}
+                {/* Location */}
                 <div className="space-y-2">
-                  <Label>Photos (optional, max 3)</Label>
-                  <div className="flex flex-col gap-4">
-                    {/* Existing photos */}
-                    {existingPhotos.length > 0 && (
-                      <div>
-                        <p className="text-sm text-gray-500 mb-2">Current photos:</p>
-                        <div className="grid grid-cols-3 gap-4">
-                          {existingPhotos.map((url, index) => (
-                            <div key={`existing-${index}`} className="relative aspect-square rounded-md overflow-hidden border bg-white">
-                              <img src={url} alt={`Photo ${index + 1}`} className="h-full w-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => removeExistingPhoto(index)}
-                                className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* New photos */}
-                    <div>
-                      {photoPreviewUrls.length > 0 && (
-                        <p className="text-sm text-gray-500 mb-2">New photos to upload:</p>
-                      )}
-                      <div className="grid grid-cols-3 gap-4">
-                        {photoPreviewUrls.map((url, index) => (
-                          <div key={`new-${index}`} className="relative aspect-square rounded-md overflow-hidden border bg-white">
-                            <img src={url} alt={`New Preview ${index + 1}`} className="h-full w-full object-cover" />
+                  <label htmlFor="location" className="block font-medium">
+                    Location
+                  </label>
+                  <Input
+                    id="location"
+                    value={location || ''}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Enter your city, neighborhood, or area"
+                  />
+                </div>
+                
+                {/* Photos */}
+                <div className="space-y-4">
+                  <label className="block font-medium">Photos</label>
+                  
+                  {/* Existing Photos */}
+                  {photos.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">Current Photos:</p>
+                      <div className="flex flex-wrap gap-4">
+                        {photos.map((photo, index) => (
+                          <div key={index} className="relative w-24 h-24 bg-gray-100 rounded overflow-hidden">
+                            <img
+                              src={photo}
+                              alt={`Photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://via.placeholder.com/100?text=Error';
+                              }}
+                            />
                             <button
                               type="button"
-                              onClick={() => removePhoto(index)}
-                              className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
+                              onClick={() => removeExistingPhoto(index)}
+                              className="absolute top-1 right-1 bg-red-500 rounded-full p-1 text-white"
+                              aria-label="Remove photo"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3 w-3" />
                             </button>
                           </div>
                         ))}
-                        
-                        {existingPhotos.length + photos.length < 3 && (
-                          <label htmlFor="photoUpload" className="flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
-                            <Image className="h-6 w-6 text-gray-400 mb-1" />
-                            <span className="text-xs text-gray-500">Add Photo</span>
-                            <input
-                              id="photoUpload"
-                              type="file"
-                              accept="image/*"
-                              onChange={handlePhotoUpload}
-                              className="sr-only"
-                            />
-                          </label>
-                        )}
                       </div>
                     </div>
+                  )}
+                  
+                  {/* New Photos */}
+                  {newPhotos.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">New Photos to Upload:</p>
+                      <div className="flex flex-wrap gap-4">
+                        {newPhotos.map((photo, index) => (
+                          <div key={index} className="relative w-24 h-24 bg-gray-100 rounded overflow-hidden">
+                            <img
+                              src={URL.createObjectURL(photo)}
+                              alt={`New Photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeNewPhoto(index)}
+                              className="absolute top-1 right-1 bg-red-500 rounded-full p-1 text-white"
+                              aria-label="Remove photo"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Upload new photos */}
+                  <div className="pt-2">
+                    <label
+                      htmlFor="new-photos"
+                      className="cursor-pointer flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <Upload className="h-5 w-5 text-gray-500" />
+                      <span>Add Photos</span>
+                      <input
+                        id="new-photos"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleNewPhotoChange}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
                 </div>
-                
-                <div className="pt-4 flex flex-col sm:flex-row justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => navigate('/profile')}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    className="bg-thryvance-green hover:bg-thryvance-green-dark"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>Save Changes</>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
+              </CardContent>
+              
+              <CardFooter className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(-1)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
           </Card>
         </div>
       </main>
+      
       <Footer />
     </div>
   );
