@@ -29,14 +29,18 @@ export function useMessageActions() {
         throw new Error("Not authenticated");
       }
       
+      // Structure the message data
+      const messageData = {
+        receiver_id: receiverId,
+        sender_id: user.id,
+        content,
+        read: false
+      };
+      
+      // Insert the message
       const { data, error } = await supabase
         .from('messages')
-        .insert({
-          receiver_id: receiverId,
-          sender_id: user.id,
-          content,
-          read: false
-        })
+        .insert(messageData)
         .select();
       
       if (error) {

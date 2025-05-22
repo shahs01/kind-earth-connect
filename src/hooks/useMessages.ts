@@ -21,6 +21,7 @@ export function useMessages() {
     messages,
     setMessages,
     fetchMessages,
+    addMessageToState,
   } = useMessagesList();
   
   const {
@@ -58,14 +59,17 @@ export function useMessages() {
       
       // Update messages state immediately without refetching
       if (message) {
-        setMessages(prev => [...prev, message]);
+        addMessageToState(message);
       }
+      
+      // Make sure we have the latest conversations after a message is sent
+      fetchConversations();
       
       return message;
     } catch (error) {
       throw error;
     }
-  }, [sendMessageAction, setMessages]);
+  }, [sendMessageAction, addMessageToState, fetchConversations]);
 
   const loading = conversationsLoading || messagesLoading;
   

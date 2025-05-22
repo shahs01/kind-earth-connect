@@ -75,6 +75,15 @@ export function useMessagesList() {
     }
   }, [toast]);
 
+  const addMessageToState = useCallback((newMessage: Message) => {
+    setMessages(prev => {
+      // Check if message already exists to avoid duplicates
+      const exists = prev.some(msg => msg.id === newMessage.id);
+      if (exists) return prev;
+      return [...prev, newMessage];
+    });
+  }, []);
+
   useEffect(() => {
     // Cleanup function that ensures we reset messages when component unmounts
     return () => {
@@ -87,6 +96,7 @@ export function useMessagesList() {
     messages,
     setMessages,
     fetchMessages,
+    addMessageToState,
     connectionError,
     setConnectionError
   };

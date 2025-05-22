@@ -3,11 +3,12 @@ import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { User } from "@/types";
+import { Message } from "./useConversations";
 
 interface UseRealtimeProps {
   userId?: string;
   currentUserId?: string;
-  onMessageReceived?: () => void;
+  onMessageReceived?: (message: Message) => void;
   setConnectionError: (error: boolean) => void;
 }
 
@@ -54,8 +55,8 @@ export function useRealtime({
           },
           (payload) => {
             console.log("Received real-time message update:", payload);
-            if (onMessageReceived) {
-              onMessageReceived();
+            if (onMessageReceived && payload.new) {
+              onMessageReceived(payload.new as Message);
             }
           }
         )

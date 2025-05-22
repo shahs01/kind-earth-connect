@@ -6,6 +6,7 @@ import { User as UserType } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
+import { Message } from "@/hooks/useConversations";
 
 export const useConversation = (userId: string | undefined) => {
   const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError, sending } = useMessages();
@@ -16,13 +17,17 @@ export const useConversation = (userId: string | undefined) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const { toast } = useToast();
   
-  const handleMessageReceived = useCallback(async () => {
+  const handleMessageReceived = useCallback((newMessage: Message) => {
     if (userId) {
       console.log("Handling received message, fetching updated messages");
-      await fetchMessages(userId);
-      await markMessagesAsRead(userId);
+      // Mark as read if the received message is from the current conversation partner
+      if (newMessage.sender_id === userId && user?.id === newMessage.receiver_id) {
+        markMessagesAsRead(userId);
+      }
+      // Refresh messages to include the new one
+      fetchMessages(userId);
     }
-  }, [userId, fetchMessages, markMessagesAsRead]);
+  }, [userId, fetchMessages, markMessagesAsRead, user?.id]);
   
   const { setupRealtimeSubscription, channelRef, isConnecting } = useRealtime({
     userId,
@@ -56,7 +61,10 @@ export const useConversation = (userId: string | undefined) => {
     
     loadMessages();
     fetchOtherUser(userId);
-  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError]);
+    
+    // Set up real-time subscription
+    setupRealtimeSubscription();
+  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError, setupRealtimeSubscription]);
 
   // Separate function to fetch profile information
   const fetchOtherUser = async (userId: string) => {
@@ -134,9 +142,6 @@ export const useConversation = (userId: string | undefined) => {
     try {
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
-      
-      // Force refresh messages to ensure we see the sent message
-      await fetchMessages(userId);
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
