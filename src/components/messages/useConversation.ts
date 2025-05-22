@@ -7,10 +7,10 @@ import { useConversationProfile } from "./hooks/useConversationProfile";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useConversationMessages } from "./hooks/useConversationMessages";
 import { useConversationReconnect } from "./hooks/useConversationReconnect";
-import { useAuthProfile } from "@/hooks/useAuthProfile";
+import { useAuth } from "@/context/AuthContext"; // Import useAuth instead of useAuthProfile
 
 const useConversation = (userId?: string) => {
-  const { user } = useAuthProfile();
+  const { user } = useAuth(); // Use useAuth to get the user
   const navigate = useNavigate();
   const { toast } = useToast();
   const [connectionError, setConnectionError] = useState(false);
@@ -23,7 +23,7 @@ const useConversation = (userId?: string) => {
     setIsProfileOpen,
     fetchOtherUser, 
     handleReportUser
-  } = useConversationProfile(userId);
+  } = useConversationProfile();
 
   const { 
     loading,
@@ -91,6 +91,13 @@ const useConversation = (userId?: string) => {
       markMessagesAsRead(userId);
     }
   }, [userId, messages, markMessagesAsRead]);
+
+  // Fetch other user profile when userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchOtherUser(userId);
+    }
+  }, [userId, fetchOtherUser]);
 
   return {
     user,
