@@ -4,10 +4,14 @@ import {
   Dialog, 
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogClose
 } from "@/components/ui/dialog";
 import ProfileCard from "@/components/ProfileCard";
 import { User } from "@/types";
+import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileDialogProps {
   user: User | null;
@@ -16,11 +20,28 @@ interface ProfileDialogProps {
 }
 
 const ProfileDialog = ({ user, open, onOpenChange }: ProfileDialogProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const handleConnectClick = () => {
-    // In a real app, this would initiate a connection request
-    console.log("Connect request sent to", user?.name);
-    // Could display a toast notification here
-    onOpenChange(false);
+    if (user) {
+      // Navigate to message conversation with this user
+      navigate(`/messages/${user.id}`);
+      onOpenChange(false);
+      
+      toast({
+        title: "Conversation opened",
+        description: `You can now message ${user.name || user.username}`
+      });
+    }
+  };
+
+  const handleViewFullProfile = () => {
+    if (user) {
+      // Navigate to the full profile page
+      navigate(`/profile/${user.id}`);
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -28,11 +49,16 @@ const ProfileDialog = ({ user, open, onOpenChange }: ProfileDialogProps) => {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-center">User Profile</DialogTitle>
+          <DialogClose className="absolute right-4 top-4">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
         </DialogHeader>
         {user && (
           <ProfileCard 
             user={user} 
-            onConnectClick={handleConnectClick} 
+            onConnectClick={handleConnectClick}
+            onViewFullProfile={handleViewFullProfile}
           />
         )}
       </DialogContent>

@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { User } from "@/types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { User as UserIcon, MapPin, Calendar, Star, Check } from "lucide-react";
+import { User as UserIcon, MapPin, Calendar, Star, Check, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EditProfileDialog from "@/components/EditProfileDialog";
 
@@ -13,6 +14,7 @@ interface ProfileCardProps {
   compact?: boolean;
   onConnectClick?: () => void;
   onAvatarClick?: () => void;
+  onViewFullProfile?: () => void;
 }
 
 const ProfileCard = ({ 
@@ -20,7 +22,8 @@ const ProfileCard = ({
   isOwnProfile = false, 
   compact = false, 
   onConnectClick,
-  onAvatarClick
+  onAvatarClick,
+  onViewFullProfile
 }: ProfileCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
@@ -132,13 +135,23 @@ const ProfileCard = ({
       </CardContent>
       
       {!isOwnProfile && (
-        <CardFooter className="flex justify-center border-t pt-4">
+        <CardFooter className="flex justify-between border-t pt-4 flex-wrap gap-2">
           <Button 
             className="bg-thryvance-green hover:bg-thryvance-green-dark"
             onClick={onConnectClick}
           >
-            Connect with {user.name.split(" ")[0]}
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Message {user.name.split(" ")[0]}
           </Button>
+          
+          {onViewFullProfile && (
+            <Button 
+              variant="outline" 
+              onClick={onViewFullProfile}
+            >
+              View Full Profile
+            </Button>
+          )}
         </CardFooter>
       )}
       

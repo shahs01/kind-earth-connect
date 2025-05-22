@@ -252,6 +252,9 @@ export function useMessages() {
           ? { ...convo, unreadCount: 0 } 
           : convo
       ));
+      
+      // Refresh conversations to update the unread count
+      fetchConversations();
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }

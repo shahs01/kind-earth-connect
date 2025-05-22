@@ -13,7 +13,11 @@ import { User as UserType } from "@/types";
 import ProfileDialog from "@/components/ProfileDialog";
 import { useToast } from "@/hooks/use-toast";
 
-const MessageConversation = () => {
+interface MessageConversationProps {
+  onViewProfile?: (userId: string) => void;
+}
+
+const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
   const { loading, messages, fetchMessages, sendMessage } = useMessages();
   const { user } = useAuth();
@@ -140,7 +144,11 @@ const MessageConversation = () => {
 
   const handleViewProfile = () => {
     if (otherUser) {
-      setIsProfileOpen(true);
+      if (onViewProfile) {
+        onViewProfile(otherUser.id);
+      } else {
+        setIsProfileOpen(true);
+      }
     }
   };
   
@@ -156,7 +164,7 @@ const MessageConversation = () => {
       <div className="flex flex-col h-[70vh]">
         {/* Header */}
         <div 
-          className="p-4 border-b border-gray-200 flex items-center cursor-pointer" 
+          className="p-4 border-b border-gray-200 flex items-center cursor-pointer hover:bg-gray-50" 
           onClick={handleViewProfile}
         >
           {otherUser ? (
@@ -165,12 +173,23 @@ const MessageConversation = () => {
                 <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
                 <AvatarFallback>{otherUser.name?.charAt(0) || '?'}</AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-medium">{otherUser.name || otherUser.username}</h3>
                 {otherUser.location && (
                   <p className="text-xs text-gray-500">{otherUser.location}</p>
                 )}
               </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewProfile();
+                }}
+              >
+                View Profile
+              </Button>
             </>
           ) : loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
@@ -253,7 +272,7 @@ const MessageConversation = () => {
         </div>
       </div>
 
-      {otherUser && (
+      {otherUser && !onViewProfile && (
         <ProfileDialog 
           user={otherUser}
           open={isProfileOpen}

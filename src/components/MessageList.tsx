@@ -4,31 +4,44 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Conversation } from "@/hooks/useMessages";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { UserIcon } from "lucide-react";
 
 interface MessageListProps {
   conversations: Conversation[];
   onSelect: (userId: string) => void;
   selectedUserId?: string;
+  onViewProfile: (userId: string) => void;
 }
 
-const MessageList = ({ conversations, onSelect, selectedUserId }: MessageListProps) => {
+const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }: MessageListProps) => {
   return (
     <div className="overflow-y-auto max-h-[70vh]">
       {conversations.map((convo) => (
         <div 
           key={convo.user.id}
-          onClick={() => onSelect(convo.user.id)}
           className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
             selectedUserId === convo.user.id ? 'bg-gray-50' : ''
           }`}
         >
           <div className="flex items-start gap-3">
-            <Avatar className="h-10 w-10">
+            <Avatar 
+              className="h-10 w-10 cursor-pointer" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile(convo.user.id);
+              }}
+            >
               <AvatarImage src={convo.user.avatar} alt={convo.user.name} />
-              <AvatarFallback>{convo.user.name?.charAt(0) || '?'}</AvatarFallback>
+              <AvatarFallback>
+                {convo.user.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
+              </AvatarFallback>
             </Avatar>
             
-            <div className="flex-1 min-w-0">
+            <div 
+              className="flex-1 min-w-0"
+              onClick={() => onSelect(convo.user.id)}
+            >
               <div className="flex justify-between items-start">
                 <h4 className="font-medium truncate">
                   {convo.user.name || convo.user.username}
@@ -50,6 +63,20 @@ const MessageList = ({ conversations, onSelect, selectedUserId }: MessageListPro
                 )}
               </div>
             </div>
+          </div>
+          
+          <div className="mt-2 flex justify-end">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-xs text-thryvance-blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile(convo.user.id);
+              }}
+            >
+              View Profile
+            </Button>
           </div>
         </div>
       ))}

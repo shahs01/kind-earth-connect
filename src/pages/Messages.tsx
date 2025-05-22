@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
+import ProfileDialog from "@/components/ProfileDialog";
+import { useAuthProfile } from "@/hooks/useAuthProfile";
 
 const NewMessageForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -146,6 +148,9 @@ const Messages = () => {
   const { user } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
+  const { fetchUserProfile } = useAuthProfile();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   
   useEffect(() => {
     // Check if user is logged in
@@ -197,6 +202,21 @@ const Messages = () => {
     setIsNewMessageOpen(true);
   };
   
+  const handleViewProfile = async (userId: string) => {
+    try {
+      const profileData = await fetchUserProfile(userId);
+      setSelectedProfile(profileData);
+      setIsProfileOpen(true);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load user profile",
+        variant: "destructive"
+      });
+    }
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -239,6 +259,7 @@ const Messages = () => {
                       conversations={conversations}
                       onSelect={handleSelectConversation}
                       selectedUserId={userId}
+                      onViewProfile={handleViewProfile}
                     />
                   )}
                 </div>
@@ -246,7 +267,7 @@ const Messages = () => {
                 {/* Message Content Area */}
                 <div className="md:col-span-2">
                   <Routes>
-                    <Route path="/:userId" element={<MessageConversation />} />
+                    <Route path="/:userId" element={<MessageConversation onViewProfile={handleViewProfile} />} />
                     <Route path="/" element={
                       <div className="h-96 flex flex-col items-center justify-center text-center p-6">
                         <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
@@ -280,6 +301,15 @@ const Messages = () => {
           </DialogClose>
         </DialogContent>
       </Dialog>
+
+      {/* Profile Dialog */}
+      {selectedProfile && (
+        <ProfileDialog 
+          user={selectedProfile} 
+          open={isProfileOpen} 
+          onOpenChange={setIsProfileOpen} 
+        />
+      )}
     </div>
   );
 };
