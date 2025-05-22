@@ -15,7 +15,7 @@ export function useConversationMessages(
       return;
     }
     
-    console.log("Sending message to userId:", userId);
+    console.log("Sending message to userId:", userId, "content:", message);
     try {
       // Clear any previous connection error state
       setConnectionError(false);
@@ -24,16 +24,10 @@ export function useConversationMessages(
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
       
-      // Important: Refresh messages after sending
+      // Don't need to refresh messages since we should get real-time updates,
+      // but we'll do it anyway as a fallback
       console.log("Refreshing messages after sending");
       await fetchMessages(userId);
-      
-      // Show success toast
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully",
-        variant: "default",
-      });
     } catch (error) {
       console.error("Failed to send message:", error);
       setConnectionError(true);

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
@@ -12,10 +12,18 @@ interface MessageInputProps {
 
 const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when component mounts or conversation changes
+  useEffect(() => {
+    if (!loading && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [loading]);
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      console.log("Attempting to send message:", newMessage);
+      console.log("Preparing to send message:", newMessage);
       onSendMessage(newMessage.trim());
       setNewMessage("");
     }
@@ -38,13 +46,13 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
         className="flex space-x-2"
       >
         <Input
+          ref={inputRef}
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           disabled={sending || loading}
           className="flex-1"
-          autoFocus
         />
         <Button 
           type="submit" 

@@ -80,7 +80,7 @@ export const useConversation = (userId: string | undefined) => {
     // Load initial messages
     const loadMessages = async () => {
       try {
-        console.log("Loading initial messages for conversation");
+        console.log("Loading initial messages for conversation with:", userId);
         setIsReconnecting(false);
         const messagesData = await fetchMessages(userId);
         console.log("Initial messages loaded:", messagesData?.length);
@@ -96,7 +96,7 @@ export const useConversation = (userId: string | undefined) => {
     fetchOtherUser(userId);
     
     // Set up real-time subscription
-    console.log("Setting up real-time subscription from useConversation");
+    console.log("Setting up real-time subscription from useConversation for user:", userId);
     setupRealtimeSubscription();
     
     return () => {
@@ -115,6 +115,7 @@ export const useConversation = (userId: string | undefined) => {
 
   const wrappedHandleSendMessage = useCallback((message: string) => {
     if (userId) {
+      console.log("Sending message in conversation with:", userId);
       handleSendMessage(userId, message);
     }
   }, [handleSendMessage, userId]);

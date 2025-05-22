@@ -17,6 +17,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
+  console.log("MessageConversation: Rendering with userId:", userId);
+  
   const {
     user,
     otherUser,
@@ -32,6 +34,13 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleReportUser,
     handleReconnect
   } = useConversation(userId);
+  
+  // Log when conversation is selected
+  useEffect(() => {
+    if (userId) {
+      console.log("Conversation selected:", userId);
+    }
+  }, [userId]);
   
   // Redirect if user is not authenticated
   if (!user) {
