@@ -10,8 +10,9 @@ export function useConversationProfile() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { toast } = useToast();
   const [lastFetchedId, setLastFetchedId] = useState<string | null>(null);
+  const [fetchAttempts, setFetchAttempts] = useState(0);
 
-  // Fetch profile information
+  // Fetch profile information with retry logic
   const fetchOtherUser = useCallback(async (userId: string) => {
     // Skip if we're already loading this user
     if (profileLoading && lastFetchedId === userId) {
@@ -31,6 +32,14 @@ export function useConversationProfile() {
       
       if (error) {
         console.error("Error fetching user profile:", error);
+        
+        // Retry logic for temporary failures (max 3 attempts)
+        if (fetchAttempts < 3) {
+          setFetchAttempts(prev => prev + 1);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+          return fetchOtherUser(userId);
+        }
+        
         toast({
           title: "Error",
           description: "Could not load user information",
@@ -49,6 +58,9 @@ export function useConversationProfile() {
         });
         return;
       }
+      
+      // Reset fetch attempts on success
+      setFetchAttempts(0);
       
       const userData: UserType = {
         id: data.id,
@@ -81,13 +93,14 @@ export function useConversationProfile() {
     } finally {
       setProfileLoading(false);
     }
-  }, [toast, profileLoading, lastFetchedId]);
+  }, [toast, profileLoading, lastFetchedId, fetchAttempts]);
 
   // Clear other user data when component unmounts to prevent stale data
   useEffect(() => {
     return () => {
       setOtherUser(null);
       setLastFetchedId(null);
+      setFetchAttempts(0);
     };
   }, []);
 
@@ -98,7 +111,12 @@ export function useConversationProfile() {
       detail: { userId: otherUser.id } 
     });
     window.dispatchEvent(event);
-  }, [otherUser]);
+    
+    toast({
+      title: "Report submitted",
+      description: "Your report has been submitted for review"
+    });
+  }, [otherUser, toast]);
 
   return {
     otherUser,

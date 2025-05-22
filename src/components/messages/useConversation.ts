@@ -18,6 +18,7 @@ const useConversation = (userId?: string) => {
   const [connectionError, setConnectionError] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const previousUserIdRef = useRef<string | undefined>(undefined);
+  const loadingRef = useRef<boolean>(false);
   
   const {
     otherUser,
@@ -84,6 +85,10 @@ const useConversation = (userId?: string) => {
   useEffect(() => {
     if (!userId || !user?.id) return;
     
+    // Prevent multiple concurrent loads
+    if (loadingRef.current) return;
+    
+    loadingRef.current = true;
     console.log("Fetching messages for conversation:", userId);
     
     // Use an async function to handle the sequential loading with optimization
@@ -108,9 +113,13 @@ const useConversation = (userId?: string) => {
         
         // Step 4: Mark messages as read
         await markMessagesAsRead(userId);
+        
+        setConnectionError(false);
       } catch (error) {
         console.error("Error loading conversation:", error);
         setConnectionError(true);
+      } finally {
+        loadingRef.current = false;
       }
     };
     
@@ -123,6 +132,7 @@ const useConversation = (userId?: string) => {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      loadingRef.current = false;
     };
   }, [userId, user?.id, fetchMessages, setupRealtimeSubscription, markMessagesAsRead, fetchOtherUser]);
 
@@ -137,7 +147,12 @@ const useConversation = (userId?: string) => {
     setIsProfileOpen,
     connectionError,
     isReconnecting,
-    handleSendMessage: (content: string) => handleSendMessage(userId!, content),
+    handleSendMessage: (content: string) => {
+      if (userId) {
+        return handleSendMessage(userId, content);
+      }
+      return Promise.reject(new Error("No user ID provided"));
+    },
     handleReportUser,
     handleReconnect
   };

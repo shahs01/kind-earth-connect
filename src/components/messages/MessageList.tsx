@@ -21,21 +21,17 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     }
   };
 
-  // Scroll to bottom when messages change
+  // Only scroll to bottom when new messages are added, not on every render
   useEffect(() => {
     if (messages.length > 0) {
-      console.log("Messages changed, scrolling to bottom. Messages count:", messages.length);
-      scrollToBottom();
+      // Use a small timeout to ensure the DOM has updated
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-  }, [messages]);
-
-  // Log for debugging
-  useEffect(() => {
-    console.log("MessageList rendered with messages:", messages);
-    if (currentUserId) {
-      console.log("Current user ID for message comparison:", currentUserId);
-    }
-  }, [messages, currentUserId]);
+  }, [messages.length]); // Only depend on message count, not the messages array itself
 
   if (loading && messages.length === 0) {
     return (
