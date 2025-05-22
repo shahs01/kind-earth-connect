@@ -23,7 +23,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      console.log("Preparing to send message:", newMessage);
+      console.log("Sending message:", newMessage);
       onSendMessage(newMessage.trim());
       setNewMessage("");
     }

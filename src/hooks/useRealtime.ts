@@ -53,8 +53,9 @@ export function useRealtime({
         });
       }
       
-      // Create a unique channel name that remains consistent regardless of which user is first
-      const channelName = `public:messages:${currentUserId}-${userId}`;
+      // Create a unique channel name for messages between these two users
+      const userIds = [currentUserId, userId].sort();
+      const channelName = `messages:${userIds[0]}:${userIds[1]}`;
       console.log(`Creating new channel: ${channelName}`);
       
       // This filter ensures we only get messages between these two users
@@ -114,24 +115,6 @@ export function useRealtime({
     }
   }, [userId, currentUserId, onMessageReceived, toast, setConnectionError, isConnecting, channelRef]);
 
-  // Set up subscription when parameters change
-  useEffect(() => {
-    console.log("Setting up real-time subscription with userId:", userId, "currentUserId:", currentUserId);
-    const channel = setupRealtimeSubscription();
-    
-    return () => {
-      if (channelRef.current) {
-        console.log("Removing channel on component unmount or parameters change");
-        supabase.removeChannel(channelRef.current);
-        // Replace direct assignment with Object.defineProperty
-        Object.defineProperty(channelRef, 'current', { 
-          value: null,
-          writable: true
-        });
-      }
-    };
-  }, [userId, currentUserId, setupRealtimeSubscription]);
-
   return {
     setupRealtimeSubscription,
     channelRef,
@@ -172,8 +155,8 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
         });
       }
       
-      // Create a unique channel name for the user with proper prefix for realtime
-      const channelName = `public:messages:new-${currentUser.id}`;
+      // Create a unique channel name for the user's global messages
+      const channelName = `global:${currentUser.id}:messages`;
       console.log(`Creating channel: ${channelName}`);
       
       const channel = supabase
@@ -223,24 +206,6 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       return null;
     }
   }, [currentUser, onNewMessage, toast, isConnecting]);
-
-  // Set up subscription when user changes
-  useEffect(() => {
-    console.log("Setting up global notification subscription for user:", currentUser?.id);
-    const channel = setupGlobalNotifications();
-    
-    return () => {
-      if (channelRef.current) {
-        console.log("Removing global notification channel on unmount");
-        supabase.removeChannel(channelRef.current);
-        // Replace direct assignment with Object.defineProperty
-        Object.defineProperty(channelRef, 'current', { 
-          value: null,
-          writable: true
-        });
-      }
-    };
-  }, [currentUser?.id, setupGlobalNotifications]);
 
   return {
     setupGlobalNotifications,

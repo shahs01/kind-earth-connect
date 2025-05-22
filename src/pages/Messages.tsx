@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Route, Routes, useNavigate, useParams, useLocation } from "react-router-dom";
+
+import { useEffect, useState, useCallback } from "react";
+import { Routes, Route, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useMessages } from "@/hooks/useMessages";
@@ -7,15 +8,13 @@ import MessageList from "@/components/MessageList";
 import MessageConversation from "@/components/MessageConversation";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare, Loader2, User as UserIcon, X, RefreshCcw } from "lucide-react";
+import { Plus, MessageSquare, Loader2, User as UserIcon, RefreshCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -115,7 +114,7 @@ const NewMessageForm = () => {
   };
 
   const handleSelectUser = (userId: string) => {
-    console.log("Selected user:", userId);
+    console.log("Selected user for new message:", userId);
     navigate(`/messages/${userId}`);
   };
 
@@ -167,7 +166,8 @@ const NewMessageForm = () => {
 const Messages = () => {
   const { loading, conversations, fetchConversations, connectionError, setConnectionError } = useMessages();
   const navigate = useNavigate();
-  const { userId } = useParams();
+  const params = useParams();
+  const userId = params.userId;
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
@@ -176,8 +176,11 @@ const Messages = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  
+  console.log("Messages component rendering with route:", location.pathname, "userId param:", userId);
 
   const handleNewMessage = () => {
+    console.log("New message received, refreshing conversations");
     fetchConversations();
   };
 
@@ -240,10 +243,13 @@ const Messages = () => {
       if (channelRef.current) {
         console.log("Removing channel subscription on component unmount");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        Object.defineProperty(channelRef, 'current', { 
+          value: null,
+          writable: true
+        });
       }
     };
-  }, [user, fetchConversations, setupGlobalNotifications]);
+  }, [user, fetchConversations, setupGlobalNotifications, setConnectionError]);
   
   const handleSelectConversation = (userId: string) => {
     console.log("Selecting conversation with user:", userId);
@@ -277,7 +283,10 @@ const Messages = () => {
       // Remove existing channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        Object.defineProperty(channelRef, 'current', { 
+          value: null,
+          writable: true
+        });
       }
       
       // Reload conversations
@@ -405,7 +414,7 @@ const Messages = () => {
                 {/* Message Content Area */}
                 <div className="md:col-span-2">
                   <Routes>
-                    <Route path="/:userId" element={<MessageConversation onViewProfile={handleViewProfile} />} />
+                    <Route path=":userId" element={<MessageConversation onViewProfile={handleViewProfile} />} />
                     <Route path="/" element={
                       <div className="h-96 flex flex-col items-center justify-center text-center p-6">
                         <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
@@ -424,7 +433,24 @@ const Messages = () => {
       </main>
       <Footer />
 
-      {/* ... keep existing code (dialogs and other components) */}
+      {/* New Message Dialog */}
+      <Dialog open={isNewMessageOpen} onOpenChange={setIsNewMessageOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>New Message</DialogTitle>
+          </DialogHeader>
+          <NewMessageForm />
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Dialog */}
+      {selectedProfile && (
+        <ProfileDialog 
+          user={selectedProfile}
+          open={isProfileOpen}
+          onOpenChange={setIsProfileOpen}
+        />
+      )}
     </div>
   );
 };

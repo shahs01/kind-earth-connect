@@ -92,8 +92,7 @@ function App() {
           <Route path="/profile" element={<ProfileRedirect />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/favorites" element={<Favorites />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/messages/:userId" element={<Messages />} />
+          <Route path="/messages/*" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/edit-post/:postId" element={<EditPosting />} />
