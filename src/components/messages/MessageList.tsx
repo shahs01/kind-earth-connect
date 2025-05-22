@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useLayoutEffect } from "react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Message } from "@/hooks/useMessages";
@@ -15,28 +15,29 @@ interface MessageListProps {
 const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef<number>(0);
   
-  // Only scroll to bottom when new messages are added or on initial load
-  useEffect(() => {
-    console.log("MessageList updating with messages count:", messages.length);
-    
-    if (messages.length > 0) {
-      const scrollToBottom = () => {
-        if (messagesEndRef.current && containerRef.current) {
-          // Use scrollIntoView with behavior smooth to avoid page jumping
-          messagesEndRef.current.scrollIntoView({ 
-            behavior: "smooth", 
-            block: "end" 
-          });
-          console.log("Scrolled to bottom of message container");
-        }
-      };
+  // Use layout effect to scroll to bottom immediately without visual jump
+  useLayoutEffect(() => {
+    if (messages.length > 0 && messages.length !== prevMessagesLengthRef.current) {
+      console.log(`MessageList updating: messages changed from ${prevMessagesLengthRef.current} to ${messages.length}`);
       
-      // Small delay to prevent scrolling issues
-      const timer = setTimeout(scrollToBottom, 100);
-      return () => clearTimeout(timer);
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+        console.log("Scrolled to bottom of message container immediately");
+      }
+      
+      prevMessagesLengthRef.current = messages.length;
     }
   }, [messages.length]);
+
+  // Log when messages array changes
+  useEffect(() => {
+    console.log("MessageList: messages updated, count:", messages.length);
+    return () => {
+      console.log("MessageList: component cleanup");
+    };
+  }, [messages]);
 
   if (loading && messages.length === 0) {
     return (

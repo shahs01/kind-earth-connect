@@ -13,6 +13,9 @@ export function useMessagesList() {
   // Track when the messages state is reset
   useEffect(() => {
     console.log("Messages state initialized/reset");
+    return () => {
+      console.log("useMessagesList hook cleanup");
+    };
   }, []);
 
   const fetchMessages = useCallback(async (userId: string) => {
@@ -88,7 +91,7 @@ export function useMessagesList() {
   }, [toast]);
 
   const addMessageToState = useCallback((newMessage: Message) => {
-    console.log("Adding message to state:", newMessage);
+    console.log("Adding message to state:", newMessage?.id || 'No ID');
     setMessages(prev => {
       // Check if message already exists to avoid duplicates
       const exists = prev.some(msg => msg.id === newMessage.id);
@@ -104,7 +107,7 @@ export function useMessagesList() {
   // Reset messages when component unmounts to avoid state bleed between conversations
   useEffect(() => {
     return () => {
-      console.log("Cleanup: resetting messages state");
+      console.log("Cleanup: resetting messages state in useMessagesList");
       setMessages([]);
     };
   }, []);

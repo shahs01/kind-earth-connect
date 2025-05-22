@@ -15,14 +15,14 @@ export function useConversationMessages(
       return null;
     }
     
-    console.log("Sending message to userId:", userId, "content:", message);
+    console.log("Attempting to send message to userId:", userId, "content:", message.substring(0, 20) + (message.length > 20 ? '...' : ''));
     try {
       // Clear any previous connection error state
       setConnectionError(false);
       
       // Send the message using the hook
       const sentMessage = await sendMessage(userId, message.trim());
-      console.log("Message sent successfully:", sentMessage);
+      console.log("Message sent successfully:", sentMessage?.id || 'No ID returned');
       
       return sentMessage;
     } catch (error) {

@@ -73,6 +73,21 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     });
   }, [handleReconnect, toast]);
   
+  // Memoize message sending function to prevent unnecessary re-renders
+  const onSendMessage = useCallback(async (content: string) => {
+    try {
+      console.log("MessageConversation: Sending message:", content.substring(0, 20) + (content.length > 20 ? '...' : ''));
+      await handleSendMessage(content);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [handleSendMessage, toast]);
+  
   // Redirect if user is not authenticated
   if (!user) {
     return <div className="p-8 text-center">Please log in to view messages</div>;
@@ -127,7 +142,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         <MessageInput 
           sending={sending}
           loading={loading}
-          onSendMessage={handleSendMessage}
+          onSendMessage={onSendMessage}
         />
       </div>
 

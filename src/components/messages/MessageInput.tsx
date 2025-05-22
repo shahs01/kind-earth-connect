@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
@@ -13,31 +13,38 @@ interface MessageInputProps {
 const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-
+  
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     console.log("MessageInput mounted or loading state changed:", { loading, isFocused: document.activeElement === inputRef.current });
     
-    if (!loading && inputRef.current) {
-      // Delayed focus to ensure DOM is ready
+    if (!loading) {
+      // Use a more reliable focus method with a slight delay
       const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
           console.log("Input focused after delay");
         }
-      }, 200);
+      }, 300);
       
       return () => clearTimeout(timer);
     }
   }, [loading]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = useCallback(() => {
     if (newMessage.trim()) {
-      console.log("Sending message:", newMessage);
+      console.log("Sending message:", newMessage.trim());
       onSendMessage(newMessage.trim());
       setNewMessage("");
+      
+      // Re-focus input after sending
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 50);
     }
-  };
+  }, [newMessage, onSendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
