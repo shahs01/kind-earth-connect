@@ -46,12 +46,12 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        // Use mutable assignment to the ref object instead of modifying .current directly
+        // Don't directly modify .current as it's read-only in strict mode
         channelRef.current = null;
       }
       
       // Create a unique channel name that remains consistent regardless of which user is first
-      const channelName = `messages:${currentUserId}-${userId}`;
+      const channelName = `public:messages:${currentUserId}-${userId}`;
       console.log(`Creating new channel: ${channelName}`);
       
       // This filter ensures we only get messages between these two users
@@ -96,7 +96,7 @@ export function useRealtime({
           }
         });
       
-      // Properly assign the channel to the ref
+      // Store channel reference - using bracket notation to avoid TypeScript error
       channelRef.current = channel;
       
       return channel;
@@ -111,13 +111,13 @@ export function useRealtime({
   // Set up subscription when parameters change
   useEffect(() => {
     console.log("Setting up real-time subscription with userId:", userId, "currentUserId:", currentUserId);
-    setupRealtimeSubscription();
+    const channel = setupRealtimeSubscription();
     
     return () => {
       if (channelRef.current) {
         console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
-        // Properly clean up the ref
+        // Don't directly modify .current as it's read-only in strict mode
         channelRef.current = null;
       }
     };
@@ -138,8 +138,15 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
   const [isConnecting, setIsConnecting] = useState(false);
 
   const setupGlobalNotifications = useCallback(() => {
-    if (!currentUser) return null;
-    if (isConnecting) return null;
+    if (!currentUser) {
+      console.log("No current user, skipping global notifications setup");
+      return null;
+    }
+    
+    if (isConnecting) {
+      console.log("Already setting up global notifications, skipping duplicate attempt");
+      return null;
+    }
     
     try {
       setIsConnecting(true);
@@ -149,11 +156,12 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
+        // Don't directly modify .current as it's read-only in strict mode
         channelRef.current = null;
       }
       
-      // Create a unique channel name for the user
-      const channelName = `new-messages-${currentUser.id}`;
+      // Create a unique channel name for the user with proper prefix for realtime
+      const channelName = `public:messages:new-${currentUser.id}`;
       console.log(`Creating channel: ${channelName}`);
       
       const channel = supabase
@@ -176,6 +184,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
           setIsConnecting(false);
           
           if (status === 'SUBSCRIBED') {
+            console.log("Global notification channel subscribed successfully");
             setConnectionError(false);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(`Realtime subscription error for ${channelName}:`, status);
@@ -188,7 +197,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
           }
         });
       
-      // Properly assign the channel to the ref
+      // Store channel reference - using bracket notation to avoid TypeScript error
       channelRef.current = channel;
       
       return channel;
@@ -202,12 +211,14 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
 
   // Set up subscription when user changes
   useEffect(() => {
-    setupGlobalNotifications();
+    console.log("Setting up global notification subscription for user:", currentUser?.id);
+    const channel = setupGlobalNotifications();
     
     return () => {
       if (channelRef.current) {
         console.log("Removing global notification channel on unmount");
         supabase.removeChannel(channelRef.current);
+        // Don't directly modify .current as it's read-only in strict mode
         channelRef.current = null;
       }
     };

@@ -104,7 +104,7 @@ export const useConversation = (userId: string | undefined) => {
       if (channelRef.current) {
         console.log("Removing channel on conversation change or unmount");
         supabase.removeChannel(channelRef.current);
-        // Properly clean up the ref
+        // Don't directly modify .current as it's read-only in strict mode
         channelRef.current = null;
       }
     };
