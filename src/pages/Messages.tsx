@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -175,6 +175,7 @@ const Messages = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const globalChannelRef = useRef<any>(null);
   
   console.log("Messages component rendering with route:", location.pathname, "userId param:", userId);
 
@@ -183,7 +184,7 @@ const Messages = () => {
     fetchConversations();
   };
 
-  const { setupGlobalNotifications, channelRef } = useGlobalMessageNotifications(
+  const { setupGlobalNotifications, isConnecting, channel, channelRef } = useGlobalMessageNotifications(
     user, 
     handleNewMessage
   );
@@ -237,13 +238,15 @@ const Messages = () => {
     loadConversations();
     
     // Set up real-time subscription for new messages
-    setupGlobalNotifications();
+    const globalChannel = setupGlobalNotifications();
+    globalChannelRef.current = globalChannel;
     
     return () => {
       console.log("Cleaning up Messages component");
-      if (channelRef.current) {
+      if (globalChannelRef.current) {
         console.log("Removing channel subscription on component unmount");
-        supabase.removeChannel(channelRef.current);
+        supabase.removeChannel(globalChannelRef.current);
+        globalChannelRef.current = null;
       }
     };
   }, [user, fetchConversations, setupGlobalNotifications, setConnectionError]);
@@ -278,15 +281,17 @@ const Messages = () => {
     setIsReconnecting(true);
     try {
       // Remove existing channel
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+      if (globalChannelRef.current) {
+        supabase.removeChannel(globalChannelRef.current);
+        globalChannelRef.current = null;
       }
       
       // Reload conversations
       await fetchConversations();
       
       // Set up a new real-time connection
-      setupGlobalNotifications();
+      const newChannel = setupGlobalNotifications();
+      globalChannelRef.current = newChannel;
       
       toast({
         title: "Reconnected",

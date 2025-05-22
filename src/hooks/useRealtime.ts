@@ -1,6 +1,7 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 interface RealtimeOptions {
   userId?: string;
@@ -34,7 +35,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Don't directly modify channelRef.current, it will be updated when we return the new channel
       }
       
       // Create channel name based on user IDs
@@ -74,6 +75,7 @@ export function useRealtime({
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
+            // Update the ref through proper callback in the component
             channelRef.current = channel;
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
@@ -86,7 +88,7 @@ export function useRealtime({
           }
         });
       
-      // Store the channel in the channelRef
+      // Return the channel so the component can store it in the ref
       return channel;
     } catch (err) {
       console.error("Error setting up realtime:", err);
@@ -108,6 +110,7 @@ export function useGlobalMessageNotifications(
 ) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [channel, setChannel] = useState<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   
   const setupGlobalNotifications = useCallback(() => {
     if (!user?.id) {
@@ -119,8 +122,9 @@ export function useGlobalMessageNotifications(
       console.log("Setting up global message notifications for user:", user.id);
       
       // Clean up any existing channel first
-      if (channel) {
-        supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
       
       const newChannel = supabase.channel(`private:user:${user.id}`, {
@@ -149,6 +153,7 @@ export function useGlobalMessageNotifications(
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to global message notifications");
             setChannel(newChannel);
+            channelRef.current = newChannel;
           }
         });
       
@@ -157,21 +162,23 @@ export function useGlobalMessageNotifications(
       console.error("Error setting up global message notifications:", error);
       return null;
     }
-  }, [user?.id, onNewMessage, channel]);
+  }, [user?.id, onNewMessage]);
   
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (channel) {
+      if (channelRef.current) {
         console.log("Removing channel on useGlobalMessageNotifications unmount");
-        supabase.removeChannel(channel);
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
-  }, [channel]);
+  }, []);
   
   return {
     setupGlobalNotifications,
     isConnecting,
-    channel
+    channel,
+    channelRef
   };
 }

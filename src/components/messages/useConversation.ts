@@ -9,13 +9,14 @@ import { useConversationMessages } from "./hooks/useConversationMessages";
 import { useConversationReconnect } from "./hooks/useConversationReconnect";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const useConversation = (userId?: string) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [connectionError, setConnectionError] = useState(false);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const previousUserIdRef = useRef<string | undefined>(undefined);
   
   const {
@@ -94,6 +95,9 @@ const useConversation = (userId?: string) => {
         // Step 2: Setup realtime only after messages are loaded
         console.log("Setting up realtime for conversation:", userId);
         const channel = setupRealtimeSubscription();
+        if (channel) {
+          channelRef.current = channel;
+        }
         console.log("Realtime channel set up:", !!channel);
         
         // Step 3: Mark messages as read
