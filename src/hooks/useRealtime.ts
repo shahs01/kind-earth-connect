@@ -46,7 +46,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Don't modify the ref directly, instead return the new channel and let the consumer set it
       }
       
       // Create a unique channel name for messages between these two users
@@ -96,9 +96,6 @@ export function useRealtime({
           }
         });
       
-      // Store channel reference
-      channelRef.current = channel;
-      
       return channel;
     } catch (err) {
       console.error("Error setting up real-time subscription:", err);
@@ -141,7 +138,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+        // Don't modify the ref directly, instead return the channel
       }
       
       // Create a unique channel name for the user's global messages
@@ -180,9 +177,6 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
             });
           }
         });
-      
-      // Store channel reference
-      channelRef.current = channel;
       
       return channel;
     } catch (err) {

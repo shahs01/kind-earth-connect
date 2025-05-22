@@ -66,14 +66,7 @@ const PostsList = ({
 
         let query = supabase
           .from('posts')
-          .select(`
-            *,
-            profiles:user_id (
-              name,
-              avatar,
-              username
-            )
-          `)
+          .select('*')
           .eq('status', 'active');
 
         // Apply filters
@@ -110,28 +103,44 @@ const PostsList = ({
           query = query.limit(limit);
         }
 
-        const { data, error: fetchError } = await query;
+        const { data: postsData, error: fetchError } = await query;
 
         if (fetchError) {
           throw fetchError;
         }
 
-        console.log("Posts fetched:", data?.length);
+        console.log("Posts fetched:", postsData?.length);
         
-        // Transform data to include user details
-        const formattedPosts = data?.map(post => ({
-          ...post,
-          user: post.profiles ? {
-            name: post.profiles.name || post.profiles.username || "Unknown User",
-            avatar: post.profiles.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.profiles.name || 'User')}`,
-            username: post.profiles.username
-          } : {
-            name: "Unknown User",
-            avatar: "https://ui-avatars.com/api/?name=Unknown"
-          }
-        })) || [];
-
-        setPosts(formattedPosts);
+        // Fetch user information separately for each post
+        if (postsData && postsData.length > 0) {
+          const formattedPosts = await Promise.all(postsData.map(async (post) => {
+            const { data: userData } = await supabase
+              .from('profiles')
+              .select('name, avatar, username')
+              .eq('id', post.user_id)
+              .single();
+            
+            // Ensure the post type is correctly typed as "offer" or "request"
+            const typedPost: Post = {
+              ...post,
+              type: post.type as "offer" | "request",
+              user: userData ? {
+                name: userData.name || "Unknown User",
+                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}`,
+                username: userData.username
+              } : {
+                name: "Unknown User",
+                avatar: "https://ui-avatars.com/api/?name=Unknown"
+              }
+            };
+            
+            return typedPost;
+          }));
+          
+          setPosts(formattedPosts);
+        } else {
+          setPosts([]);
+        }
       } catch (err: any) {
         console.error("Error fetching posts:", err);
         setError("Failed to load posts");
@@ -235,9 +244,12 @@ const PostsList = ({
                   {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
                 </Badge>
                 {user && post.user_id === user.id && (
-                  <PostActionMenu postId={post.id} onDeleted={() => {
-                    setPosts(posts.filter(p => p.id !== post.id));
-                  }} />
+                  <PostActionMenu 
+                    postId={post.id} 
+                    onDeleted={() => {
+                      setPosts(posts.filter(p => p.id !== post.id));
+                    }} 
+                  />
                 )}
               </div>
             </div>

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { MoreHorizontal, Archive, RefreshCw, Trash, Edit } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -20,30 +20,66 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Post } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostActionMenuProps {
-  post: Post;
-  onStatusChange: (post: Post, newStatus: string) => void;
+  postId: string;
+  onDeleted: () => void;
 }
 
-const PostActionMenu = ({ post, onStatusChange }: PostActionMenuProps) => {
+const PostActionMenu = ({ postId, onDeleted }: PostActionMenuProps) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ status: newStatus })
+        .eq('id', postId);
+        
+      if (error) throw error;
+      
+      if (newStatus === 'archived') {
+        toast({
+          title: "Post archived successfully",
+          description: "Your post has been archived."
+        });
+      } else if (newStatus === 'active') {
+        toast({
+          title: "Post republished successfully",
+          description: "Your post is now visible to the community."
+        });
+      }
+      
+      if (newStatus === 'deleted') {
+        onDeleted();
+      }
+    } catch (err) {
+      console.error("Error updating post:", err);
+      toast({
+        title: "Error",
+        description: "Failed to update post status",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleArchive = () => {
-    onStatusChange(post, "archived");
-    toast.success("Post archived successfully");
+    handleStatusChange('archived');
   };
 
   const handleRepublish = () => {
-    onStatusChange(post, "active");
-    toast.success("Post republished successfully");
+    handleStatusChange('active');
   };
 
   const handleRenew = () => {
     // In a real app this would update the post date and potentially boost visibility
-    onStatusChange({...post, createdAt: new Date()}, "active");
-    toast.success("Post renewed successfully");
+    handleStatusChange('active');
+    toast({
+      title: "Post renewed successfully",
+      description: "Your post has been renewed."
+    });
   };
 
   const handleDelete = () => {
@@ -51,8 +87,7 @@ const PostActionMenu = ({ post, onStatusChange }: PostActionMenuProps) => {
   };
 
   const confirmDelete = () => {
-    onStatusChange(post, "deleted");
-    toast.success("Post deleted successfully");
+    handleStatusChange('deleted');
     setIsDeleteDialogOpen(false);
   };
 
@@ -66,29 +101,23 @@ const PostActionMenu = ({ post, onStatusChange }: PostActionMenuProps) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {post.status === "active" && (
-            <DropdownMenuItem onClick={handleArchive} className="cursor-pointer">
-              <Archive className="mr-2 h-4 w-4" />
-              Archive
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={handleArchive} className="cursor-pointer">
+            <Archive className="mr-2 h-4 w-4" />
+            Archive
+          </DropdownMenuItem>
           
-          {post.status === "archived" && (
-            <DropdownMenuItem onClick={handleRepublish} className="cursor-pointer">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Republish
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={handleRepublish} className="cursor-pointer">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Republish
+          </DropdownMenuItem>
           
-          {post.status === "active" && (
-            <DropdownMenuItem onClick={handleRenew} className="cursor-pointer">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Renew
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={handleRenew} className="cursor-pointer">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Renew
+          </DropdownMenuItem>
           
           <DropdownMenuItem asChild className="cursor-pointer">
-            <a href={`/edit-post/${post.id}`}>
+            <a href={`/edit-post/${postId}`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </a>
@@ -108,7 +137,7 @@ const PostActionMenu = ({ post, onStatusChange }: PostActionMenuProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this {post.type}. This action cannot be undone.
+              This will permanently delete this post. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
