@@ -1,9 +1,8 @@
-
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Route, Routes, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useMessages, Conversation } from "@/hooks/useMessages";
+import { useMessages } from "@/hooks/useMessages";
 import MessageList from "@/components/MessageList";
 import MessageConversation from "@/components/MessageConversation";
 import { User } from "@/types";
@@ -24,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 import ProfileDialog from "@/components/ProfileDialog";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
+import { useGlobalMessageNotifications } from "@/hooks/useRealtime";
 
 const NewMessageForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -176,74 +176,15 @@ const Messages = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const channelRef = useRef<any>(null);
-  
-  const setupRealtimeSubscription = useCallback(() => {
-    if (!user) return null;
-    
-    try {
-      console.log("Setting up real-time subscription for new messages");
-      
-      // Clean up any existing subscription
-      if (channelRef.current) {
-        console.log("Removing existing channel before creating new one");
-        supabase.removeChannel(channelRef.current);
-      }
-      
-      // Create a unique channel name for the user
-      const channelName = `new-messages-${user.id}`;
-      console.log(`Creating channel: ${channelName}`);
-      
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `receiver_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log("New message received via real-time:", payload);
-            
-            // When a new message arrives, update conversations list
-            fetchConversations();
-            
-            // Show toast notification if not in the messages page with the right conversation
-            const senderId = payload.new.sender_id;
-            if (!location.pathname.includes(`/messages/${senderId}`)) {
-              toast({
-                title: "New message",
-                description: "You've received a new message",
-              });
-            }
-          }
-        )
-        .subscribe((status) => {
-          console.log(`Realtime subscription status for ${channelName}:`, status);
-          if (status === 'SUBSCRIBED') {
-            setConnectionError(false);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`Realtime subscription error for ${channelName}:`, status);
-            setConnectionError(true);
-            toast({
-              title: "Connection issue",
-              description: "Problem connecting to real-time updates",
-              variant: "destructive"
-            });
-          }
-        });
-      
-      // Store the channel reference so we can clean it up later
-      channelRef.current = channel;
-      return channel;
-    } catch (err) {
-      console.error("Error setting up real-time subscription:", err);
-      setConnectionError(true);
-      return null;
-    }
-  }, [user, fetchConversations, location.pathname, toast, setConnectionError]);
+
+  const handleNewMessage = () => {
+    fetchConversations();
+  };
+
+  const { setupGlobalNotifications, channelRef } = useGlobalMessageNotifications(
+    user, 
+    handleNewMessage
+  );
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -292,7 +233,7 @@ const Messages = () => {
     loadConversations();
     
     // Set up real-time subscription for new messages
-    const channel = setupRealtimeSubscription();
+    setupGlobalNotifications();
     
     return () => {
       console.log("Cleaning up Messages component");
@@ -302,7 +243,7 @@ const Messages = () => {
         channelRef.current = null;
       }
     };
-  }, [user, fetchConversations, setupRealtimeSubscription]);
+  }, [user, fetchConversations, setupGlobalNotifications]);
   
   const handleSelectConversation = (userId: string) => {
     console.log("Selecting conversation with user:", userId);
@@ -310,7 +251,7 @@ const Messages = () => {
     setIsNewMessageOpen(false);
   };
   
-  const handleNewMessage = () => {
+  const handleOpenNewMessage = () => {
     setIsNewMessageOpen(true);
   };
   
@@ -343,7 +284,7 @@ const Messages = () => {
       await fetchConversations();
       
       // Set up a new real-time connection
-      setupRealtimeSubscription();
+      setupGlobalNotifications();
       
       toast({
         title: "Reconnected",
@@ -422,7 +363,7 @@ const Messages = () => {
           <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold">Messages</h1>
-              <Button onClick={handleNewMessage}>
+              <Button onClick={handleOpenNewMessage}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Message
               </Button>
@@ -447,7 +388,7 @@ const Messages = () => {
                       <p className="text-sm text-gray-500 mb-4">
                         Start a conversation with someone offering or requesting help
                       </p>
-                      <Button onClick={handleNewMessage}>
+                      <Button onClick={handleOpenNewMessage}>
                         Start a conversation
                       </Button>
                     </div>
@@ -483,30 +424,7 @@ const Messages = () => {
       </main>
       <Footer />
 
-      <Dialog open={isNewMessageOpen} onOpenChange={setIsNewMessageOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Message</DialogTitle>
-            <DialogDescription>
-              Search for a user to start a conversation
-            </DialogDescription>
-          </DialogHeader>
-          <NewMessageForm />
-          <DialogClose className="absolute top-4 right-4">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
-
-      {/* Profile Dialog */}
-      {selectedProfile && (
-        <ProfileDialog 
-          user={selectedProfile} 
-          open={isProfileOpen} 
-          onOpenChange={setIsProfileOpen} 
-        />
-      )}
+      {/* ... keep existing code (dialogs and other components) */}
     </div>
   );
 };

@@ -1,85 +1,33 @@
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useMessages, Message } from "@/hooks/useMessages";
+import { useState, useEffect } from "react";
+import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import { User as UserType } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtime } from "@/hooks/useRealtime";
 
 export const useConversation = (userId: string | undefined) => {
-  const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError } = useMessages();
+  const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError, sending } = useMessages();
   const { user } = useAuth();
-  const [newMessage, setNewMessage] = useState("");
   const [otherUser, setOtherUser] = useState<UserType | null>(null);
-  const [sending, setSending] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const channelRef = useRef<any>(null);
   const { toast } = useToast();
   
-  const setupRealtimeSubscription = useCallback(() => {
-    if (!user || !userId) return null;
-    
-    console.log(`Setting up message conversation real-time subscription with userId: ${userId}`);
-    
-    try {
-      // Clean up any existing subscription
-      if (channelRef.current) {
-        console.log("Removing existing channel before creating a new one");
-        supabase.removeChannel(channelRef.current);
-      }
-      
-      // Create a new subscription with a unique channel name
-      const channelName = `messages:${user.id}-${userId}`;
-      console.log(`Creating new channel: ${channelName}`);
-      
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id}))`
-          },
-          (payload) => {
-            console.log("Received real-time message update:", payload);
-            const newMessage = payload.new as Message;
-            
-            // Update our messages state immediately
-            fetchMessages(userId);
-            
-            // If we received the message, mark it as read
-            if (newMessage.sender_id === userId && newMessage.receiver_id === user.id) {
-              markMessagesAsRead(userId);
-            }
-          }
-        )
-        .subscribe((status) => {
-          console.log(`Realtime subscription status for ${channelName}:`, status);
-          if (status === 'SUBSCRIBED') {
-            setConnectionError(false);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`Realtime subscription error for ${channelName}:`, status);
-            setConnectionError(true);
-            toast({
-              title: "Connection issue",
-              description: "Problem connecting to real-time updates",
-              variant: "destructive"
-            });
-          }
-        });
-      
-      // Store the channel reference so we can clean it up later
-      channelRef.current = channel;
-      return channel;
-    } catch (err) {
-      console.error("Error setting up real-time subscription:", err);
-      setConnectionError(true);
-      return null;
+  const handleMessageReceived = async () => {
+    if (userId) {
+      await fetchMessages(userId);
+      await markMessagesAsRead(userId);
     }
-  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError]);
+  };
+  
+  const { setupRealtimeSubscription, channelRef } = useRealtime({
+    userId,
+    currentUserId: user?.id,
+    onMessageReceived: handleMessageReceived,
+    setConnectionError
+  });
   
   useEffect(() => {
     if (!user || !userId) return;
@@ -107,16 +55,7 @@ export const useConversation = (userId: string | undefined) => {
     fetchOtherUser(userId);
     
     // Set up real-time subscription
-    const channel = setupRealtimeSubscription();
-    
-    return () => {
-      console.log("Cleaning up message conversation");
-      if (channelRef.current) {
-        console.log("Removing channel on component unmount");
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
+    setupRealtimeSubscription();
   }, [userId, user, fetchMessages, markMessagesAsRead, toast, setupRealtimeSubscription]);
 
   const fetchOtherUser = async (userId: string) => {
@@ -187,7 +126,6 @@ export const useConversation = (userId: string | undefined) => {
     }
     
     console.log("Sending message to userId:", userId);
-    setSending(true);
     try {
       await sendMessage(userId, message.trim());
       console.log("Message sent successfully");
@@ -198,8 +136,6 @@ export const useConversation = (userId: string | undefined) => {
         description: "Failed to send message. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setSending(false);
     }
   };
 

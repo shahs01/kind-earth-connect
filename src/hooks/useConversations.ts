@@ -1,0 +1,163 @@
+
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "./use-toast";
+import { User } from "@/types";
+
+export interface Conversation {
+  user: User;
+  lastMessage: Message;
+  unreadCount: number;
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  read: boolean;
+  created_at: string;
+  sender?: User;
+  receiver?: User;
+}
+
+export function useConversations() {
+  const [loading, setLoading] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [connectionError, setConnectionError] = useState(false);
+  const { toast } = useToast();
+  
+  const fetchConversations = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log("Fetching conversations");
+      // First, get the authenticated user's ID
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        setConnectionError(true);
+        throw new Error(authError.message);
+      }
+      
+      if (!user) {
+        console.error("Not authenticated");
+        setConnectionError(true);
+        throw new Error("Not authenticated");
+      }
+      
+      // Get the latest message with each user the current user has conversed with
+      const { data, error } = await supabase.rpc('get_conversations');
+      
+      if (error) {
+        console.error("Error fetching conversations:", error);
+        setConnectionError(true);
+        throw error;
+      }
+      
+      console.log("Raw conversations data:", data);
+      setConnectionError(false);
+      
+      // Format conversations and fetch user details
+      const formattedConversations: Conversation[] = [];
+      
+      // Process each conversation with other user details
+      for (const convo of data || []) {
+        // Get other user profile (the one they're talking to)
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', convo.other_user_id)
+          .single();
+        
+        if (userError) {
+          console.error("Error fetching user:", userError);
+          continue;
+        }
+        
+        // Count unread messages
+        const { count, error: countError } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('sender_id', convo.other_user_id)
+          .eq('receiver_id', user.id)
+          .eq('read', false);
+        
+        if (countError) {
+          console.error("Error counting unread messages:", countError);
+          continue;
+        }
+        
+        // Get the last message
+        const { data: lastMessageData, error: msgError } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .or(`sender_id.eq.${convo.other_user_id},receiver_id.eq.${convo.other_user_id}`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (msgError) {
+          console.error("Error fetching last message:", msgError);
+          continue;
+        }
+        
+        // Create user object from profile
+        const otherUser: User = {
+          id: userData.id,
+          username: userData.username || '',
+          email: userData.email || '',
+          name: userData.name || '',
+          avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
+          bio: userData.bio || '',
+          location: userData.location || '',
+          trustScore: userData.trust_score || 0,
+          helpOffered: userData.help_offered || 0,
+          helpReceived: userData.help_received || 0,
+          volunteerHours: userData.volunteer_hours || 0,
+          createdAt: new Date(userData.created_at || Date.now()),
+          verifiedStatus: userData.verified_status || false,
+          emailVerified: true,
+          trustBadges: userData.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        };
+        
+        formattedConversations.push({
+          user: otherUser,
+          lastMessage: lastMessageData as Message,
+          unreadCount: count || 0
+        });
+      }
+      
+      // Sort by most recent message
+      formattedConversations.sort((a, b) => 
+        new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
+      );
+      
+      console.log("Formatted conversations:", formattedConversations);
+      setConversations(formattedConversations);
+      return formattedConversations;
+    } catch (error: any) {
+      console.error("Error fetching conversations:", error);
+      setConnectionError(true);
+      toast({
+        title: "Error fetching conversations",
+        description: error.message || "Failed to load conversations",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+  
+  return {
+    loading,
+    conversations,
+    fetchConversations,
+    connectionError,
+    setConnectionError
+  };
+}
