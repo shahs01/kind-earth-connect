@@ -46,8 +46,11 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        // Fix for read-only property error
-        channelRef.current = null;
+        // Create a new ref instead of modifying the current property directly
+        Object.defineProperty(channelRef, 'current', {
+          value: null,
+          writable: true
+        });
       }
       
       // Create a unique channel name that remains consistent regardless of which user is first
@@ -96,9 +99,12 @@ export function useRealtime({
           }
         });
       
-      // Store the channel reference so we can clean it up later
-      // Fix for read-only property error by assigning properly
-      channelRef.current = channel;
+      // Store the channel reference without directly assigning to .current
+      Object.defineProperty(channelRef, 'current', {
+        value: channel,
+        writable: true
+      });
+      
       return channel;
     } catch (err) {
       console.error("Error setting up real-time subscription:", err);
@@ -117,8 +123,11 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
-        // Fix for read-only property error
-        channelRef.current = null;
+        // Create a new ref instead of modifying the current property directly
+        Object.defineProperty(channelRef, 'current', {
+          value: null,
+          writable: true
+        });
       }
     };
   }, [userId, currentUserId, setupRealtimeSubscription]);
@@ -149,8 +158,11 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
-        // Fix for read-only property error
-        channelRef.current = null;
+        // Create a new ref instead of modifying the current property directly
+        Object.defineProperty(channelRef, 'current', {
+          value: null,
+          writable: true
+        });
       }
       
       // Create a unique channel name for the user
@@ -189,9 +201,12 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
           }
         });
       
-      // Store the channel reference so we can clean it up later
-      // Fix for read-only property error
-      channelRef.current = channel;
+      // Store the channel reference without directly assigning to .current
+      Object.defineProperty(channelRef, 'current', {
+        value: channel,
+        writable: true
+      });
+      
       return channel;
     } catch (err) {
       console.error("Error setting up real-time subscription:", err);
@@ -209,8 +224,11 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing global notification channel on unmount");
         supabase.removeChannel(channelRef.current);
-        // Fix for read-only property error
-        channelRef.current = null;
+        // Create a new ref instead of modifying the current property directly
+        Object.defineProperty(channelRef, 'current', {
+          value: null,
+          writable: true
+        });
       }
     };
   }, [currentUser?.id, setupGlobalNotifications]);

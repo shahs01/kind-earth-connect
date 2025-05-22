@@ -21,8 +21,11 @@ export function useConversationReconnect(
       // Remove existing channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        // Use a proper type-safe approach to clear the ref
-        channelRef.current = null;
+        // Create a new ref instead of modifying the current property directly
+        Object.defineProperty(channelRef, 'current', {
+          value: null,
+          writable: true
+        });
       }
       
       // Reload messages
