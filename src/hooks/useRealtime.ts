@@ -1,197 +1,163 @@
 
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "./use-toast";
-import { User } from "@/types";
-import { Message } from "./useConversations";
 
-interface UseRealtimeProps {
+interface RealtimeOptions {
   userId?: string;
   currentUserId?: string;
-  onMessageReceived?: (message: Message) => void;
-  setConnectionError: (error: boolean) => void;
-  channelRef?: React.RefObject<any>;
+  onMessageReceived: (message: any) => void;
+  setConnectionError: (value: boolean) => void;
+  channelRef: React.RefObject<any>;
 }
 
-export function useRealtime({ 
-  userId, 
-  currentUserId, 
-  onMessageReceived, 
+export function useRealtime({
+  userId,
+  currentUserId,
+  onMessageReceived,
   setConnectionError,
-  channelRef: externalChannelRef
-}: UseRealtimeProps) {
-  // Use external channelRef if provided, otherwise create our own
-  const internalChannelRef = useRef<any>(null);
-  const channelRef = externalChannelRef || internalChannelRef;
-  
-  const { toast } = useToast();
+  channelRef
+}: RealtimeOptions) {
   const [isConnecting, setIsConnecting] = useState(false);
   
   const setupRealtimeSubscription = useCallback(() => {
-    if (!currentUserId || !userId) {
-      console.log("Missing userId or currentUserId, cannot setup real-time subscription");
+    if (!userId || !currentUserId) {
+      console.error("Cannot set up realtime without userId and currentUserId");
       return null;
     }
-    
-    if (isConnecting) {
-      console.log("Already setting up subscription, skipping duplicate attempt");
-      return null;
-    }
-    
-    console.log(`Setting up message conversation real-time subscription with userId: ${userId} and currentUserId: ${currentUserId}`);
-    setIsConnecting(true);
     
     try {
-      // Clean up any existing subscription
-      if (channelRef.current) {
-        console.log("Removing existing channel before creating a new one");
-        supabase.removeChannel(channelRef.current);
-        // Don't modify the ref directly, instead return the new channel and let the consumer set it
-      }
+      console.log("Setting up realtime for conversation between:", currentUserId, "and", userId);
+      setIsConnecting(true);
+      setConnectionError(false);
       
-      // Create a unique channel name for messages between these two users
+      // Create channel name based on user IDs
+      // Sort IDs to ensure consistent channel names regardless of sender/receiver
       const userIds = [currentUserId, userId].sort();
-      const channelName = `messages:${userIds[0]}:${userIds[1]}`;
-      console.log(`Creating new channel: ${channelName}`);
+      const channelName = `private:${userIds[0]}:${userIds[1]}`;
       
-      // This filter ensures we only get messages between these two users
-      const filter = `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId}))`;
-      console.log("Using filter:", filter);
+      console.log("Creating channel:", channelName);
       
-      const channel = supabase
-        .channel(channelName)
+      // Create the channel
+      const channel = supabase.channel(channelName, {
+        config: {
+          presence: {
+            key: currentUserId,
+          },
+        },
+      });
+      
+      // Subscribe to message inserts
+      channel
         .on(
           'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
             table: 'messages',
-            filter: filter
+            filter: `or(and(sender_id=eq.${currentUserId},receiver_id=eq.${userId}),and(sender_id=eq.${userId},receiver_id=eq.${currentUserId}))` 
           },
           (payload) => {
-            console.log("Received real-time message update:", payload);
-            if (onMessageReceived && payload.new) {
-              // Explicitly cast the payload to Message type
-              const newMessage = payload.new as Message;
-              console.log("Processing received message:", newMessage);
-              onMessageReceived(newMessage);
-            }
+            console.log("Realtime message received:", payload);
+            onMessageReceived(payload.new);
           }
         )
         .subscribe((status) => {
-          console.log(`Realtime subscription status for ${channelName}:`, status);
-          setIsConnecting(false);
+          console.log("Realtime subscription status:", status);
           
-          if (status === 'SUBSCRIBED') {
-            console.log(`Successfully subscribed to real-time updates for channel: ${channelName}`);
-            setConnectionError(false);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`Realtime subscription error for ${channelName}:`, status);
+          if (status === "SUBSCRIBED") {
+            console.log("Successfully subscribed to realtime updates for conversation");
+            setIsConnecting(false);
+          } else if (status === "CHANNEL_ERROR") {
+            console.error("Error subscribing to realtime updates");
             setConnectionError(true);
-            toast({
-              title: "Connection issue",
-              description: "Problem connecting to real-time updates",
-              variant: "destructive"
-            });
+            setIsConnecting(false);
+          } else if (status === "TIMED_OUT") {
+            console.error("Timed out subscribing to realtime updates");
+            setConnectionError(true);
+            setIsConnecting(false);
           }
         });
       
       return channel;
     } catch (err) {
-      console.error("Error setting up real-time subscription:", err);
+      console.error("Error setting up realtime:", err);
       setConnectionError(true);
       setIsConnecting(false);
       return null;
     }
-  }, [userId, currentUserId, onMessageReceived, toast, setConnectionError, isConnecting, channelRef]);
-
+  }, [userId, currentUserId, onMessageReceived, setConnectionError]);
+  
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (channelRef.current) {
+        console.log("Removing channel on useRealtime unmount");
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, []);
+  
   return {
     setupRealtimeSubscription,
-    channelRef,
-    isConnecting
+    isConnecting,
   };
 }
 
-// For global message notifications
-export function useGlobalMessageNotifications(currentUser: User | null, onNewMessage: () => void) {
-  const channelRef = useRef<any>(null);
-  const { toast } = useToast();
-  const [connectionError, setConnectionError] = useState(false);
+export function useGlobalMessageNotifications(
+  user: any,
+  onNewMessage: () => void
+) {
   const [isConnecting, setIsConnecting] = useState(false);
-
+  const channelRef = useRef<any>(null);
+  
   const setupGlobalNotifications = useCallback(() => {
-    if (!currentUser) {
-      console.log("No current user, skipping global notifications setup");
-      return null;
+    if (!user?.id) {
+      console.log("No user ID available, not setting up global message notifications");
+      return;
     }
-    
-    if (isConnecting) {
-      console.log("Already setting up global notifications, skipping duplicate attempt");
-      return null;
-    }
-    
+
     try {
-      setIsConnecting(true);
-      console.log("Setting up real-time subscription for new messages");
+      console.log("Setting up global message notifications for user:", user.id);
       
-      // Clean up any existing subscription
-      if (channelRef.current) {
-        console.log("Removing existing channel before creating new one");
-        supabase.removeChannel(channelRef.current);
-        // Don't modify the ref directly, instead return the channel
-      }
+      const channel = supabase.channel(`private:user:${user.id}`, {
+        config: {
+          presence: {
+            key: user.id,
+          },
+        },
+      });
       
-      // Create a unique channel name for the user's global messages
-      const channelName = `global:${currentUser.id}:messages`;
-      console.log(`Creating channel: ${channelName}`);
-      
-      const channel = supabase
-        .channel(channelName)
+      channel
         .on(
           'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
             table: 'messages',
-            filter: `receiver_id=eq.${currentUser.id}`
+            filter: `receiver_id=eq.${user.id}` 
           },
           (payload) => {
-            console.log("New message received via real-time:", payload);
+            console.log("New message notification received:", payload);
             onNewMessage();
           }
         )
         .subscribe((status) => {
-          console.log(`Realtime subscription status for ${channelName}:`, status);
-          setIsConnecting(false);
-          
-          if (status === 'SUBSCRIBED') {
-            console.log("Global notification channel subscribed successfully");
-            setConnectionError(false);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error(`Realtime subscription error for ${channelName}:`, status);
-            setConnectionError(true);
-            toast({
-              title: "Connection issue",
-              description: "Problem connecting to real-time updates",
-              variant: "destructive"
-            });
+          if (status === "SUBSCRIBED") {
+            console.log("Successfully subscribed to global message notifications");
+            channelRef.current = channel;
           }
         });
       
       return channel;
-    } catch (err) {
-      console.error("Error setting up real-time subscription:", err);
-      setConnectionError(true);
-      setIsConnecting(false);
+    } catch (error) {
+      console.error("Error setting up global message notifications:", error);
       return null;
     }
-  }, [currentUser, onNewMessage, toast, isConnecting]);
-
+  }, [user?.id, onNewMessage]);
+  
   return {
     setupGlobalNotifications,
-    channelRef,
-    connectionError,
-    setConnectionError,
-    isConnecting
+    isConnecting,
+    channelRef
   };
 }

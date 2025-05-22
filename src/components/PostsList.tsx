@@ -113,30 +113,47 @@ const PostsList = ({
         
         // Fetch user information separately for each post
         if (postsData && postsData.length > 0) {
-          const formattedPosts = await Promise.all(postsData.map(async (post) => {
-            const { data: userData } = await supabase
-              .from('profiles')
-              .select('name, avatar, username')
-              .eq('id', post.user_id)
-              .single();
-            
-            // Ensure the post type is correctly typed as "offer" or "request"
-            const typedPost: Post = {
-              ...post,
-              type: post.type as "offer" | "request",
-              user: userData ? {
-                name: userData.name || "Unknown User",
-                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}`,
-                username: userData.username
-              } : {
-                name: "Unknown User",
-                avatar: "https://ui-avatars.com/api/?name=Unknown"
-              }
-            };
-            
-            return typedPost;
+          const formattedPosts: Post[] = await Promise.all(postsData.map(async (post) => {
+            try {
+              const { data: userData } = await supabase
+                .from('profiles')
+                .select('name, avatar, username')
+                .eq('id', post.user_id)
+                .single();
+              
+              // Ensure the post type is correctly typed as "offer" or "request"
+              const postType = post.type === "offer" ? "offer" as const : "request" as const;
+              
+              const typedPost: Post = {
+                ...post,
+                type: postType,
+                user: userData ? {
+                  name: userData.name || "Unknown User",
+                  avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}`,
+                  username: userData.username
+                } : {
+                  name: "Unknown User",
+                  avatar: "https://ui-avatars.com/api/?name=Unknown"
+                }
+              };
+              
+              return typedPost;
+            } catch (err) {
+              console.error("Error fetching user data for post:", err);
+              // Still return a post with default user data if we can't get the real user
+              const postType = post.type === "offer" ? "offer" as const : "request" as const;
+              return {
+                ...post,
+                type: postType,
+                user: {
+                  name: "Unknown User",
+                  avatar: "https://ui-avatars.com/api/?name=Unknown"
+                }
+              };
+            }
           }));
           
+          console.log("Formatted posts:", formattedPosts.length);
           setPosts(formattedPosts);
         } else {
           setPosts([]);
