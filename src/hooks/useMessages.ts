@@ -245,6 +245,13 @@ export function useMessages() {
           ? { ...msg, read: true }
           : msg
       ));
+      
+      // Also update the conversations list if it exists
+      setConversations(prev => prev.map(convo => 
+        convo.user.id === senderId 
+          ? { ...convo, unreadCount: 0 } 
+          : convo
+      ));
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }

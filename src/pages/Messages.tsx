@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Route, Routes, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -144,6 +145,7 @@ const Messages = () => {
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
   
   useEffect(() => {
     // Check if user is logged in
@@ -154,7 +156,37 @@ const Messages = () => {
 
     // Fetch conversations when component loads
     fetchConversations();
-  }, [user, navigate]);
+    
+    // Set up real-time subscription for new messages
+    const channel = supabase
+      .channel('new-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        () => {
+          // When a new message arrives, update conversations list
+          fetchConversations();
+          
+          // Show toast notification if not in the messages page
+          if (!location.pathname.includes('/messages')) {
+            toast({
+              title: "New message",
+              description: "You've received a new message",
+            });
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, navigate, location.pathname]);
   
   const handleSelectConversation = (userId: string) => {
     navigate(`/messages/${userId}`);

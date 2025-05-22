@@ -6,9 +6,10 @@ import Footer from "@/components/Footer";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Bell, Trash2, Check } from "lucide-react";
+import { Loader2, Bell, Trash2, Check, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 const Notifications = () => {
   const { 
@@ -22,18 +23,36 @@ const Notifications = () => {
   } = useNotifications();
   const navigate = useNavigate();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     fetchNotifications();
   }, []);
   
   const handleNotificationClick = async (notification: Notification) => {
-    const result = await handleNotificationAction(notification);
-    
-    if (result.type === 'message') {
-      navigate(`/messages/${result.userId}`);
+    try {
+      // Mark notification as read first
+      await markAsRead(notification.id);
+      
+      const result = await handleNotificationAction(notification);
+      
+      if (result.type === 'message' && result.userId) {
+        // Navigate to the conversation with this user
+        navigate(`/messages/${result.userId}`);
+      } else {
+        toast({
+          title: "Notification opened",
+          description: "This notification doesn't have any action associated with it.",
+        });
+      }
+    } catch (error) {
+      console.error("Error handling notification:", error);
+      toast({
+        title: "Error",
+        description: "Could not process this notification",
+        variant: "destructive"
+      });
     }
-    // Add more notification type handlers here
   };
   
   const handleDelete = async (e: React.MouseEvent, notificationId: string) => {
@@ -46,7 +65,7 @@ const Notifications = () => {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'message':
-        return <Bell className="h-5 w-5" />;
+        return <MessageSquare className="h-5 w-5" />;
       default:
         return <Bell className="h-5 w-5" />;
     }

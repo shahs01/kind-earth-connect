@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Conversation } from "@/hooks/useMessages";
+import { Link } from "react-router-dom";
 
 interface MessageListProps {
   conversations: Conversation[];
