@@ -27,6 +27,8 @@ export function useConversationMessages(
       // Refresh messages after sending to ensure we have the latest
       console.log("Refreshing messages after sending");
       await fetchMessages(userId);
+      
+      return sentMessage;
     } catch (error) {
       console.error("Failed to send message:", error);
       setConnectionError(true);

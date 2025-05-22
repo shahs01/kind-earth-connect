@@ -96,10 +96,15 @@ export function useConversations() {
           .or(`sender_id.eq.${convo.other_user_id},receiver_id.eq.${convo.other_user_id}`)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();  // Changed from single to maybeSingle to avoid errors
         
         if (msgError) {
           console.error("Error fetching last message:", msgError);
+          continue;
+        }
+        
+        if (!lastMessageData) {
+          console.error("No last message found for conversation with", convo.other_user_id);
           continue;
         }
         

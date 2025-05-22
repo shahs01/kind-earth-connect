@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RealtimeOptions {
@@ -67,6 +67,9 @@ export function useRealtime({
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
+            if (channelRef) {
+              channelRef.current = channel;
+            }
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
             setConnectionError(true);
@@ -85,17 +88,17 @@ export function useRealtime({
       setIsConnecting(false);
       return null;
     }
-  }, [userId, currentUserId, onMessageReceived, setConnectionError]);
+  }, [userId, currentUserId, onMessageReceived, setConnectionError, channelRef]);
   
   useEffect(() => {
     // Cleanup on unmount
     return () => {
-      if (channelRef.current) {
+      if (channelRef?.current) {
         console.log("Removing channel on useRealtime unmount");
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, []);
+  }, [channelRef]);
   
   return {
     setupRealtimeSubscription,
@@ -113,7 +116,7 @@ export function useGlobalMessageNotifications(
   const setupGlobalNotifications = useCallback(() => {
     if (!user?.id) {
       console.log("No user ID available, not setting up global message notifications");
-      return;
+      return null;
     }
 
     try {
@@ -155,9 +158,22 @@ export function useGlobalMessageNotifications(
     }
   }, [user?.id, onNewMessage]);
   
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (channelRef.current) {
+        console.log("Removing channel on useGlobalMessageNotifications unmount");
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, []);
+  
   return {
     setupGlobalNotifications,
     isConnecting,
     channelRef
   };
 }
+
+// Fix missing import
+import { useRef } from "react";
