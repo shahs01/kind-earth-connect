@@ -62,7 +62,6 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
         <Button 
           type="submit" 
           disabled={sending || !newMessage.trim() || loading}
-          className="bg-thryvance-green hover:bg-thryvance-green-dark"
         >
           {sending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
