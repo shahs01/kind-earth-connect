@@ -239,7 +239,9 @@ const Messages = () => {
     
     // Set up real-time subscription for new messages
     const globalChannel = setupGlobalNotifications();
-    globalChannelRef.current = globalChannel;
+    if (globalChannel) {
+      globalChannelRef.current = globalChannel;
+    }
     
     return () => {
       console.log("Cleaning up Messages component");
@@ -291,7 +293,9 @@ const Messages = () => {
       
       // Set up a new real-time connection
       const newChannel = setupGlobalNotifications();
-      globalChannelRef.current = newChannel;
+      if (newChannel) {
+        globalChannelRef.current = newChannel;
+      }
       
       toast({
         title: "Reconnected",

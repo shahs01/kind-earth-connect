@@ -75,8 +75,8 @@ export function useRealtime({
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
-            // Update the ref through proper callback in the component
-            channelRef.current = channel;
+            // Return the channel instead of directly modifying the ref
+            // The parent component will handle updating the ref
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
             setConnectionError(true);
@@ -153,7 +153,7 @@ export function useGlobalMessageNotifications(
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to global message notifications");
             setChannel(newChannel);
-            channelRef.current = newChannel;
+            // Update ref through state change in an effect
           }
         });
       
@@ -163,6 +163,13 @@ export function useGlobalMessageNotifications(
       return null;
     }
   }, [user?.id, onNewMessage]);
+  
+  // Use an effect to safely update the ref when channel changes
+  useEffect(() => {
+    if (channel) {
+      channelRef.current = channel;
+    }
+  }, [channel]);
   
   // Cleanup on unmount
   useEffect(() => {

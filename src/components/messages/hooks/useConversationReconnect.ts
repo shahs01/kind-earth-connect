@@ -31,7 +31,7 @@ export function useConversationReconnect(
       if (channelRef.current) {
         console.log("Cleaning up existing channel before reconnecting");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify channelRef.current, the new value will be set by setupRealtime
+        channelRef.current = null;
       }
       
       // Refetch messages
@@ -44,6 +44,7 @@ export function useConversationReconnect(
       
       if (channel) {
         console.log("Successfully reconnected and established new channel");
+        // The parent component will handle updating the ref
         toast({
           title: "Reconnected",
           description: "Chat connection restored successfully"
