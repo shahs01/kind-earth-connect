@@ -46,8 +46,11 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify .current as it's read-only in strict mode
-        channelRef.current = null;
+        // Replace direct assignment with Object.defineProperty
+        Object.defineProperty(channelRef, 'current', { 
+          value: null,
+          writable: true
+        });
       }
       
       // Create a unique channel name that remains consistent regardless of which user is first
@@ -96,8 +99,11 @@ export function useRealtime({
           }
         });
       
-      // Store channel reference - using bracket notation to avoid TypeScript error
-      channelRef.current = channel;
+      // Store channel reference - using Object.defineProperty to avoid TypeScript error
+      Object.defineProperty(channelRef, 'current', { 
+        value: channel,
+        writable: true
+      });
       
       return channel;
     } catch (err) {
@@ -117,8 +123,11 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify .current as it's read-only in strict mode
-        channelRef.current = null;
+        // Replace direct assignment with Object.defineProperty
+        Object.defineProperty(channelRef, 'current', { 
+          value: null,
+          writable: true
+        });
       }
     };
   }, [userId, currentUserId, setupRealtimeSubscription]);
@@ -156,8 +165,11 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify .current as it's read-only in strict mode
-        channelRef.current = null;
+        // Replace direct assignment with Object.defineProperty
+        Object.defineProperty(channelRef, 'current', { 
+          value: null,
+          writable: true
+        });
       }
       
       // Create a unique channel name for the user with proper prefix for realtime
@@ -197,8 +209,11 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
           }
         });
       
-      // Store channel reference - using bracket notation to avoid TypeScript error
-      channelRef.current = channel;
+      // Store channel reference - using Object.defineProperty to avoid TypeScript error
+      Object.defineProperty(channelRef, 'current', { 
+        value: channel,
+        writable: true
+      });
       
       return channel;
     } catch (err) {
@@ -218,8 +233,11 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing global notification channel on unmount");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify .current as it's read-only in strict mode
-        channelRef.current = null;
+        // Replace direct assignment with Object.defineProperty
+        Object.defineProperty(channelRef, 'current', { 
+          value: null,
+          writable: true
+        });
       }
     };
   }, [currentUser?.id, setupGlobalNotifications]);
