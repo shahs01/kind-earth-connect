@@ -21,14 +21,19 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    console.log("Messages changed, scrolling to bottom", messages.length);
-    scrollToBottom();
+    if (messages.length > 0) {
+      console.log("Messages changed, scrolling to bottom. Messages count:", messages.length);
+      scrollToBottom();
+    }
   }, [messages]);
 
+  // Log for debugging
   useEffect(() => {
-    // Log messages state for debugging
     console.log("MessageList rendered with messages:", messages);
-  }, [messages]);
+    if (currentUserId) {
+      console.log("Current user ID for message comparison:", currentUserId);
+    }
+  }, [messages, currentUserId]);
 
   if (loading && messages.length === 0) {
     return (
@@ -47,7 +52,6 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     );
   }
 
-  console.log("Rendering message list with", messages.length, "messages");
   return (
     <div className="space-y-4" data-testid="messages-container">
       {messages.map((message) => (

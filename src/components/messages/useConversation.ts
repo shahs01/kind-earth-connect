@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
@@ -160,14 +161,26 @@ export const useConversation = (userId: string | undefined) => {
     
     console.log("Sending message to userId:", userId);
     try {
+      // Clear any previous connection error state
+      setConnectionError(false);
+      
+      // Send the message using the hook
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
       
-      // Important: Refresh messages after sending to ensure UI is updated immediately
+      // Important: Refresh messages after sending
       console.log("Refreshing messages after sending");
       await fetchMessages(userId);
+      
+      // Show success toast
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent successfully",
+        variant: "default",
+      });
     } catch (error) {
       console.error("Failed to send message:", error);
+      setConnectionError(true);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",

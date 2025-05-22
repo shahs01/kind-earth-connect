@@ -33,7 +33,7 @@ export function useRealtime({
       return null;
     }
     
-    console.log(`Setting up message conversation real-time subscription with userId: ${userId}`);
+    console.log(`Setting up message conversation real-time subscription with userId: ${userId} and currentUserId: ${currentUserId}`);
     setIsConnecting(true);
     
     try {
@@ -104,7 +104,7 @@ export function useRealtime({
   // Set up subscription when parameters change
   useEffect(() => {
     console.log("Setting up real-time subscription with userId:", userId, "currentUserId:", currentUserId);
-    const channel = setupRealtimeSubscription();
+    setupRealtimeSubscription();
     
     return () => {
       if (channelRef.current) {

@@ -10,12 +10,14 @@ export function useMessageActions() {
 
   const sendMessage = useCallback(async (receiverId: string, content: string) => {
     if (!receiverId || !content.trim()) {
+      console.error("Missing receiverId or content");
       throw new Error("Recipient and message content are required");
     }
     
     setSending(true);
     try {
       console.log("Sending message to:", receiverId, "content:", content);
+      
       // Get the authenticated user's ID
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
@@ -29,6 +31,8 @@ export function useMessageActions() {
         throw new Error("Not authenticated");
       }
       
+      console.log("Current user ID:", user.id);
+      
       // Structure the message data
       const messageData = {
         receiver_id: receiverId,
@@ -36,6 +40,8 @@ export function useMessageActions() {
         content,
         read: false
       };
+      
+      console.log("Inserting message with data:", messageData);
       
       // Insert the message
       const { data, error } = await supabase

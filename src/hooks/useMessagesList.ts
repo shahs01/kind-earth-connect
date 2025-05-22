@@ -34,6 +34,8 @@ export function useMessagesList() {
         throw new Error("Not authenticated");
       }
       
+      console.log("Current user for fetching messages:", user.id);
+      
       // Get messages between current user and the selected user
       const { data, error } = await supabase
         .from('messages')
@@ -90,9 +92,7 @@ export function useMessagesList() {
         return prev;
       }
       console.log("Adding new message to state, current count:", prev.length);
-      const updated = [...prev, newMessage];
-      console.log("New messages count:", updated.length);
-      return updated;
+      return [...prev, newMessage];
     });
   }, []);
 
