@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -225,7 +224,9 @@ const Messages = () => {
     // Fetch conversations when component loads
     const loadConversations = async () => {
       try {
+        console.log("Fetching conversations for user:", user.id);
         await fetchConversations();
+        console.log("Conversations fetched successfully");
         setConnectionError(false);
       } catch (err) {
         console.error("Error loading conversations:", err);
@@ -243,10 +244,6 @@ const Messages = () => {
       if (channelRef.current) {
         console.log("Removing channel subscription on component unmount");
         supabase.removeChannel(channelRef.current);
-        Object.defineProperty(channelRef, 'current', { 
-          value: null,
-          writable: true
-        });
       }
     };
   }, [user, fetchConversations, setupGlobalNotifications, setConnectionError]);
@@ -283,10 +280,6 @@ const Messages = () => {
       // Remove existing channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        Object.defineProperty(channelRef, 'current', { 
-          value: null,
-          writable: true
-        });
       }
       
       // Reload conversations

@@ -1,80 +1,79 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, MapPin, Clock, User, AlertCircle, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, AlertCircle, MessageSquare, Heart, Share2, MapPin, Calendar, User } from "lucide-react";
+import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import ProfileDialog from "@/components/ProfileDialog";
-import { User as UserType } from "@/types";
-import { 
-  Dialog, 
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-
-interface ProfileData {
-  name?: string | null;
-  avatar?: string | null;
-}
+import PostActionMenu from "@/components/PostActionMenu";
 
 interface Post {
   id: string;
   title: string;
   description: string | null;
-  type: string;
+  type: "offer" | "request";
   category: string | null;
-  created_at: string;
   location: string | null;
-  status: string | null;
+  created_at: string;
   user_id: string;
-  profile?: ProfileData | null;
+  photos?: string[] | null;
+  status?: string | null;
+  timeframe?: string | null;
+  availability?: string | null;
+  user?: {
+    name: string;
+    avatar: string;
+    username?: string;
+  }
 }
 
 interface PostsListProps {
   searchQuery?: string;
   categoryFilter?: string;
-  typeFilter?: string | null;
   locationFilter?: string;
+  typeFilter?: "offer" | "request" | null;
+  userId?: string;
   sortBy?: string;
+  limit?: number;
 }
 
-const PostsList = ({ 
-  searchQuery = "", 
+const PostsList = ({
+  searchQuery = "",
   categoryFilter = "",
-  typeFilter = null,
   locationFilter = "",
-  sortBy = "newest"
+  typeFilter = null,
+  userId,
+  sortBy = "newest",
+  limit
 }: PostsListProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedPostTitle, setSelectedPostTitle] = useState<string>("");
-  const [messageContent, setMessageContent] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const { toast } = useToast();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-
+  const { toast } = useToast();
+  
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         setLoading(true);
-        console.log("Fetching posts with filters:", { searchQuery, categoryFilter, typeFilter, locationFilter, sortBy });
-        
-        // Start building the query
+        console.log("Fetching posts with filters:", { searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit });
+
         let query = supabase
           .from('posts')
-          .select('*')
+          .select(`
+            *,
+            profiles:user_id (
+              name,
+              avatar,
+              username
+            )
+          `)
           .eq('status', 'active');
 
         // Apply filters
@@ -82,16 +81,20 @@ const PostsList = ({
           query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
         }
         
-        if (categoryFilter && categoryFilter !== "All Categories") {
+        if (categoryFilter) {
           query = query.eq('category', categoryFilter);
-        }
-        
-        if (typeFilter && typeFilter !== "all") {
-          query = query.eq('type', typeFilter);
         }
         
         if (locationFilter) {
           query = query.ilike('location', `%${locationFilter}%`);
+        }
+        
+        if (typeFilter) {
+          query = query.eq('type', typeFilter);
+        }
+
+        if (userId) {
+          query = query.eq('user_id', userId);
         }
 
         // Apply sorting
@@ -102,358 +105,228 @@ const PostsList = ({
           query = query.order('created_at', { ascending: false });
         }
 
-        const { data: postsData, error: postsError } = await query;
-        
-        console.log("Posts query result:", { postsData, postsError });
+        // Apply limit if provided
+        if (limit) {
+          query = query.limit(limit);
+        }
 
-        if (postsError) throw postsError;
-        
-        if (!postsData || postsData.length === 0) {
-          setPosts([]);
-          return;
+        const { data, error: fetchError } = await query;
+
+        if (fetchError) {
+          throw fetchError;
         }
+
+        console.log("Posts fetched:", data?.length);
         
-        // Get profile data for each post
-        const postsWithProfiles = await Promise.all(postsData.map(async (post) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, avatar')
-            .eq('id', post.user_id)
-            .single();
-          
-          return {
-            ...post,
-            profile: profileData || null
-          };
-        }));
-        
-        setPosts(postsWithProfiles);
-        
-        if (postsWithProfiles.length === 0) {
-          toast({
-            title: "No posts found",
-            description: "Try adjusting your search filters to find more posts",
-            variant: "default"
-          });
-        }
+        // Transform data to include user details
+        const formattedPosts = data?.map(post => ({
+          ...post,
+          user: post.profiles ? {
+            name: post.profiles.name || post.profiles.username || "Unknown User",
+            avatar: post.profiles.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.profiles.name || 'User')}`,
+            username: post.profiles.username
+          } : {
+            name: "Unknown User",
+            avatar: "https://ui-avatars.com/api/?name=Unknown"
+          }
+        })) || [];
+
+        setPosts(formattedPosts);
       } catch (err: any) {
         console.error("Error fetching posts:", err);
-        setError(err.message || "Failed to load posts");
+        setError("Failed to load posts");
+        toast({
+          title: "Error",
+          description: "Failed to load posts. Please try again later.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchPosts();
-  }, [searchQuery, categoryFilter, typeFilter, locationFilter, sortBy, toast]);
+  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast]);
 
-  const handleContact = async (userId: string, postTitle: string) => {
-    try {
-      // Check if user is authenticated
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to contact other users",
-          variant: "destructive"
-        });
-        navigate('/login');
-        return;
-      }
-
-      // Open the message dialog
-      setSelectedUserId(userId);
-      setSelectedPostTitle(postTitle);
-      setMessageDialogOpen(true);
-    } catch (err) {
-      console.error("Error getting user data:", err);
+  const handleMessageClick = (postUserId: string) => {
+    if (!isAuthenticated) {
       toast({
-        title: "Error",
-        description: "Could not contact this user. Please try again.",
-        variant: "destructive"
+        title: "Authentication Required",
+        description: "Please log in to send messages",
       });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
     }
+
+    // Navigate to messages with the post creator
+    navigate(`/messages/${postUserId}`);
   };
-
-  const sendMessage = async () => {
-    if (!selectedUserId || !messageContent.trim()) return;
-    
-    try {
-      setSendingMessage(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("You must be logged in to send messages");
-      }
-      
-      // Add post title to the message if it exists
-      const messageWithContext = selectedPostTitle 
-        ? `Regarding: "${selectedPostTitle}"\n\n${messageContent}` 
-        : messageContent;
-      
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: selectedUserId,
-          content: messageWithContext
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully!",
-      });
-      
-      // Close dialog and reset
-      setMessageDialogOpen(false);
-      setMessageContent("");
-      setSelectedUserId(null);
-      setSelectedPostTitle("");
-      
-      // Navigate to messages
-      navigate('/messages');
-    } catch (err: any) {
-      console.error("Error sending message:", err);
-      toast({
-        title: "Error sending message",
-        description: err.message || "Could not send message. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setSendingMessage(false);
-    }
-  };
-
-  const handleViewProfile = async (userId: string) => {
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (userError) throw userError;
-
-      if (userData) {
-        const user: UserType = {
-          id: userData.id,
-          username: userData.username || '',
-          email: userData.email || '',
-          name: userData.name || '',
-          avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
-          bio: userData.bio || '',
-          location: userData.location || '',
-          trustScore: userData.trust_score || 0,
-          helpOffered: userData.help_offered || 0,
-          helpReceived: userData.help_received || 0,
-          volunteerHours: userData.volunteer_hours || 0,
-          createdAt: new Date(userData.created_at || Date.now()),
-          verifiedStatus: userData.verified_status || false,
-          emailVerified: true,
-          trustBadges: userData.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        };
-
-        setSelectedUser(user);
-        setIsProfileOpen(true);
-      }
-    } catch (err) {
-      console.error("Error getting user data:", err);
-      toast({
-        title: "Error",
-        description: "Could not view this user's profile. Please try again.",
-        variant: "destructive"
-      });
-    }
-  }
 
   if (loading) {
     return (
-      <div className="my-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="h-24 bg-gray-100"></CardHeader>
-              <CardContent className="h-32 mt-4 space-y-3">
-                <div className="h-4 bg-gray-100 rounded"></div>
-                <div className="h-4 bg-gray-100 rounded w-4/5"></div>
-                <div className="h-4 bg-gray-100 rounded w-2/3"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+        <span className="ml-2">Loading posts...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="my-8 border-red-200">
-        <CardContent className="text-center py-6">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <p className="text-red-500 font-medium mb-2">Error Loading Posts</p>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="bg-red-50 p-4 rounded-md my-4 flex items-center">
+        <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+        <p className="text-red-700">{error}</p>
+      </div>
     );
   }
 
   if (posts.length === 0) {
     return (
-      <Card className="my-8 border-gray-200">
-        <CardContent className="text-center py-12">
-          <h3 className="text-xl font-medium text-gray-700 mb-2">No Posts Found</h3>
-          <p className="text-gray-500 mb-6">
-            {searchQuery || categoryFilter || typeFilter || locationFilter
-              ? "Try adjusting your search filters"
-              : "Be the first to create a post in our community!"}
-          </p>
-          <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
-            <Link to="/create-posting">Create a Post</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="text-center py-12">
+        <div className="bg-gray-100 inline-block p-5 rounded-full mb-4">
+          <AlertCircle className="h-12 w-12 text-gray-400" />
+        </div>
+        <h3 className="text-xl font-medium text-gray-900 mb-2">No posts found</h3>
+        <p className="text-gray-500 mb-6 max-w-md mx-auto">
+          {searchQuery || categoryFilter || locationFilter || typeFilter ? 
+            "Try adjusting your search filters to find more posts." : 
+            "There are no posts available right now. Be the first to create one!"}
+        </p>
+        {isAuthenticated && (
+          <div className="flex justify-center gap-3">
+            <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+              <Link to="/offer-help">Offer Help</Link>
+            </Button>
+            <Button asChild className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
+              <Link to="/request-help">Request Help</Link>
+            </Button>
+          </div>
+        )}
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
-        {posts.map((post) => (
-          <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
-            <CardHeader className={
-              post.type === 'offer' 
-                ? 'border-b-2 border-thryvance-green-light bg-thryvance-green-light/20 pb-3' 
-                : 'border-b-2 border-thryvance-blue-light bg-thryvance-blue-light/20 pb-3'
-            }>
-              <div className="flex justify-between">
-                <Badge variant={post.type === 'offer' ? 'outline' : 'default'} className={
-                  post.type === 'offer' 
-                    ? 'bg-thryvance-green-light text-thryvance-green border-thryvance-green' 
-                    : 'bg-thryvance-blue-light text-thryvance-blue'
-                }>
-                  {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
-                </Badge>
-                
-                {post.category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {post.category}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            
-            <CardContent className="pt-4">
-              <CardTitle className="text-lg mb-2">{post.title}</CardTitle>
-              
-              <p className="text-gray-700 mb-4 line-clamp-3">{post.description}</p>
-              
-              <div className="flex flex-wrap gap-y-2 text-sm text-gray-500">
-                {post.location && (
-                  <div className="flex items-center gap-1 w-full">
-                    <MapPin className="h-3.5 w-3.5" /> 
-                    <span className="truncate">{post.location}</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-1 w-full">
-                  <Clock className="h-3.5 w-3.5" /> 
-                  <span>Posted {new Date(post.created_at).toLocaleDateString()}</span>
+    <div className="space-y-6">
+      {posts.map((post) => (
+        <Card key={post.id} className="overflow-hidden shadow-md">
+          <div className="p-5">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={post.user?.avatar} alt={post.user?.name} />
+                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-medium text-gray-900">{post.user?.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(post.created_at), 'MMM d, yyyy')}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-            
-            <CardFooter className="border-t pt-3 flex justify-between items-center bg-gray-50">
-              <div 
-                className="flex items-center gap-2 cursor-pointer" 
-                onClick={() => handleViewProfile(post.user_id)}
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={post.profile?.avatar || undefined} />
-                  <AvatarFallback className="bg-thryvance-neutral-light text-thryvance-neutral-dark">
-                    <User className="h-3.5 w-3.5" />
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium truncate max-w-[100px]">
-                  {post.profile?.name || "User"}
-                </span>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  variant={post.type === 'offer' ? 'outline' : 'default'}
+                  className={post.type === 'offer' 
+                    ? 'border-thryvance-green text-thryvance-green' 
+                    : 'bg-thryvance-blue text-white'
+                  }
+                >
+                  {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
+                </Badge>
+                {user && post.user_id === user.id && (
+                  <PostActionMenu postId={post.id} onDeleted={() => {
+                    setPosts(posts.filter(p => p.id !== post.id));
+                  }} />
+                )}
               </div>
-              
-              <Button 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={() => handleContact(post.user_id, post.title)}
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span>Message</span>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-      
-      <ProfileDialog 
-        user={selectedUser} 
-        open={isProfileOpen} 
-        onOpenChange={setIsProfileOpen} 
-      />
+            </div>
 
-      {/* Quick Message Dialog */}
-      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send Message</DialogTitle>
-            <DialogDescription>
-              {selectedPostTitle ? `About: ${selectedPostTitle}` : "Send a direct message"}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <Textarea
-              placeholder="Write your message here..."
-              value={messageContent}
-              onChange={(e) => setMessageContent(e.target.value)}
-              className="min-h-[120px]"
-            />
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setMessageDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={sendMessage}
-              disabled={!messageContent.trim() || sendingMessage}
-              className="bg-thryvance-green hover:bg-thryvance-green-dark"
-            >
-              {sendingMessage ? (
-                <>Sending...</>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Message
-                </>
+            <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
+            <p className="text-gray-700 mb-4 whitespace-pre-line">{post.description}</p>
+
+            {post.photos && post.photos.length > 0 && (
+              <div className="mb-4">
+                <div className="flex overflow-x-auto space-x-2 py-2">
+                  {post.photos.map((photo, index) => (
+                    <div key={index} className="flex-shrink-0 w-48 h-32 rounded overflow-hidden">
+                      <img 
+                        src={photo} 
+                        alt={`Photo ${index + 1} for ${post.title}`} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200?text=Image+Not+Available';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 mt-4 mb-4">
+              {post.category && (
+                <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
+                  {post.category}
+                </Badge>
               )}
-            </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
+              {post.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {post.location}
+                </div>
+              )}
+              {post.timeframe && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {post.timeframe}
+                </div>
+              )}
+              {post.availability && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {post.availability}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="flex gap-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center text-gray-500"
+                >
+                  <Heart className="mr-1 h-4 w-4" />
+                  <span>Like</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center text-gray-500"
+                  onClick={() => user?.id !== post.user_id && handleMessageClick(post.user_id)}
+                  disabled={user?.id === post.user_id}
+                >
+                  <MessageSquare className="mr-1 h-4 w-4" />
+                  <span>Message</span>
+                </Button>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center text-gray-500"
+              >
+                <Share2 className="mr-1 h-4 w-4" />
+                <span>Share</span>
+              </Button>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </Card>
+      ))}
+    </div>
   );
 };
 

@@ -77,6 +77,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     );
   }
   
+  console.log("Messages in conversation:", messages);
+  
   return (
     <>
       <div className="flex flex-col h-[70vh]">

@@ -24,8 +24,7 @@ export function useConversationMessages(
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
       
-      // Don't need to refresh messages since we should get real-time updates,
-      // but we'll do it anyway as a fallback
+      // Refresh messages after sending to ensure we have the latest
       console.log("Refreshing messages after sending");
       await fetchMessages(userId);
     } catch (error) {
