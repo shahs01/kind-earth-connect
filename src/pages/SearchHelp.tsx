@@ -3,7 +3,6 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchFilters from "@/components/search/SearchFilters";
-import ResultsDisplay from "@/components/search/ResultsDisplay";
 import PostsList from "@/components/PostsList";
 import { categories } from "@/data/searchHelpData";
 import { useAuth } from "@/context/AuthContext";
@@ -62,10 +61,9 @@ const SearchHelp = () => {
             categories={categories}
           />
           
-          {/* Use PostsList component to display search results from Supabase */}
           <PostsList
             searchQuery={searchQuery}
-            categoryFilter={selectedCategory}
+            categoryFilter={selectedCategory !== "All Categories" ? selectedCategory : ""}
             typeFilter={postType === "all" ? null : (postType === "offers" ? "offer" : "request")}
             locationFilter={locationFilter}
             sortBy={sortBy}

@@ -14,7 +14,7 @@ import { categories } from "@/data/searchHelpData";
 import { useAuth } from "@/context/AuthContext";
 
 const EditPosting = () => {
-  const { postId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -35,42 +35,44 @@ const EditPosting = () => {
   
   // Load existing post data
   useEffect(() => {
-    const loadPostData = async () => {
-      if (!postId) return;
+    const fetchPost = async () => {
+      if (!id) return;
       
       try {
         setIsLoading(true);
         setError("");
         
-        const { data: post, error: postError } = await supabase
+        const { data: postData, error: postError } = await supabase
           .from('posts')
           .select('*')
-          .eq('id', postId)
+          .eq('id', id)
           .single();
         
         if (postError) {
           throw postError;
         }
         
-        if (!post) {
+        if (!postData) {
           setError("Post not found");
           return;
         }
         
         // Check if the post belongs to the current user
-        if (post.user_id !== user?.id) {
+        if (postData.user_id !== user?.id) {
           setError("You don't have permission to edit this post");
           navigate('/profile');
           return;
         }
         
         // Populate form fields
-        setTitle(post.title || '');
-        setDescription(post.description || '');
-        setType(post.type || '');
-        setCategory(post.category || '');
-        setLocation(post.location || '');
-        setPhotos(post.photos || []);
+        setTitle(postData.title);
+        setDescription(postData.description || "");
+        setCategory(postData.category || "");
+        setLocation(postData.location || "");
+        setType(postData.type);
+        setAvailability(postData.availability || "");
+        setTimeframe(postData.timeframe || "");
+        setExistingPhotos(postData.photos || []);
         
       } catch (err: any) {
         console.error("Error loading post:", err);
@@ -84,9 +86,11 @@ const EditPosting = () => {
         setIsLoading(false);
       }
     };
-    
-    loadPostData();
-  }, [postId, navigate, toast, user?.id]);
+
+    if (id) {
+      fetchPost();
+    }
+  }, [id, navigate, toast, user?.id]);
   
   const handleNewPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -166,7 +170,7 @@ const EditPosting = () => {
           photos: allPhotos,
           // Don't change user_id or created_at
         })
-        .eq('id', postId);
+        .eq('id', id);
       
       if (updateError) {
         throw updateError;

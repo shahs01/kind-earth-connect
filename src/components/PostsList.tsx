@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, MapPin, Clock, User, AlertCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import ProfileDialog from "@/components/ProfileDialog";
+import { User as UserType } from "@/types";
 
 interface ProfileData {
   name?: string | null;
@@ -45,7 +47,10 @@ const PostsList = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -129,6 +134,105 @@ const PostsList = ({
     fetchPosts();
   }, [searchQuery, categoryFilter, typeFilter, locationFilter, sortBy, toast]);
 
+  const handleContact = async (userId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      // Check if user is authenticated
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to contact other users",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return;
+      }
+
+      if (userData) {
+        const user: UserType = {
+          id: userData.id,
+          username: userData.username || '',
+          email: userData.email || '',
+          name: userData.name || '',
+          avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
+          bio: userData.bio || '',
+          location: userData.location || '',
+          trustScore: userData.trust_score || 0,
+          helpOffered: userData.help_offered || 0,
+          helpReceived: userData.help_received || 0,
+          volunteerHours: userData.volunteer_hours || 0,
+          createdAt: new Date(userData.created_at || Date.now()),
+          verifiedStatus: userData.verified_status || false,
+          emailVerified: true,
+          trustBadges: userData.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        };
+
+        navigate(`/messages/${userId}`);
+      }
+    } catch (err) {
+      console.error("Error getting user data:", err);
+      toast({
+        title: "Error",
+        description: "Could not contact this user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }
+
+  const handleViewProfile = async (userId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      if (userData) {
+        const user: UserType = {
+          id: userData.id,
+          username: userData.username || '',
+          email: userData.email || '',
+          name: userData.name || '',
+          avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
+          bio: userData.bio || '',
+          location: userData.location || '',
+          trustScore: userData.trust_score || 0,
+          helpOffered: userData.help_offered || 0,
+          helpReceived: userData.help_received || 0,
+          volunteerHours: userData.volunteer_hours || 0,
+          createdAt: new Date(userData.created_at || Date.now()),
+          verifiedStatus: userData.verified_status || false,
+          emailVerified: true,
+          trustBadges: userData.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        };
+
+        setSelectedUser(user);
+        setIsProfileOpen(true);
+      }
+    } catch (err) {
+      console.error("Error getting user data:", err);
+      toast({
+        title: "Error",
+        description: "Could not view this user's profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }
+
   if (loading) {
     return (
       <div className="my-8">
@@ -186,72 +290,87 @@ const PostsList = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
-      {posts.map((post) => (
-        <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
-          <CardHeader className={
-            post.type === 'offer' 
-              ? 'border-b-2 border-thryvance-green-light bg-thryvance-green-light/20 pb-3' 
-              : 'border-b-2 border-thryvance-blue-light bg-thryvance-blue-light/20 pb-3'
-          }>
-            <div className="flex justify-between">
-              <Badge variant={post.type === 'offer' ? 'outline' : 'default'} className={
-                post.type === 'offer' 
-                  ? 'bg-thryvance-green-light text-thryvance-green border-thryvance-green' 
-                  : 'bg-thryvance-blue-light text-thryvance-blue'
-              }>
-                {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
-              </Badge>
-              
-              {post.category && (
-                <Badge variant="secondary" className="text-xs">
-                  {post.category}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+        {posts.map((post) => (
+          <Card key={post.id} className="overflow-hidden hover:shadow-md transition-shadow">
+            <CardHeader className={
+              post.type === 'offer' 
+                ? 'border-b-2 border-thryvance-green-light bg-thryvance-green-light/20 pb-3' 
+                : 'border-b-2 border-thryvance-blue-light bg-thryvance-blue-light/20 pb-3'
+            }>
+              <div className="flex justify-between">
+                <Badge variant={post.type === 'offer' ? 'outline' : 'default'} className={
+                  post.type === 'offer' 
+                    ? 'bg-thryvance-green-light text-thryvance-green border-thryvance-green' 
+                    : 'bg-thryvance-blue-light text-thryvance-blue'
+                }>
+                  {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
                 </Badge>
-              )}
-            </div>
-          </CardHeader>
-          
-          <CardContent className="pt-4">
-            <CardTitle className="text-lg mb-2">{post.title}</CardTitle>
-            
-            <p className="text-gray-700 mb-4 line-clamp-3">{post.description}</p>
-            
-            <div className="flex flex-wrap gap-y-2 text-sm text-gray-500">
-              {post.location && (
-                <div className="flex items-center gap-1 w-full">
-                  <MapPin className="h-3.5 w-3.5" /> 
-                  <span className="truncate">{post.location}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-1 w-full">
-                <Clock className="h-3.5 w-3.5" /> 
-                <span>Posted {new Date(post.created_at).toLocaleDateString()}</span>
+                
+                {post.category && (
+                  <Badge variant="secondary" className="text-xs">
+                    {post.category}
+                  </Badge>
+                )}
               </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="border-t pt-3 flex justify-between items-center bg-gray-50">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={post.profile?.avatar || undefined} />
-                <AvatarFallback className="bg-thryvance-neutral-light text-thryvance-neutral-dark">
-                  <User className="h-3.5 w-3.5" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium truncate max-w-[100px]">
-                {post.profile?.name || "User"}
-              </span>
-            </div>
+            </CardHeader>
             
-            <Button size="sm" className="flex items-center gap-1">
-              <MessageSquare className="h-3.5 w-3.5" />
-              <span>Contact</span>
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
+            <CardContent className="pt-4">
+              <CardTitle className="text-lg mb-2">{post.title}</CardTitle>
+              
+              <p className="text-gray-700 mb-4 line-clamp-3">{post.description}</p>
+              
+              <div className="flex flex-wrap gap-y-2 text-sm text-gray-500">
+                {post.location && (
+                  <div className="flex items-center gap-1 w-full">
+                    <MapPin className="h-3.5 w-3.5" /> 
+                    <span className="truncate">{post.location}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-1 w-full">
+                  <Clock className="h-3.5 w-3.5" /> 
+                  <span>Posted {new Date(post.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </CardContent>
+            
+            <CardFooter className="border-t pt-3 flex justify-between items-center bg-gray-50">
+              <div 
+                className="flex items-center gap-2 cursor-pointer" 
+                onClick={() => handleViewProfile(post.user_id)}
+              >
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={post.profile?.avatar || undefined} />
+                  <AvatarFallback className="bg-thryvance-neutral-light text-thryvance-neutral-dark">
+                    <User className="h-3.5 w-3.5" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium truncate max-w-[100px]">
+                  {post.profile?.name || "User"}
+                </span>
+              </div>
+              
+              <Button 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={() => handleContact(post.user_id)}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>Contact</span>
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+      
+      <ProfileDialog 
+        user={selectedUser} 
+        open={isProfileOpen} 
+        onOpenChange={setIsProfileOpen} 
+      />
+    </>
   );
 };
 
