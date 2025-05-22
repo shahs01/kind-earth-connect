@@ -45,11 +45,23 @@ const NewMessageForm = () => {
     try {
       console.log("Searching users with term:", searchTerm);
       // Get current user ID
-      const { data: authData } = await supabase.auth.getSession();
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        throw new Error(authError.message);
+      }
+      
       const currentUserId = authData.session?.user?.id;
 
       if (!currentUserId) {
         console.warn("No authenticated user found when searching");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to search for users",
+          variant: "destructive"
+        });
+        return;
       }
 
       // Search for users
@@ -90,11 +102,11 @@ const NewMessageForm = () => {
 
         setUsers(formattedUsers);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error searching users:", err);
       toast({
         title: "Error",
-        description: "Failed to search users",
+        description: err.message || "Failed to search users",
         variant: "destructive"
       });
     } finally {
@@ -115,6 +127,7 @@ const NewMessageForm = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="mb-4"
+          autoFocus
         />
         {loading && <Loader2 className="h-5 w-5 animate-spin mx-auto text-gray-400" />}
       </div>
@@ -162,18 +175,52 @@ const Messages = () => {
   const { fetchUserProfile } = useAuthProfile();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
+  const [connectionError, setConnectionError] = useState(false);
   
   useEffect(() => {
-    // Check if user is logged in
-    if (!user) {
-      console.log("User not logged in, redirecting to login");
-      navigate('/login');
-      return;
-    }
-
+    const checkAuth = async () => {
+      // Check if user is logged in
+      if (!user) {
+        console.log("User not logged in, redirecting to login");
+        navigate('/login');
+        return;
+      }
+      
+      // Verify authentication
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        console.error("Auth check failed:", error);
+        toast({
+          title: "Authentication Error",
+          description: "Please log in again to access messages",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return;
+      }
+      
+      console.log("Authentication verified, user ID:", data.user.id);
+    };
+    
+    checkAuth();
+  }, [navigate, user, toast]);
+  
+  useEffect(() => {
+    if (!user) return;
+    
     console.log("Messages component mounted, fetching conversations");
     // Fetch conversations when component loads
-    fetchConversations();
+    const loadConversations = async () => {
+      try {
+        await fetchConversations();
+        setConnectionError(false);
+      } catch (err) {
+        console.error("Error loading conversations:", err);
+        setConnectionError(true);
+      }
+    };
+    
+    loadConversations();
     
     // Set up real-time subscription for new messages
     const channel = supabase
@@ -200,7 +247,16 @@ const Messages = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime subscription status for new messages:", status);
+        if (status !== 'SUBSCRIBED') {
+          toast({
+            title: "Connection issue",
+            description: "Problem connecting to real-time updates",
+            variant: "destructive"
+          });
+        }
+      });
     
     console.log("Real-time subscription for new messages set up");
     
@@ -208,7 +264,7 @@ const Messages = () => {
       console.log("Cleaning up Messages component");
       supabase.removeChannel(channel);
     };
-  }, [user, navigate, location.pathname, fetchConversations]);
+  }, [user, navigate, location.pathname, fetchConversations, toast]);
   
   const handleSelectConversation = (userId: string) => {
     console.log("Selecting conversation with user:", userId);
@@ -235,6 +291,46 @@ const Messages = () => {
       });
     }
   };
+
+  // Show authentication error or connection error
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow py-8 bg-gray-50">
+          <div className="container mx-auto px-4 text-center py-16">
+            <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
+            <p className="mb-6">You need to be logged in to view messages</p>
+            <Button onClick={() => navigate('/login')}>Log In</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (connectionError) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow py-8 bg-gray-50">
+          <div className="container mx-auto px-4 text-center py-16">
+            <div className="text-red-500 mb-4 mx-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h3 className="text-xl font-medium mb-2">Connection Error</h3>
+            <p className="text-gray-500 mb-4">Unable to load conversations</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col">

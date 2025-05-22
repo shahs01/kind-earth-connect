@@ -52,7 +52,12 @@ export function useMessages() {
     try {
       console.log("Fetching conversations");
       // First, get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        throw new Error(authError.message);
+      }
       
       if (!user) {
         console.error("Not authenticated");
@@ -154,7 +159,7 @@ export function useMessages() {
       console.error("Error fetching conversations:", error);
       toast({
         title: "Error fetching conversations",
-        description: error.message,
+        description: error.message || "Failed to load conversations",
         variant: "destructive",
       });
       return [];
@@ -164,11 +169,21 @@ export function useMessages() {
   }, [toast]);
   
   const fetchMessages = useCallback(async (userId: string) => {
+    if (!userId) {
+      console.error("No userId provided to fetchMessages");
+      return [];
+    }
+    
     setLoading(true);
     try {
       console.log("Fetching messages with userId:", userId);
       // Get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        throw new Error(authError.message);
+      }
       
       if (!user) {
         console.error("Not authenticated");
@@ -200,12 +215,12 @@ export function useMessages() {
       // Mark messages as read
       await markMessagesAsRead(userId);
       
-      return data;
+      return data || [];
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       toast({
         title: "Error fetching messages",
-        description: error.message,
+        description: error.message || "Failed to load messages",
         variant: "destructive",
       });
       return [];
@@ -215,10 +230,19 @@ export function useMessages() {
   }, [toast]);
   
   const sendMessage = useCallback(async (receiverId: string, content: string) => {
+    if (!receiverId || !content.trim()) {
+      throw new Error("Recipient and message content are required");
+    }
+    
     try {
       console.log("Sending message to:", receiverId, "content:", content);
       // Get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        throw new Error(authError.message);
+      }
       
       if (!user) {
         console.error("Not authenticated");
@@ -230,7 +254,8 @@ export function useMessages() {
         .insert({
           receiver_id: receiverId,
           sender_id: user.id,
-          content
+          content,
+          read: false
         })
         .select();
       
@@ -251,7 +276,7 @@ export function useMessages() {
       console.error("Error sending message:", error);
       toast({
         title: "Error sending message",
-        description: error.message,
+        description: error.message || "Failed to send message",
         variant: "destructive",
       });
       throw error;
@@ -259,14 +284,24 @@ export function useMessages() {
   }, [toast]);
   
   const markMessagesAsRead = useCallback(async (senderId: string) => {
+    if (!senderId) {
+      console.error("No senderId provided to markMessagesAsRead");
+      return;
+    }
+    
     try {
       console.log("Marking messages as read from sender:", senderId);
       // Get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        return;
+      }
       
       if (!user) {
         console.error("Not authenticated");
-        throw new Error("Not authenticated");
+        return;
       }
       
       // Mark all messages from the sender as read
@@ -279,7 +314,7 @@ export function useMessages() {
       
       if (error) {
         console.error("Error marking messages as read:", error);
-        throw error;
+        return;
       }
       
       console.log("Messages marked as read");
@@ -299,7 +334,7 @@ export function useMessages() {
       ));
       
       // Refresh conversations to update the unread count
-      fetchConversations();
+      await fetchConversations();
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }

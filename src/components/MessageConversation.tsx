@@ -25,33 +25,49 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const [otherUser, setOtherUser] = useState<UserType | null>(null);
   const [sending, setSending] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // Check if user is authenticated and has a valid userId
   useEffect(() => {
     if (!user) {
+      console.log("No authenticated user, redirecting to login");
       navigate('/login');
       return;
     }
 
     if (!userId) {
-      return; // Exit early if there's no userId
+      console.log("No userId provided in the URL");
+      return;
     }
+  }, [user, userId, navigate]);
 
-    console.log("Setting up message conversation with userId:", userId);
+  // Fetch messages and set up real-time subscriptions
+  useEffect(() => {
+    if (!user || !userId) return;
+
+    console.log(`Setting up message conversation with userId: ${userId}`);
     
-    // Ensure we have the latest messages
-    fetchMessages(userId)
-      .then(() => {
-        console.log("Messages fetched successfully");
-        // Mark messages as read when conversation is opened
-        return markMessagesAsRead(userId);
-      })
-      .catch(err => {
-        console.error("Error fetching messages:", err);
-      });
+    // Load initial messages
+    const loadMessages = async () => {
+      try {
+        await fetchMessages(userId);
+        await markMessagesAsRead(userId);
+        setConnectionError(false);
+      } catch (err) {
+        console.error("Error loading messages:", err);
+        setConnectionError(true);
+        toast({
+          title: "Connection error",
+          description: "Could not load messages. Please try again.",
+          variant: "destructive"
+        });
+      }
+    };
     
+    loadMessages();
     fetchOtherUser(userId);
     
     // Set up real-time subscription for new messages
@@ -87,7 +103,16 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime subscription status:", status);
+        if (status !== 'SUBSCRIBED') {
+          toast({
+            title: "Connection issue",
+            description: "Problem connecting to real-time updates",
+            variant: "destructive"
+          });
+        }
+      });
     
     console.log("Real-time channel subscription set up");
     
@@ -95,8 +120,9 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       console.log("Cleaning up message conversation");
       supabase.removeChannel(channel);
     };
-  }, [userId, user, fetchMessages, markMessagesAsRead]);
+  }, [userId, user, fetchMessages, markMessagesAsRead, toast]);
   
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -112,10 +138,24 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       
       if (error) {
         console.error("Error fetching user profile:", error);
-        throw error;
+        toast({
+          title: "Error",
+          description: "Could not load user information",
+          variant: "destructive"
+        });
+        return;
       }
       
       console.log("User profile fetched:", data);
+      
+      if (!data) {
+        toast({
+          title: "User not found",
+          description: "The user profile could not be found",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const userData: UserType = {
         id: data.id,
@@ -174,7 +214,9 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   };
   
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const handleViewProfile = () => {
@@ -190,10 +232,10 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const handleReportUser = () => {
     if (!otherUser) return;
     
-    toast({
-      title: "Report submitted",
-      description: `We've received your report about ${otherUser.name || otherUser.username}. Our team will review it shortly.`
+    const event = new CustomEvent('report-user', { 
+      detail: { userId: otherUser.id } 
     });
+    window.dispatchEvent(event);
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -202,6 +244,28 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       handleSendMessage();
     }
   };
+  
+  // Show connection error or redirect if no user
+  if (!user) {
+    return <div className="p-8 text-center">Please log in to view messages</div>;
+  }
+
+  if (connectionError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh]">
+        <div className="text-red-500 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h3 className="text-xl font-medium mb-2">Connection Error</h3>
+        <p className="text-gray-500 mb-4">Unable to load conversation</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    );
+  }
   
   return (
     <>
