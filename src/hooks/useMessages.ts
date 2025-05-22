@@ -84,6 +84,7 @@ export function useMessages() {
     markMessagesAsRead,
     connectionError,
     setConnectionError,
-    sending
+    sending,
+    setMessages // Expose setMessages so it's available to components that use this hook
   };
 }

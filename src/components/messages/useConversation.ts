@@ -47,7 +47,7 @@ const useConversation = (userId?: string) => {
     sendMessage,
     markMessagesAsRead, 
     sending,
-    setMessages
+    setMessages // Correctly destructured here
   } = useMessages();
 
   // When a new message is received via realtime, add it to the messages list
