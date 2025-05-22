@@ -19,21 +19,27 @@ export function useRealtime({
 }: UseRealtimeProps) {
   const channelRef = useRef<any>(null);
   const { toast } = useToast();
+  const [isConnecting, setIsConnecting] = useState(false);
   
   const setupRealtimeSubscription = useCallback(() => {
     if (!currentUserId || !userId) return null;
+    if (isConnecting) return null;
     
     console.log(`Setting up message conversation real-time subscription with userId: ${userId}`);
+    setIsConnecting(true);
     
     try {
       // Clean up any existing subscription
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
       
-      // Create a new subscription with a unique channel name
-      const channelName = `messages:${currentUserId}-${userId}`;
+      // Create a unique channel name that remains consistent regardless of which user is first
+      // Sort IDs to ensure same channel name regardless of sender/receiver order
+      const ids = [currentUserId, userId].sort();
+      const channelName = `messages:${ids[0]}-${ids[1]}`;
       console.log(`Creating new channel: ${channelName}`);
       
       const channel = supabase
@@ -46,8 +52,8 @@ export function useRealtime({
             table: 'messages',
             filter: `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId}))`
           },
-          () => {
-            console.log("Received real-time message update");
+          (payload) => {
+            console.log("Received real-time message update:", payload);
             if (onMessageReceived) {
               onMessageReceived();
             }
@@ -55,6 +61,8 @@ export function useRealtime({
         )
         .subscribe((status) => {
           console.log(`Realtime subscription status for ${channelName}:`, status);
+          setIsConnecting(false);
+          
           if (status === 'SUBSCRIBED') {
             setConnectionError(false);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -74,24 +82,28 @@ export function useRealtime({
     } catch (err) {
       console.error("Error setting up real-time subscription:", err);
       setConnectionError(true);
+      setIsConnecting(false);
       return null;
     }
-  }, [userId, currentUserId, onMessageReceived, toast, setConnectionError]);
+  }, [userId, currentUserId, onMessageReceived, toast, setConnectionError, isConnecting]);
 
-  // Clean up function for subscription
+  // Set up subscription when parameters change
   useEffect(() => {
+    const subscription = setupRealtimeSubscription();
+    
     return () => {
       if (channelRef.current) {
-        console.log("Removing channel on component unmount");
+        console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, []);
+  }, [userId, currentUserId, setupRealtimeSubscription]);
 
   return {
     setupRealtimeSubscription,
-    channelRef
+    channelRef,
+    isConnecting
   };
 }
 
@@ -100,17 +112,21 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
   const channelRef = useRef<any>(null);
   const { toast } = useToast();
   const [connectionError, setConnectionError] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const setupGlobalNotifications = useCallback(() => {
     if (!currentUser) return null;
+    if (isConnecting) return null;
     
     try {
+      setIsConnecting(true);
       console.log("Setting up real-time subscription for new messages");
       
       // Clean up any existing subscription
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
       
       // Create a unique channel name for the user
@@ -134,6 +150,8 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
         )
         .subscribe((status) => {
           console.log(`Realtime subscription status for ${channelName}:`, status);
+          setIsConnecting(false);
+          
           if (status === 'SUBSCRIBED') {
             setConnectionError(false);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -153,23 +171,29 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
     } catch (err) {
       console.error("Error setting up real-time subscription:", err);
       setConnectionError(true);
+      setIsConnecting(false);
       return null;
     }
-  }, [currentUser, onNewMessage, toast]);
+  }, [currentUser, onNewMessage, toast, isConnecting]);
 
+  // Set up subscription when user changes
   useEffect(() => {
+    const subscription = setupGlobalNotifications();
+    
     return () => {
       if (channelRef.current) {
+        console.log("Removing global notification channel on unmount");
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, []);
+  }, [currentUser?.id, setupGlobalNotifications]);
 
   return {
     setupGlobalNotifications,
     channelRef,
     connectionError,
-    setConnectionError
+    setConnectionError,
+    isConnecting
   };
 }

@@ -7,6 +7,7 @@ import ConversationHeader from "@/components/messages/ConversationHeader";
 import MessageList from "@/components/messages/MessageList";
 import MessageInput from "@/components/messages/MessageInput";
 import ConnectionErrorDisplay from "@/components/messages/ConnectionErrorDisplay";
+import { Loader2 } from "lucide-react";
 
 interface MessageConversationProps {
   onViewProfile?: (userId: string) => void;
@@ -20,6 +21,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     user,
     otherUser,
     loading,
+    profileLoading,
     messages,
     sending,
     isProfileOpen,
@@ -55,6 +57,16 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       }
     }
   };
+  
+  // Show loading state when user profile is loading
+  if (profileLoading && !otherUser) {
+    return (
+      <div className="flex flex-col h-[70vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
+        <p className="text-gray-500">Loading conversation...</p>
+      </div>
+    );
+  }
   
   return (
     <>

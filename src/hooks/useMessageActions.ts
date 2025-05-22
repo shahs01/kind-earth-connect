@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
+import { Message } from "./useConversations";
 
 export function useMessageActions() {
   const [sending, setSending] = useState(false);
@@ -44,7 +45,7 @@ export function useMessageActions() {
       }
       
       console.log("Message sent successfully:", data);
-      return data?.[0];
+      return data?.[0] as Message;
     } catch (error: any) {
       console.error("Error sending message:", error);
       toast({

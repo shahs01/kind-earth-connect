@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { Message } from "./useConversations";
@@ -56,6 +56,8 @@ export function useMessagesList() {
       
       setConnectionError(false);
       console.log("Messages fetched:", data?.length);
+      
+      // Ensure we're not setting messages to null
       setMessages(data || []);
       
       return data || [];
@@ -72,6 +74,13 @@ export function useMessagesList() {
       setLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => {
+    // Cleanup function that ensures we reset messages when component unmounts
+    return () => {
+      setMessages([]);
+    };
+  }, []);
 
   return {
     loading,

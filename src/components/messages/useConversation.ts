@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import { User as UserType } from "@/types";
@@ -13,22 +13,25 @@ export const useConversation = (userId: string | undefined) => {
   const [otherUser, setOtherUser] = useState<UserType | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const { toast } = useToast();
   
-  const handleMessageReceived = async () => {
+  const handleMessageReceived = useCallback(async () => {
     if (userId) {
+      console.log("Handling received message, fetching updated messages");
       await fetchMessages(userId);
       await markMessagesAsRead(userId);
     }
-  };
+  }, [userId, fetchMessages, markMessagesAsRead]);
   
-  const { setupRealtimeSubscription, channelRef } = useRealtime({
+  const { setupRealtimeSubscription, channelRef, isConnecting } = useRealtime({
     userId,
     currentUserId: user?.id,
     onMessageReceived: handleMessageReceived,
     setConnectionError
   });
   
+  // Load messages when conversation changes
   useEffect(() => {
     if (!user || !userId) return;
     
@@ -53,19 +56,19 @@ export const useConversation = (userId: string | undefined) => {
     
     loadMessages();
     fetchOtherUser(userId);
-    
-    // Set up real-time subscription
-    setupRealtimeSubscription();
-  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setupRealtimeSubscription]);
+  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError]);
 
+  // Separate function to fetch profile information
   const fetchOtherUser = async (userId: string) => {
     try {
+      setProfileLoading(true);
       console.log("Fetching user profile for:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error("Error fetching user profile:", error);
@@ -116,6 +119,8 @@ export const useConversation = (userId: string | undefined) => {
         description: "Could not load user information",
         variant: "destructive"
       });
+    } finally {
+      setProfileLoading(false);
     }
   };
   
@@ -127,8 +132,11 @@ export const useConversation = (userId: string | undefined) => {
     
     console.log("Sending message to userId:", userId);
     try {
-      await sendMessage(userId, message.trim());
-      console.log("Message sent successfully");
+      const sentMessage = await sendMessage(userId, message.trim());
+      console.log("Message sent successfully:", sentMessage);
+      
+      // Force refresh messages to ensure we see the sent message
+      await fetchMessages(userId);
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
@@ -184,7 +192,8 @@ export const useConversation = (userId: string | undefined) => {
   return {
     user,
     otherUser,
-    loading,
+    loading: loading || isConnecting,
+    profileLoading,
     messages,
     sending,
     isProfileOpen,
