@@ -46,6 +46,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
+        // Use mutable assignment to the ref object instead of modifying .current directly
         channelRef.current = null;
       }
       
@@ -95,7 +96,7 @@ export function useRealtime({
           }
         });
       
-      // Store the channel reference
+      // Properly assign the channel to the ref
       channelRef.current = channel;
       
       return channel;
@@ -116,6 +117,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
+        // Properly clean up the ref
         channelRef.current = null;
       }
     };
@@ -186,7 +188,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
           }
         });
       
-      // Store the channel reference
+      // Properly assign the channel to the ref
       channelRef.current = channel;
       
       return channel;

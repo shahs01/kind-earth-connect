@@ -104,11 +104,8 @@ export const useConversation = (userId: string | undefined) => {
       if (channelRef.current) {
         console.log("Removing channel on conversation change or unmount");
         supabase.removeChannel(channelRef.current);
-        // Use Object.defineProperty to set the ref to null
-        Object.defineProperty(channelRef, 'current', {
-          value: null,
-          writable: true
-        });
+        // Properly clean up the ref
+        channelRef.current = null;
       }
     };
   }, [userId, user, fetchMessages, markMessagesAsRead, setConnectionError, setupRealtimeSubscription, fetchOtherUser]);
