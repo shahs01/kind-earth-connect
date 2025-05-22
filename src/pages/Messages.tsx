@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -9,6 +10,7 @@ import { User } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Plus, MessageSquare, Loader2, User as UserIcon, RefreshCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   Dialog,
   DialogContent,
