@@ -90,12 +90,15 @@ const useConversation = (userId?: string) => {
     const loadConversation = async () => {
       try {
         // Add a small delay to avoid UI freezing
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Step 1: Fetch messages
+        // Step 1: Fetch other user profile first
+        await fetchOtherUser(userId);
+        
+        // Step 2: Fetch messages
         await fetchMessages(userId);
         
-        // Step 2: Setup realtime only after messages are loaded
+        // Step 3: Setup realtime only after messages are loaded
         console.log("Setting up realtime for conversation:", userId);
         const channel = setupRealtimeSubscription();
         if (channel) {
@@ -103,7 +106,7 @@ const useConversation = (userId?: string) => {
         }
         console.log("Realtime channel set up:", !!channel);
         
-        // Step 3: Mark messages as read
+        // Step 4: Mark messages as read
         await markMessagesAsRead(userId);
       } catch (error) {
         console.error("Error loading conversation:", error);
@@ -121,19 +124,7 @@ const useConversation = (userId?: string) => {
         channelRef.current = null;
       }
     };
-  }, [userId, user?.id, fetchMessages, setupRealtimeSubscription, markMessagesAsRead]);
-
-  // Fetch other user profile when userId changes - use memoization for performance
-  const memoizedFetchOtherUser = useCallback(() => {
-    if (userId) {
-      fetchOtherUser(userId);
-    }
-  }, [userId, fetchOtherUser]);
-
-  // Only fetch user profile when userId changes
-  useEffect(() => {
-    memoizedFetchOtherUser();
-  }, [memoizedFetchOtherUser]);
+  }, [userId, user?.id, fetchMessages, setupRealtimeSubscription, markMessagesAsRead, fetchOtherUser]);
 
   return {
     user,

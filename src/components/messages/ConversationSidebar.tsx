@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, X, MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,13 +24,22 @@ const ConversationSidebar = ({
   onOpenNewMessage
 }: ConversationSidebarProps) => {
   const [conversationSearch, setConversationSearch] = useState("");
-  const filteredConversations = conversationSearch.trim() === "" 
-    ? conversations 
-    : conversations.filter(convo => 
-        (convo.user.name && convo.user.name.toLowerCase().includes(conversationSearch.toLowerCase())) || 
-        (convo.user.username && convo.user.username.toLowerCase().includes(conversationSearch.toLowerCase())) ||
-        convo.lastMessage.content.toLowerCase().includes(conversationSearch.toLowerCase())
+  const [filteredConversations, setFilteredConversations] = useState(conversations);
+  
+  // Update filtered conversations whenever the search term or conversations list changes
+  useEffect(() => {
+    if (conversationSearch.trim() === "") {
+      setFilteredConversations(conversations);
+    } else {
+      const searchTerm = conversationSearch.toLowerCase();
+      const filtered = conversations.filter(convo => 
+        (convo.user.name && convo.user.name.toLowerCase().includes(searchTerm)) || 
+        (convo.user.username && convo.user.username.toLowerCase().includes(searchTerm)) ||
+        convo.lastMessage.content.toLowerCase().includes(searchTerm)
       );
+      setFilteredConversations(filtered);
+    }
+  }, [conversationSearch, conversations]);
   
   return (
     <div className="md:col-span-1 border-r border-gray-200">

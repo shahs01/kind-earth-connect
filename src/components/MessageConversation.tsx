@@ -48,6 +48,11 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [connectionError, isReconnecting]);
   
+  // Reset state when userId changes
+  useEffect(() => {
+    setFetchError(false);
+  }, [userId]);
+  
   // Memoized function for viewing profile to reduce renders
   const handleViewProfile = useCallback(() => {
     if (otherUser) {

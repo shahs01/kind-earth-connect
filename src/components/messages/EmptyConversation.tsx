@@ -21,14 +21,16 @@ const EmptyConversation = ({ error, onRetry }: EmptyConversationProps) => {
         <p className="text-gray-500 mb-4">
           There was an error loading this conversation
         </p>
-        {onRetry && (
-          <Button onClick={onRetry} className="mr-2">
-            Retry
+        <div className="flex gap-3">
+          {onRetry && (
+            <Button onClick={onRetry} variant="default">
+              Retry
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => navigate('/messages')}>
+            Back to Messages
           </Button>
-        )}
-        <Button variant="outline" onClick={() => navigate('/messages')}>
-          Back to Messages
-        </Button>
+        </div>
       </div>
     );
   }

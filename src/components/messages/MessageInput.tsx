@@ -17,7 +17,11 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     if (!loading && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 300); // Short delay to ensure UI has settled
     }
   }, [loading]);
 
@@ -53,6 +57,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           placeholder="Type your message..."
           disabled={sending || loading}
           className="flex-1"
+          autoComplete="off" // Prevent browser suggestions from interfering
         />
         <Button 
           type="submit" 

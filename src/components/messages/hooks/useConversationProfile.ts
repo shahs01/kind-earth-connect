@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User as UserType } from "@/types";
@@ -9,11 +9,18 @@ export function useConversationProfile() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { toast } = useToast();
+  const [lastFetchedId, setLastFetchedId] = useState<string | null>(null);
 
   // Fetch profile information
-  const fetchOtherUser = async (userId: string) => {
+  const fetchOtherUser = useCallback(async (userId: string) => {
+    // Skip if we're already loading this user
+    if (profileLoading && lastFetchedId === userId) {
+      return;
+    }
+    
     try {
       setProfileLoading(true);
+      setLastFetchedId(userId);
       console.log("Fetching user profile for:", userId);
       
       const { data, error } = await supabase
@@ -74,7 +81,15 @@ export function useConversationProfile() {
     } finally {
       setProfileLoading(false);
     }
-  };
+  }, [toast, profileLoading, lastFetchedId]);
+
+  // Clear other user data when component unmounts to prevent stale data
+  useEffect(() => {
+    return () => {
+      setOtherUser(null);
+      setLastFetchedId(null);
+    };
+  }, []);
 
   const handleReportUser = useCallback(() => {
     if (!otherUser) return;
