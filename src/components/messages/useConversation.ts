@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import { User as UserType } from "@/types";
@@ -15,6 +15,7 @@ export const useConversation = (userId: string | undefined) => {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
   
   const handleMessageReceived = useCallback((newMessage: Message) => {
     if (!userId || !user) return;
