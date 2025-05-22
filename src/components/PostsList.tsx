@@ -397,7 +397,7 @@ const PostsList = ({
                 onClick={() => handleContact(post.user_id, post.title)}
               >
                 <MessageSquare className="h-3.5 w-3.5" />
-                <span>Contact</span>
+                <span>Message</span>
               </Button>
             </CardFooter>
           </Card>
