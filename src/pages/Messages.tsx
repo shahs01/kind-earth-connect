@@ -1,167 +1,33 @@
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation } from "react-router-dom";
+import { RealtimeChannel } from "@supabase/supabase-js";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useMessages } from "@/hooks/useMessages";
-import MessageList from "@/components/MessageList";
 import MessageConversation from "@/components/MessageConversation";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare, Loader2, User as UserIcon, RefreshCcw, Search, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 import ProfileDialog from "@/components/ProfileDialog";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useGlobalMessageNotifications } from "@/hooks/useRealtime";
 
-const NewMessageForm = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (searchTerm.length >= 2) {
-      searchUsers();
-    } else {
-      setUsers([]);
-    }
-  }, [searchTerm]);
-
-  const searchUsers = async () => {
-    setLoading(true);
-    try {
-      console.log("Searching users with term:", searchTerm);
-      // Get current user ID
-      const { data: authData, error: authError } = await supabase.auth.getSession();
-      
-      if (authError) {
-        console.error("Authentication error:", authError);
-        throw new Error(authError.message);
-      }
-      
-      const currentUserId = authData.session?.user?.id;
-
-      if (!currentUserId) {
-        console.warn("No authenticated user found when searching");
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to search for users",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Search for users
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
-        .neq('id', currentUserId || '')
-        .limit(10);
-
-      if (error) {
-        console.error("Error searching users:", error);
-        throw error;
-      }
-
-      console.log("Users search results:", data?.length);
-
-      if (data) {
-        const formattedUsers: User[] = data.map(user => ({
-          id: user.id,
-          username: user.username || '',
-          email: user.email || '',
-          name: user.name || '',
-          avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || '')}`,
-          bio: user.bio || '',
-          location: user.location || '',
-          trustScore: user.trust_score || 0,
-          helpOffered: user.help_offered || 0,
-          helpReceived: user.help_received || 0,
-          volunteerHours: user.volunteer_hours || 0,
-          createdAt: new Date(user.created_at || Date.now()),
-          verifiedStatus: user.verified_status || false,
-          emailVerified: true,
-          trustBadges: user.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        }));
-
-        setUsers(formattedUsers);
-      }
-    } catch (err: any) {
-      console.error("Error searching users:", err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to search users",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSelectUser = (userId: string) => {
-    console.log("Selected user for new message:", userId);
-    navigate(`/messages/${userId}`);
-  };
-
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <Input
-          placeholder="Search user by name or username..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mb-4"
-          autoFocus
-        />
-        {loading && <Loader2 className="h-5 w-5 animate-spin mx-auto text-gray-400" />}
-      </div>
-
-      {users.length > 0 ? (
-        <div className="space-y-3">
-          {users.map(user => (
-            <div
-              key={user.id}
-              className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer"
-              onClick={() => handleSelectUser(user.id)}
-            >
-              <Avatar className="h-10 w-10 mr-3">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback>
-                  <UserIcon className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{user.name}</p>
-                {user.username && <p className="text-sm text-gray-500">@{user.username}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : searchTerm.length >= 2 && !loading ? (
-        <p className="text-center text-gray-500">No users found</p>
-      ) : searchTerm.length === 0 ? (
-        <p className="text-center text-gray-500">Type a name or username to search for users</p>
-      ) : (
-        <p className="text-center text-gray-500">Type at least 2 characters to search</p>
-      )}
-    </div>
-  );
-};
+// Import refactored components
+import NewMessageForm from "@/components/messages/NewMessageForm";
+import MessagesConnectionError from "@/components/messages/MessagesConnectionError";
+import MessagesAuthRequired from "@/components/messages/MessagesAuthRequired";
+import EmptyConversation from "@/components/messages/EmptyConversation";
+import ConversationSidebar from "@/components/messages/ConversationSidebar";
 
 const Messages = () => {
   const { loading, conversations, fetchConversations, connectionError, setConnectionError } = useMessages();
@@ -177,8 +43,6 @@ const Messages = () => {
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const globalChannelRef = useRef<RealtimeChannel | null>(null);
-  const [conversationSearch, setConversationSearch] = useState("");
-  const [filteredConversations, setFilteredConversations] = useState(conversations);
   
   console.log("Messages component rendering with route:", location.pathname, "userId param:", userId);
 
@@ -198,20 +62,6 @@ const Messages = () => {
       globalChannelRef.current = channel;
     }
   }, [channel]);
-
-  // Filter conversations based on search
-  useEffect(() => {
-    if (conversationSearch.trim() === "") {
-      setFilteredConversations(conversations);
-    } else {
-      const filtered = conversations.filter(convo => 
-        (convo.user.name && convo.user.name.toLowerCase().includes(conversationSearch.toLowerCase())) || 
-        (convo.user.username && convo.user.username.toLowerCase().includes(conversationSearch.toLowerCase())) ||
-        convo.lastMessage.content.toLowerCase().includes(conversationSearch.toLowerCase())
-      );
-      setFilteredConversations(filtered);
-    }
-  }, [conversationSearch, conversations]);
   
   useEffect(() => {
     if (!user) return;
@@ -319,11 +169,7 @@ const Messages = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow py-8 bg-gray-50">
-          <div className="container mx-auto px-4 text-center py-16">
-            <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
-            <p className="mb-6">You need to be logged in to view messages</p>
-            <Button onClick={() => navigate('/login')}>Log In</Button>
-          </div>
+          <MessagesAuthRequired />
         </main>
         <Footer />
       </div>
@@ -335,29 +181,10 @@ const Messages = () => {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow py-8 bg-gray-50">
-          <div className="container mx-auto px-4 text-center py-16">
-            <div className="text-red-500 mb-4 mx-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-            </div>
-            <h3 className="text-xl font-medium mb-2">Connection Error</h3>
-            <p className="text-gray-500 mb-4">Unable to load conversations</p>
-            <div className="flex justify-center gap-3">
-              <Button onClick={handleReconnect} disabled={isReconnecting} className="flex items-center gap-2">
-                {isReconnecting ? 
-                  <Loader2 className="h-4 w-4 animate-spin" /> : 
-                  <RefreshCcw className="h-4 w-4" />
-                }
-                {isReconnecting ? "Reconnecting..." : "Reconnect"}
-              </Button>
-              <Button variant="outline" onClick={() => window.location.reload()}>
-                Reload Page
-              </Button>
-            </div>
-          </div>
+          <MessagesConnectionError 
+            onReconnect={handleReconnect}
+            isReconnecting={isReconnecting}
+          />
         </main>
         <Footer />
       </div>
@@ -380,77 +207,21 @@ const Messages = () => {
             
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3">
-                {/* Conversation List */}
-                <div className="md:col-span-1 border-r border-gray-200">
-                  <div className="p-4 border-b border-gray-200">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        className="pl-8 pr-8"
-                        placeholder="Search conversations..."
-                        value={conversationSearch}
-                        onChange={(e) => setConversationSearch(e.target.value)}
-                      />
-                      {conversationSearch && (
-                        <button 
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                          onClick={() => setConversationSearch("")}
-                        >
-                          <X className="h-4 w-4 text-gray-400" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {loading && conversations.length === 0 ? (
-                    <div className="flex justify-center items-center h-64">
-                      <Loader2 className="h-6 w-6 animate-spin text-thryvance-green" />
-                    </div>
-                  ) : filteredConversations.length === 0 ? (
-                    <div className="p-6 text-center">
-                      {conversationSearch ? (
-                        <>
-                          <p className="text-gray-500 mb-2">No conversations match your search</p>
-                          <Button variant="outline" size="sm" onClick={() => setConversationSearch("")}>
-                            Clear search
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <MessageSquare className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-                          <h3 className="font-medium mb-1">No messages yet</h3>
-                          <p className="text-sm text-gray-500 mb-4">
-                            Start a conversation with someone offering or requesting help
-                          </p>
-                          <Button onClick={handleOpenNewMessage}>
-                            Start a conversation
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <MessageList 
-                      conversations={filteredConversations}
-                      onSelect={handleSelectConversation}
-                      selectedUserId={userId}
-                      onViewProfile={handleViewProfile}
-                    />
-                  )}
-                </div>
+                {/* Conversation Sidebar */}
+                <ConversationSidebar 
+                  conversations={conversations}
+                  loading={loading}
+                  onSelect={handleSelectConversation}
+                  selectedUserId={userId}
+                  onViewProfile={handleViewProfile}
+                  onOpenNewMessage={handleOpenNewMessage}
+                />
                 
                 {/* Message Content Area */}
                 <div className="md:col-span-2">
                   <Routes>
                     <Route path=":userId" element={<MessageConversation onViewProfile={handleViewProfile} />} />
-                    <Route path="/" element={
-                      <div className="h-96 flex flex-col items-center justify-center text-center p-6">
-                        <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-                        <h3 className="text-xl font-medium mb-2">Select a conversation</h3>
-                        <p className="text-gray-500">
-                          Choose a conversation from the list or start a new one
-                        </p>
-                      </div>
-                    } />
+                    <Route path="/" element={<EmptyConversation />} />
                   </Routes>
                 </div>
               </div>
