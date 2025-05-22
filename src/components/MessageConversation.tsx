@@ -1,5 +1,5 @@
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
@@ -8,6 +8,8 @@ import MessageList from "@/components/messages/MessageList";
 import MessageInput from "@/components/messages/MessageInput";
 import ConnectionErrorDisplay from "@/components/messages/ConnectionErrorDisplay";
 import { Loader2 } from "lucide-react";
+import EmptyConversation from "./messages/EmptyConversation";
+import { useToast } from "@/hooks/use-toast";
 
 interface MessageConversationProps {
   onViewProfile?: (userId: string) => void;
@@ -16,6 +18,8 @@ interface MessageConversationProps {
 const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [fetchError, setFetchError] = useState(false);
   
   console.log("MessageConversation: Rendering with userId:", userId);
   
@@ -35,6 +39,15 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleReconnect
   } = useConversation(userId);
   
+  // Handle fetch errors
+  useEffect(() => {
+    if (connectionError && !isReconnecting) {
+      setFetchError(true);
+    } else {
+      setFetchError(false);
+    }
+  }, [connectionError, isReconnecting]);
+  
   // Memoized function for viewing profile to reduce renders
   const handleViewProfile = useCallback(() => {
     if (otherUser) {
@@ -45,6 +58,15 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       }
     }
   }, [otherUser, onViewProfile, setIsProfileOpen]);
+  
+  const handleRetry = useCallback(() => {
+    setFetchError(false);
+    handleReconnect();
+    toast({
+      title: "Retrying",
+      description: "Attempting to reconnect..."
+    });
+  }, [handleReconnect, toast]);
   
   // Redirect if user is not authenticated
   if (!user) {
@@ -59,6 +81,11 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         onReconnect={handleReconnect}
       />
     );
+  }
+  
+  // Handle specific fetch error for this conversation
+  if (fetchError) {
+    return <EmptyConversation error={true} onRetry={handleRetry} />;
   }
   
   // Show loading state when user profile is loading

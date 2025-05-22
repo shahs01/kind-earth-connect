@@ -1,6 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCcw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 interface MessagesConnectionErrorProps {
   onReconnect: () => void;
@@ -8,6 +10,17 @@ interface MessagesConnectionErrorProps {
 }
 
 const MessagesConnectionError = ({ onReconnect, isReconnecting }: MessagesConnectionErrorProps) => {
+  const { toast } = useToast();
+
+  // Automatically show toast on mount
+  useEffect(() => {
+    toast({
+      variant: "destructive",
+      title: "Connection Error",
+      description: "Unable to load conversations. Please check your connection."
+    });
+  }, [toast]);
+
   return (
     <div className="container mx-auto px-4 text-center py-16">
       <div className="text-red-500 mb-4 mx-auto">
