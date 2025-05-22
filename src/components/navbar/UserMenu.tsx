@@ -1,93 +1,104 @@
 
-import { User, LogOut, Mail, Settings, Search } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import SearchButton from "./SearchButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { 
+  User, 
+  LogOut, 
+  Heart, 
+  Settings, 
+  Bell, 
+  ChevronDown,
+  MessageSquare
+} from "lucide-react";
+import NotificationIndicator from "../NotificationIndicator";
 
 const UserMenu = () => {
-  const { user, emailVerified, logout } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const goToProfile = () => {
+    navigate(`/profile/${user?.id}`);
+  };
+
+  const goToFavorites = () => {
+    navigate("/favorites");
+  };
+
+  const goToMessages = () => {
+    navigate("/messages");
+  };
+
+  const goToNotifications = () => {
+    navigate("/notifications");
+  };
+
+  if (!user) return null;
 
   return (
-    <div className="flex items-center gap-4">
-      <SearchButton />
-      
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative rounded-full h-8 w-8 p-0">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.avatar} alt={user?.name} />
-              <AvatarFallback>{user?.name?.substring(0, 2)}</AvatarFallback>
-            </Avatar>
-            {!emailVerified && (
-              <span className="absolute top-0 right-0 h-2 w-2 bg-amber-500 rounded-full" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span>{user?.name}</span>
-              <span className="text-xs text-gray-500 truncate">{user?.email}</span>
-            </div>
-          </DropdownMenuLabel>
-          
-          {!emailVerified && (
-            <div className="px-2 py-1.5">
-              <Badge variant="outline" className="flex items-center gap-1 bg-amber-50 text-amber-800 border-amber-200">
-                <Mail className="h-3 w-3" />
-                Email not verified
-              </Badge>
-            </div>
-          )}
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem asChild>
-            <Link to="/profile" className="cursor-pointer w-full">
-              <User className="mr-2 h-4 w-4" />
-              <span>My Profile</span>
-            </Link>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 px-2 flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.photoURL || ""} />
+            <AvatarFallback className="bg-thryvance-blue text-white">
+              {user.displayName?.charAt(0) || user.email?.charAt(0) || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden md:inline-block text-sm font-medium">
+            {user.displayName || user.email?.split("@")[0] || "User"}
+          </span>
+          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <NotificationIndicator />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={goToProfile}>
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
           </DropdownMenuItem>
-          
-          {!emailVerified && (
-            <DropdownMenuItem asChild>
-              <Link to="/verify-email" className="cursor-pointer w-full">
-                <Mail className="mr-2 h-4 w-4" />
-                <span>Verify Email</span>
-              </Link>
-            </DropdownMenuItem>
-          )}
-          
-          <DropdownMenuItem asChild>
-            <Link to="/settings" className="cursor-pointer w-full">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Account Settings</span>
-            </Link>
+          <DropdownMenuItem onClick={goToMessages}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            <span>Messages</span>
           </DropdownMenuItem>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
-            onClick={logout}
-            className="text-red-600 focus:text-red-600 cursor-pointer"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log Out</span>
+          <DropdownMenuItem onClick={goToFavorites}>
+            <Heart className="mr-2 h-4 w-4" />
+            <span>Favorites</span>
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+          <DropdownMenuItem onClick={goToNotifications}>
+            <Bell className="mr-2 h-4 w-4" />
+            <span>Notifications</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={goToProfile}>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSignOut}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Log out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Route, Routes, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useMessages, Conversation } from "@/hooks/useMessages";
@@ -21,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 
 const NewMessageForm = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -142,10 +142,19 @@ const Messages = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+  const { user } = useAuth();
+  const location = useLocation();
   
   useEffect(() => {
+    // Check if user is logged in
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // Fetch conversations when component loads
     fetchConversations();
-  }, []);
+  }, [user, navigate]);
   
   const handleSelectConversation = (userId: string) => {
     navigate(`/messages/${userId}`);
@@ -206,18 +215,6 @@ const Messages = () => {
                 <div className="md:col-span-2">
                   <Routes>
                     <Route path="/:userId" element={<MessageConversation />} />
-                    <Route path="/new" element={
-                      <div className="h-96 flex flex-col items-center justify-center text-center p-6">
-                        <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-                        <h3 className="text-xl font-medium mb-2">Start a new conversation</h3>
-                        <p className="text-gray-500 mb-4">
-                          Search for a user to start messaging with
-                        </p>
-                        <Button onClick={handleNewMessage}>
-                          Find someone to message
-                        </Button>
-                      </div>
-                    } />
                     <Route path="/" element={
                       <div className="h-96 flex flex-col items-center justify-center text-center p-6">
                         <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />

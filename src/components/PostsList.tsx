@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
@@ -136,14 +135,6 @@ const PostsList = ({
 
   const handleContact = async (userId: string) => {
     try {
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (userError) throw userError;
-
       // Check if user is authenticated
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
@@ -156,29 +147,8 @@ const PostsList = ({
         return;
       }
 
-      if (userData) {
-        const user: UserType = {
-          id: userData.id,
-          username: userData.username || '',
-          email: userData.email || '',
-          name: userData.name || '',
-          avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
-          bio: userData.bio || '',
-          location: userData.location || '',
-          trustScore: userData.trust_score || 0,
-          helpOffered: userData.help_offered || 0,
-          helpReceived: userData.help_received || 0,
-          volunteerHours: userData.volunteer_hours || 0,
-          createdAt: new Date(userData.created_at || Date.now()),
-          verifiedStatus: userData.verified_status || false,
-          emailVerified: true,
-          trustBadges: userData.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        };
-
-        navigate(`/messages/${userId}`);
-      }
+      // If authenticated, navigate to the messages page with the user ID
+      navigate(`/messages/${userId}`);
     } catch (err) {
       console.error("Error getting user data:", err);
       toast({
