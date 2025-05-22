@@ -51,7 +51,7 @@ const ProfileDialog = ({ user, open, onOpenChange }: ProfileDialogProps) => {
         title: "Report submitted",
         description: `We've received your report about ${user.name || user.username}. Our team will review it shortly.`
       });
-      // In a real implementation, you would send this report to your backend
+      onOpenChange(false);
     }
   };
 
@@ -70,11 +70,13 @@ const ProfileDialog = ({ user, open, onOpenChange }: ProfileDialogProps) => {
             <span className="sr-only">Close</span>
           </DialogClose>
         </DialogHeader>
-        <ProfileCard 
-          user={user} 
-          onConnectClick={handleConnectClick}
-          onViewFullProfile={handleViewFullProfile}
-        />
+        {user && (
+          <ProfileCard 
+            user={user} 
+            onConnectClick={handleConnectClick}
+            onViewFullProfile={handleViewFullProfile}
+          />
+        )}
         <div className="mt-4 flex justify-end">
           <Button 
             variant="outline" 

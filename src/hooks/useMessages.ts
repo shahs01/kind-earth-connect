@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { User } from "@/types";
@@ -46,7 +47,7 @@ export function useMessages() {
     };
   }, [toast]);
   
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     setLoading(true);
     try {
       // First, get the authenticated user's ID
@@ -152,9 +153,9 @@ export function useMessages() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
   
-  const fetchMessages = async (userId: string) => {
+  const fetchMessages = useCallback(async (userId: string) => {
     setLoading(true);
     try {
       // Get the authenticated user's ID
@@ -197,10 +198,9 @@ export function useMessages() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
   
-  const sendMessage = async (receiverId: string, content: string) => {
-    setLoading(true);
+  const sendMessage = useCallback(async (receiverId: string, content: string) => {
     try {
       // Get the authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser();
@@ -225,9 +225,6 @@ export function useMessages() {
         setMessages(prev => [...prev, data[0]]);
       }
       
-      // Update conversations list to include this conversation
-      fetchConversations();
-      
       return data?.[0];
     } catch (error: any) {
       console.error("Error sending message:", error);
@@ -237,12 +234,10 @@ export function useMessages() {
         variant: "destructive",
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [toast]);
   
-  const markMessagesAsRead = async (senderId: string) => {
+  const markMessagesAsRead = useCallback(async (senderId: string) => {
     try {
       // Get the authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser();
@@ -280,7 +275,7 @@ export function useMessages() {
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
-  };
+  }, [fetchConversations]);
   
   return {
     loading,

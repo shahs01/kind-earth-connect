@@ -19,7 +19,7 @@ interface MessageConversationProps {
 
 const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
-  const { loading, messages, fetchMessages, sendMessage } = useMessages();
+  const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead } = useMessages();
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const [otherUser, setOtherUser] = useState<UserType | null>(null);
@@ -40,6 +40,9 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       fetchMessages(userId);
       fetchOtherUser(userId);
       
+      // Mark messages as read when conversation is opened
+      markMessagesAsRead(userId);
+      
       // Set up real-time subscription for new messages
       const channel = supabase
         .channel('messages-changes')
@@ -48,14 +51,21 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'messages',
-            filter: `receiver_id=eq.${user?.id}`
+            table: 'messages'
           },
           (payload) => {
-            // If message is from the current conversation, refresh messages
-            if (payload.new.sender_id === userId) {
+            const newMessage = payload.new as Message;
+            
+            // If message is related to the current conversation, refresh messages
+            if ((newMessage.sender_id === userId && newMessage.receiver_id === user.id) ||
+                (newMessage.sender_id === user.id && newMessage.receiver_id === userId)) {
               fetchMessages(userId);
-            } else {
+              
+              // If we received the message, mark it as read
+              if (newMessage.sender_id === userId && newMessage.receiver_id === user.id) {
+                markMessagesAsRead(userId);
+              }
+            } else if (newMessage.receiver_id === user.id) {
               // If from someone else, show a notification
               toast({
                 title: "New message",
@@ -70,7 +80,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         supabase.removeChannel(channel);
       };
     }
-  }, [userId, user?.id, user]);
+  }, [userId, user?.id, user, fetchMessages, markMessagesAsRead]);
   
   useEffect(() => {
     scrollToBottom();
