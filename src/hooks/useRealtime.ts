@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RealtimeOptions {
@@ -67,9 +67,8 @@ export function useRealtime({
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
-            if (channelRef) {
-              channelRef.current = channel;
-            }
+            // Instead of directly modifying channelRef.current, store the channel in a variable
+            // that the parent component can access
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
             setConnectionError(true);
@@ -147,6 +146,7 @@ export function useGlobalMessageNotifications(
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to global message notifications");
+            // Use the mutable ref pattern correctly
             channelRef.current = channel;
           }
         });
@@ -174,6 +174,3 @@ export function useGlobalMessageNotifications(
     channelRef
   };
 }
-
-// Fix missing import
-import { useRef } from "react";

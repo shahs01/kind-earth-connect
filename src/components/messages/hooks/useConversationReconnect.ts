@@ -31,8 +31,7 @@ export function useConversationReconnect(
       if (channelRef.current) {
         console.log("Cleaning up existing channel before reconnecting");
         supabase.removeChannel(channelRef.current);
-        // Clear the reference to avoid issues with stale channels
-        channelRef.current = null;
+        // Don't try to directly modify channelRef.current
       }
       
       // Refetch messages
