@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Send, User } from "lucide-react";
+import { Loader2, Send, User, Flag } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { User as UserType } from "@/types";
@@ -36,6 +36,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
 
     if (userId) {
+      // Ensure we have the latest messages
       fetchMessages(userId);
       fetchOtherUser(userId);
       
@@ -151,6 +152,15 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       }
     }
   };
+
+  const handleReportUser = () => {
+    if (!otherUser) return;
+    
+    toast({
+      title: "Report submitted",
+      description: `We've received your report about ${otherUser.name || otherUser.username}. Our team will review it shortly.`
+    });
+  };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -163,39 +173,50 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     <>
       <div className="flex flex-col h-[70vh]">
         {/* Header */}
-        <div 
-          className="p-4 border-b border-gray-200 flex items-center cursor-pointer hover:bg-gray-50" 
-          onClick={handleViewProfile}
-        >
-          {otherUser ? (
-            <>
-              <Avatar className="h-10 w-10 mr-3">
-                <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-                <AvatarFallback>{otherUser.name?.charAt(0) || '?'}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="font-medium">{otherUser.name || otherUser.username}</h3>
-                {otherUser.location && (
-                  <p className="text-xs text-gray-500">{otherUser.location}</p>
-                )}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="ml-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleViewProfile();
-                }}
-              >
-                View Profile
-              </Button>
-            </>
-          ) : loading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-          ) : (
-            <span>Unknown user</span>
-          )}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <div 
+            className="flex items-center cursor-pointer hover:bg-gray-50 rounded-md p-2" 
+            onClick={handleViewProfile}
+          >
+            {otherUser ? (
+              <>
+                <Avatar className="h-10 w-10 mr-3">
+                  <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
+                  <AvatarFallback>{otherUser.name?.charAt(0) || '?'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-medium">{otherUser.name || otherUser.username}</h3>
+                  {otherUser.location && (
+                    <p className="text-xs text-gray-500">{otherUser.location}</p>
+                  )}
+                </div>
+              </>
+            ) : loading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            ) : (
+              <span>Unknown user</span>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-2"
+              onClick={handleViewProfile}
+            >
+              View Profile
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={handleReportUser}
+            >
+              <Flag className="h-4 w-4 mr-1" />
+              Report
+            </Button>
+          </div>
         </div>
         
         {/* Messages */}

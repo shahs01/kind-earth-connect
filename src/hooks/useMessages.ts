@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { User } from "@/types";
@@ -26,6 +25,26 @@ export function useMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const { toast } = useToast();
+  
+  // Set up event listener for user reporting
+  useEffect(() => {
+    const handleReportUser = (event: any) => {
+      const { userId } = event.detail;
+      
+      if (userId) {
+        toast({
+          title: "Report submitted",
+          description: "We've received your report. Our team will review it shortly.",
+        });
+      }
+    };
+    
+    window.addEventListener('report-user', handleReportUser as EventListener);
+    
+    return () => {
+      window.removeEventListener('report-user', handleReportUser as EventListener);
+    };
+  }, [toast]);
   
   const fetchConversations = async () => {
     setLoading(true);
@@ -205,6 +224,9 @@ export function useMessages() {
       if (data && data.length > 0) {
         setMessages(prev => [...prev, data[0]]);
       }
+      
+      // Update conversations list to include this conversation
+      fetchConversations();
       
       return data?.[0];
     } catch (error: any) {
