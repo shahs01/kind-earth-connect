@@ -64,6 +64,14 @@ export const useConversation = (userId: string | undefined) => {
     
     // Set up real-time subscription
     setupRealtimeSubscription();
+    
+    return () => {
+      // Clean up subscription when component unmounts or userId changes
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError, setupRealtimeSubscription]);
 
   // Separate function to fetch profile information
@@ -142,6 +150,8 @@ export const useConversation = (userId: string | undefined) => {
     try {
       const sentMessage = await sendMessage(userId, message.trim());
       console.log("Message sent successfully:", sentMessage);
+      // Refresh messages after sending to ensure UI is updated
+      fetchMessages(userId);
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
@@ -197,7 +207,7 @@ export const useConversation = (userId: string | undefined) => {
   return {
     user,
     otherUser,
-    loading: loading || isConnecting,
+    loading: loading || isConnecting || profileLoading,
     profileLoading,
     messages,
     sending,

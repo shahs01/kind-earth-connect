@@ -55,7 +55,7 @@ export function useMessagesList() {
       }
       
       setConnectionError(false);
-      console.log("Messages fetched:", data?.length);
+      console.log("Messages fetched:", data?.length, data);
       
       // Ensure we're not setting messages to null
       setMessages(data || []);

@@ -1,4 +1,3 @@
-
 import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
@@ -90,7 +89,7 @@ export function useRealtime({
 
   // Set up subscription when parameters change
   useEffect(() => {
-    const subscription = setupRealtimeSubscription();
+    setupRealtimeSubscription();
     
     return () => {
       if (channelRef.current) {
