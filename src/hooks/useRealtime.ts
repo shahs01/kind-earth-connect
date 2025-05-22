@@ -10,15 +10,20 @@ interface UseRealtimeProps {
   currentUserId?: string;
   onMessageReceived?: (message: Message) => void;
   setConnectionError: (error: boolean) => void;
+  channelRef?: React.RefObject<any>; // Added channelRef as an optional prop
 }
 
 export function useRealtime({ 
   userId, 
   currentUserId, 
   onMessageReceived, 
-  setConnectionError 
+  setConnectionError,
+  channelRef: externalChannelRef // Renamed to avoid conflict
 }: UseRealtimeProps) {
-  const channelRef = useRef<any>(null);
+  // Use external channelRef if provided, otherwise create our own
+  const internalChannelRef = useRef<any>(null);
+  const channelRef = externalChannelRef || internalChannelRef;
+  
   const { toast } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
   
@@ -99,7 +104,7 @@ export function useRealtime({
       setIsConnecting(false);
       return null;
     }
-  }, [userId, currentUserId, onMessageReceived, toast, setConnectionError, isConnecting]);
+  }, [userId, currentUserId, onMessageReceived, toast, setConnectionError, isConnecting, channelRef]);
 
   // Set up subscription when parameters change
   useEffect(() => {

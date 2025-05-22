@@ -1,23 +1,30 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import { User as UserType } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useRealtime } from "@/hooks/useRealtime";
 import { Message } from "@/hooks/useConversations";
+import { useConversationProfile } from "./hooks/useConversationProfile";
+import { useConversationReconnect } from "./hooks/useConversationReconnect";
+import { useConversationMessages } from "./hooks/useConversationMessages";
 
 export const useConversation = (userId: string | undefined) => {
   const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError, sending } = useMessages();
   const { user } = useAuth();
-  const [otherUser, setOtherUser] = useState<UserType | null>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const { toast } = useToast();
   const channelRef = useRef<any>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   
+  // Importing refactored hooks
+  const { 
+    otherUser, 
+    profileLoading, 
+    isProfileOpen, 
+    setIsProfileOpen, 
+    fetchOtherUser, 
+    handleReportUser 
+  } = useConversationProfile();
+  
+  // Handle message reception from real-time
   const handleMessageReceived = useCallback((newMessage: Message) => {
     if (!userId || !user) return;
     
@@ -34,12 +41,30 @@ export const useConversation = (userId: string | undefined) => {
     fetchMessages(userId);
   }, [userId, fetchMessages, markMessagesAsRead, user]);
   
+  // Set up real-time
   const { setupRealtimeSubscription, isConnecting } = useRealtime({
     userId,
     currentUserId: user?.id,
     onMessageReceived: handleMessageReceived,
-    setConnectionError
+    setConnectionError,
+    channelRef
   });
+  
+  // Set up reconnect functionality
+  const { handleReconnect } = useConversationReconnect(
+    fetchMessages,
+    setupRealtimeSubscription,
+    userId,
+    channelRef,
+    setConnectionError
+  );
+  
+  // Set up message sending functionality
+  const { handleSendMessage } = useConversationMessages(
+    sendMessage,
+    fetchMessages,
+    setConnectionError
+  );
   
   // Load messages when conversation changes
   useEffect(() => {
@@ -62,11 +87,6 @@ export const useConversation = (userId: string | undefined) => {
       } catch (err) {
         console.error("Error loading messages:", err);
         setConnectionError(true);
-        toast({
-          title: "Connection error",
-          description: "Could not load messages. Please try again.",
-          variant: "destructive"
-        });
       }
     };
     
@@ -85,151 +105,13 @@ export const useConversation = (userId: string | undefined) => {
         channelRef.current = null;
       }
     };
-  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError, setupRealtimeSubscription]);
+  }, [userId, user, fetchMessages, markMessagesAsRead, setConnectionError, setupRealtimeSubscription, fetchOtherUser]);
 
-  // Separate function to fetch profile information
-  const fetchOtherUser = async (userId: string) => {
-    try {
-      setProfileLoading(true);
-      console.log("Fetching user profile for:", userId);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error("Error fetching user profile:", error);
-        toast({
-          title: "Error",
-          description: "Could not load user information",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      console.log("User profile fetched:", data);
-      
-      if (!data) {
-        toast({
-          title: "User not found",
-          description: "The user profile could not be found",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const userData: UserType = {
-        id: data.id,
-        username: data.username || '',
-        email: data.email || '',
-        name: data.name || '',
-        avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || '')}`,
-        bio: data.bio || '',
-        location: data.location || '',
-        trustScore: data.trust_score || 0,
-        helpOffered: data.help_offered || 0,
-        helpReceived: data.help_received || 0,
-        volunteerHours: data.volunteer_hours || 0,
-        createdAt: new Date(data.created_at || Date.now()),
-        verifiedStatus: data.verified_status || false,
-        emailVerified: true,
-        trustBadges: data.trust_badges || [],
-        loginAttempts: 0,
-        lastLoginAttempt: null
-      };
-      
-      setOtherUser(userData);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      toast({
-        title: "Error",
-        description: "Could not load user information",
-        variant: "destructive"
-      });
-    } finally {
-      setProfileLoading(false);
+  const wrappedHandleSendMessage = useCallback((message: string) => {
+    if (userId) {
+      handleSendMessage(userId, message);
     }
-  };
-  
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim() || !userId) {
-      console.log("Cannot send empty message or missing userId");
-      return;
-    }
-    
-    console.log("Sending message to userId:", userId);
-    try {
-      // Clear any previous connection error state
-      setConnectionError(false);
-      
-      // Send the message using the hook
-      const sentMessage = await sendMessage(userId, message.trim());
-      console.log("Message sent successfully:", sentMessage);
-      
-      // Important: Refresh messages after sending
-      console.log("Refreshing messages after sending");
-      await fetchMessages(userId);
-      
-      // Show success toast
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      setConnectionError(true);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleReconnect = async () => {
-    setIsReconnecting(true);
-    try {
-      // Remove existing channel
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      
-      // Reload messages
-      await fetchMessages(userId as string);
-      
-      // Set up a new real-time connection
-      setupRealtimeSubscription();
-      
-      toast({
-        title: "Reconnected",
-        description: "Successfully reconnected to the messaging service",
-      });
-      
-      setConnectionError(false);
-    } catch (err) {
-      console.error("Error reconnecting:", err);
-      toast({
-        title: "Reconnection failed",
-        description: "Please try again or reload the page",
-        variant: "destructive"
-      });
-    } finally {
-      setIsReconnecting(false);
-    }
-  };
-
-  const handleReportUser = () => {
-    if (!otherUser) return;
-    
-    const event = new CustomEvent('report-user', { 
-      detail: { userId: otherUser.id } 
-    });
-    window.dispatchEvent(event);
-  };
+  }, [handleSendMessage, userId]);
 
   return {
     user,
@@ -242,7 +124,7 @@ export const useConversation = (userId: string | undefined) => {
     setIsProfileOpen,
     connectionError,
     isReconnecting,
-    handleSendMessage,
+    handleSendMessage: wrappedHandleSendMessage,
     handleReportUser,
     handleReconnect
   };
