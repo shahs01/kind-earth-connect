@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Route, Routes, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,7 +8,7 @@ import MessageList from "@/components/MessageList";
 import MessageConversation from "@/components/MessageConversation";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare, Loader2, User as UserIcon, X } from "lucide-react";
+import { Plus, MessageSquare, Loader2, User as UserIcon, X, RefreshCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -165,7 +165,7 @@ const NewMessageForm = () => {
 };
 
 const Messages = () => {
-  const { loading, conversations, fetchConversations } = useMessages();
+  const { loading, conversations, fetchConversations, connectionError, setConnectionError } = useMessages();
   const navigate = useNavigate();
   const { userId } = useParams();
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
@@ -175,7 +175,75 @@ const Messages = () => {
   const { fetchUserProfile } = useAuthProfile();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
-  const [connectionError, setConnectionError] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const channelRef = useRef<any>(null);
+  
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!user) return null;
+    
+    try {
+      console.log("Setting up real-time subscription for new messages");
+      
+      // Clean up any existing subscription
+      if (channelRef.current) {
+        console.log("Removing existing channel before creating new one");
+        supabase.removeChannel(channelRef.current);
+      }
+      
+      // Create a unique channel name for the user
+      const channelName = `new-messages-${user.id}`;
+      console.log(`Creating channel: ${channelName}`);
+      
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `receiver_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log("New message received via real-time:", payload);
+            
+            // When a new message arrives, update conversations list
+            fetchConversations();
+            
+            // Show toast notification if not in the messages page with the right conversation
+            const senderId = payload.new.sender_id;
+            if (!location.pathname.includes(`/messages/${senderId}`)) {
+              toast({
+                title: "New message",
+                description: "You've received a new message",
+              });
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log(`Realtime subscription status for ${channelName}:`, status);
+          if (status === 'SUBSCRIBED') {
+            setConnectionError(false);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Realtime subscription error for ${channelName}:`, status);
+            setConnectionError(true);
+            toast({
+              title: "Connection issue",
+              description: "Problem connecting to real-time updates",
+              variant: "destructive"
+            });
+          }
+        });
+      
+      // Store the channel reference so we can clean it up later
+      channelRef.current = channel;
+      return channel;
+    } catch (err) {
+      console.error("Error setting up real-time subscription:", err);
+      setConnectionError(true);
+      return null;
+    }
+  }, [user, fetchConversations, location.pathname, toast, setConnectionError]);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -209,6 +277,7 @@ const Messages = () => {
     if (!user) return;
     
     console.log("Messages component mounted, fetching conversations");
+    
     // Fetch conversations when component loads
     const loadConversations = async () => {
       try {
@@ -223,48 +292,17 @@ const Messages = () => {
     loadConversations();
     
     // Set up real-time subscription for new messages
-    const channel = supabase
-      .channel('new-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log("New message received via real-time:", payload);
-          // When a new message arrives, update conversations list
-          fetchConversations();
-          
-          // Show toast notification if not in the messages page
-          if (!location.pathname.includes('/messages')) {
-            toast({
-              title: "New message",
-              description: "You've received a new message",
-            });
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log("Realtime subscription status for new messages:", status);
-        if (status !== 'SUBSCRIBED') {
-          toast({
-            title: "Connection issue",
-            description: "Problem connecting to real-time updates",
-            variant: "destructive"
-          });
-        }
-      });
-    
-    console.log("Real-time subscription for new messages set up");
+    const channel = setupRealtimeSubscription();
     
     return () => {
       console.log("Cleaning up Messages component");
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        console.log("Removing channel subscription on component unmount");
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user, navigate, location.pathname, fetchConversations, toast]);
+  }, [user, fetchConversations, setupRealtimeSubscription]);
   
   const handleSelectConversation = (userId: string) => {
     console.log("Selecting conversation with user:", userId);
@@ -289,6 +327,39 @@ const Messages = () => {
         description: "Failed to load user profile",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleReconnect = async () => {
+    setIsReconnecting(true);
+    try {
+      // Remove existing channel
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      
+      // Reload conversations
+      await fetchConversations();
+      
+      // Set up a new real-time connection
+      setupRealtimeSubscription();
+      
+      toast({
+        title: "Reconnected",
+        description: "Successfully reconnected to the messaging service",
+      });
+      
+      setConnectionError(false);
+    } catch (err) {
+      console.error("Error reconnecting:", err);
+      toast({
+        title: "Reconnection failed",
+        description: "Please try again or reload the page",
+        variant: "destructive"
+      });
+    } finally {
+      setIsReconnecting(false);
     }
   };
 
@@ -324,7 +395,18 @@ const Messages = () => {
             </div>
             <h3 className="text-xl font-medium mb-2">Connection Error</h3>
             <p className="text-gray-500 mb-4">Unable to load conversations</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <div className="flex justify-center gap-3">
+              <Button onClick={handleReconnect} disabled={isReconnecting} className="flex items-center gap-2">
+                {isReconnecting ? 
+                  <Loader2 className="h-4 w-4 animate-spin" /> : 
+                  <RefreshCcw className="h-4 w-4" />
+                }
+                {isReconnecting ? "Reconnecting..." : "Reconnect"}
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Reload Page
+              </Button>
+            </div>
           </div>
         </main>
         <Footer />

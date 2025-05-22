@@ -25,6 +25,7 @@ export function useMessages() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [connectionError, setConnectionError] = useState(false);
   const { toast } = useToast();
   
   // Set up event listener for user reporting
@@ -56,11 +57,13 @@ export function useMessages() {
       
       if (authError) {
         console.error("Authentication error:", authError);
+        setConnectionError(true);
         throw new Error(authError.message);
       }
       
       if (!user) {
         console.error("Not authenticated");
+        setConnectionError(true);
         throw new Error("Not authenticated");
       }
       
@@ -69,10 +72,12 @@ export function useMessages() {
       
       if (error) {
         console.error("Error fetching conversations:", error);
+        setConnectionError(true);
         throw error;
       }
       
       console.log("Raw conversations data:", data);
+      setConnectionError(false);
       
       // Format conversations and fetch user details
       const formattedConversations: Conversation[] = [];
@@ -157,6 +162,7 @@ export function useMessages() {
       return formattedConversations;
     } catch (error: any) {
       console.error("Error fetching conversations:", error);
+      setConnectionError(true);
       toast({
         title: "Error fetching conversations",
         description: error.message || "Failed to load conversations",
@@ -182,11 +188,13 @@ export function useMessages() {
       
       if (authError) {
         console.error("Authentication error:", authError);
+        setConnectionError(true);
         throw new Error(authError.message);
       }
       
       if (!user) {
         console.error("Not authenticated");
+        setConnectionError(true);
         throw new Error("Not authenticated");
       }
       
@@ -206,9 +214,11 @@ export function useMessages() {
       
       if (error) {
         console.error("Error fetching messages:", error);
+        setConnectionError(true);
         throw error;
       }
       
+      setConnectionError(false);
       console.log("Messages fetched:", data?.length);
       setMessages(data || []);
       
@@ -218,6 +228,7 @@ export function useMessages() {
       return data || [];
     } catch (error: any) {
       console.error("Error fetching messages:", error);
+      setConnectionError(true);
       toast({
         title: "Error fetching messages",
         description: error.message || "Failed to load messages",
@@ -347,6 +358,8 @@ export function useMessages() {
     fetchConversations,
     fetchMessages,
     sendMessage,
-    markMessagesAsRead
+    markMessagesAsRead,
+    connectionError,
+    setConnectionError
   };
 }

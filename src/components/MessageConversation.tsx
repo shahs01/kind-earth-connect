@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Send, User, Flag } from "lucide-react";
+import { Loader2, Send, User, Flag, RefreshCcw } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { User as UserType } from "@/types";
@@ -19,14 +19,15 @@ interface MessageConversationProps {
 
 const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
-  const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead } = useMessages();
+  const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError } = useMessages();
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const [otherUser, setOtherUser] = useState<UserType | null>(null);
   const [sending, setSending] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [connectionError, setConnectionError] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -44,18 +45,83 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [user, userId, navigate]);
 
+  // Function to set up real-time subscription
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!user || !userId) return null;
+    
+    console.log(`Setting up message conversation real-time subscription with userId: ${userId}`);
+    
+    try {
+      // Clean up any existing subscription
+      if (channelRef.current) {
+        console.log("Removing existing channel before creating a new one");
+        supabase.removeChannel(channelRef.current);
+      }
+      
+      // Create a new subscription with a unique channel name
+      const channelName = `messages:${user.id}-${userId}`;
+      console.log(`Creating new channel: ${channelName}`);
+      
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id}))`
+          },
+          (payload) => {
+            console.log("Received real-time message update:", payload);
+            const newMessage = payload.new as Message;
+            
+            // Update our messages state immediately
+            fetchMessages(userId);
+            
+            // If we received the message, mark it as read
+            if (newMessage.sender_id === userId && newMessage.receiver_id === user.id) {
+              markMessagesAsRead(userId);
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log(`Realtime subscription status for ${channelName}:`, status);
+          if (status === 'SUBSCRIBED') {
+            setConnectionError(false);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Realtime subscription error for ${channelName}:`, status);
+            setConnectionError(true);
+            toast({
+              title: "Connection issue",
+              description: "Problem connecting to real-time updates",
+              variant: "destructive"
+            });
+          }
+        });
+      
+      // Store the channel reference so we can clean it up later
+      channelRef.current = channel;
+      return channel;
+    } catch (err) {
+      console.error("Error setting up real-time subscription:", err);
+      setConnectionError(true);
+      return null;
+    }
+  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setConnectionError]);
+
   // Fetch messages and set up real-time subscriptions
   useEffect(() => {
     if (!user || !userId) return;
-
+    
     console.log(`Setting up message conversation with userId: ${userId}`);
     
     // Load initial messages
     const loadMessages = async () => {
       try {
+        setIsReconnecting(false);
         await fetchMessages(userId);
         await markMessagesAsRead(userId);
-        setConnectionError(false);
       } catch (err) {
         console.error("Error loading messages:", err);
         setConnectionError(true);
@@ -70,57 +136,18 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     loadMessages();
     fetchOtherUser(userId);
     
-    // Set up real-time subscription for new messages
-    const channel = supabase
-      .channel('messages-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          console.log("Received real-time message update:", payload);
-          const newMessage = payload.new as Message;
-          
-          // If message is related to the current conversation, refresh messages
-          if ((newMessage.sender_id === userId && newMessage.receiver_id === user.id) ||
-              (newMessage.sender_id === user.id && newMessage.receiver_id === userId)) {
-            console.log("Refreshing messages for current conversation");
-            fetchMessages(userId);
-            
-            // If we received the message, mark it as read
-            if (newMessage.sender_id === userId && newMessage.receiver_id === user.id) {
-              markMessagesAsRead(userId);
-            }
-          } else if (newMessage.receiver_id === user.id) {
-            // If from someone else, show a notification
-            toast({
-              title: "New message",
-              description: "You received a new message from another conversation",
-            });
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log("Realtime subscription status:", status);
-        if (status !== 'SUBSCRIBED') {
-          toast({
-            title: "Connection issue",
-            description: "Problem connecting to real-time updates",
-            variant: "destructive"
-          });
-        }
-      });
-    
-    console.log("Real-time channel subscription set up");
+    // Set up real-time subscription
+    const channel = setupRealtimeSubscription();
     
     return () => {
       console.log("Cleaning up message conversation");
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        console.log("Removing channel on component unmount");
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [userId, user, fetchMessages, markMessagesAsRead, toast]);
+  }, [userId, user, fetchMessages, markMessagesAsRead, toast, setupRealtimeSubscription]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -245,6 +272,39 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   };
   
+  const handleReconnect = async () => {
+    setIsReconnecting(true);
+    try {
+      // Remove existing channel
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      
+      // Reload messages
+      await fetchMessages(userId as string);
+      
+      // Set up a new real-time connection
+      setupRealtimeSubscription();
+      
+      toast({
+        title: "Reconnected",
+        description: "Successfully reconnected to the messaging service",
+      });
+      
+      setConnectionError(false);
+    } catch (err) {
+      console.error("Error reconnecting:", err);
+      toast({
+        title: "Reconnection failed",
+        description: "Please try again or reload the page",
+        variant: "destructive"
+      });
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
+  
   // Show connection error or redirect if no user
   if (!user) {
     return <div className="p-8 text-center">Please log in to view messages</div>;
@@ -262,7 +322,18 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         </div>
         <h3 className="text-xl font-medium mb-2">Connection Error</h3>
         <p className="text-gray-500 mb-4">Unable to load conversation</p>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
+        <div className="flex gap-3">
+          <Button onClick={handleReconnect} disabled={isReconnecting} className="flex items-center gap-2">
+            {isReconnecting ? 
+              <Loader2 className="h-4 w-4 animate-spin" /> : 
+              <RefreshCcw className="h-4 w-4" />
+            }
+            {isReconnecting ? "Reconnecting..." : "Reconnect"}
+          </Button>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Reload Page
+          </Button>
+        </div>
       </div>
     );
   }
