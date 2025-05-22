@@ -3,8 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Conversation } from "@/hooks/useMessages";
-import { Button } from "@/components/ui/button";
-import { UserIcon, Flag } from "lucide-react";
+import { UserIcon } from "lucide-react";
 
 interface MessageListProps {
   conversations: Conversation[];
@@ -68,37 +67,6 @@ const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }:
                   )}
                 </div>
               </div>
-            </div>
-            
-            <div className="mt-2 flex justify-between">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-xs text-thryvance-blue"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewProfile(convo.user.id);
-                }}
-              >
-                View Profile
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-xs text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Show a toast notification for reporting
-                  const event = new CustomEvent('report-user', { 
-                    detail: { userId: convo.user.id } 
-                  });
-                  window.dispatchEvent(event);
-                }}
-              >
-                <Flag className="h-3 w-3 mr-1" />
-                Report
-              </Button>
             </div>
           </div>
         ))

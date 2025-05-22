@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate, useParams, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -8,7 +7,7 @@ import MessageList from "@/components/MessageList";
 import MessageConversation from "@/components/MessageConversation";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare, Loader2, User as UserIcon, RefreshCcw } from "lucide-react";
+import { Plus, MessageSquare, Loader2, User as UserIcon, RefreshCcw, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import {
@@ -178,6 +177,8 @@ const Messages = () => {
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const globalChannelRef = useRef<RealtimeChannel | null>(null);
+  const [conversationSearch, setConversationSearch] = useState("");
+  const [filteredConversations, setFilteredConversations] = useState(conversations);
   
   console.log("Messages component rendering with route:", location.pathname, "userId param:", userId);
 
@@ -197,41 +198,25 @@ const Messages = () => {
       globalChannelRef.current = channel;
     }
   }, [channel]);
-  
+
+  // Filter conversations based on search
   useEffect(() => {
-    const checkAuth = async () => {
-      // Check if user is logged in
-      if (!user) {
-        console.log("User not logged in, redirecting to login");
-        navigate('/login');
-        return;
-      }
-      
-      // Verify authentication
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        console.error("Auth check failed:", error);
-        toast({
-          title: "Authentication Error",
-          description: "Please log in again to access messages",
-          variant: "destructive"
-        });
-        navigate('/login');
-        return;
-      }
-      
-      console.log("Authentication verified, user ID:", data.user.id);
-    };
-    
-    checkAuth();
-  }, [navigate, user, toast]);
+    if (conversationSearch.trim() === "") {
+      setFilteredConversations(conversations);
+    } else {
+      const filtered = conversations.filter(convo => 
+        (convo.user.name && convo.user.name.toLowerCase().includes(conversationSearch.toLowerCase())) || 
+        (convo.user.username && convo.user.username.toLowerCase().includes(conversationSearch.toLowerCase())) ||
+        convo.lastMessage.content.toLowerCase().includes(conversationSearch.toLowerCase())
+      );
+      setFilteredConversations(filtered);
+    }
+  }, [conversationSearch, conversations]);
   
   useEffect(() => {
     if (!user) return;
     
-    console.log("Messages component mounted, fetching conversations");
-    
-    // Fetch conversations when component loads
+    // Optimize by using a lazy loading strategy
     const loadConversations = async () => {
       try {
         console.log("Fetching conversations for user:", user.id);
@@ -244,7 +229,10 @@ const Messages = () => {
       }
     };
     
-    loadConversations();
+    // Add a small timeout to prevent UI from freezing during navigation
+    const timer = setTimeout(() => {
+      loadConversations();
+    }, 100);
     
     // Set up real-time subscription for new messages
     const globalChannel = setupGlobalNotifications();
@@ -253,6 +241,7 @@ const Messages = () => {
     }
     
     return () => {
+      clearTimeout(timer);
       console.log("Cleaning up Messages component");
       if (globalChannelRef.current) {
         console.log("Removing channel subscription on component unmount");
@@ -262,11 +251,11 @@ const Messages = () => {
     };
   }, [user, fetchConversations, setupGlobalNotifications, setConnectionError]);
   
-  const handleSelectConversation = (userId: string) => {
+  const handleSelectConversation = useCallback((userId: string) => {
     console.log("Selecting conversation with user:", userId);
     navigate(`/messages/${userId}`);
     setIsNewMessageOpen(false);
-  };
+  }, [navigate]);
   
   const handleOpenNewMessage = () => {
     setIsNewMessageOpen(true);
@@ -394,27 +383,54 @@ const Messages = () => {
                 {/* Conversation List */}
                 <div className="md:col-span-1 border-r border-gray-200">
                   <div className="p-4 border-b border-gray-200">
-                    <h2 className="font-medium text-gray-600">Conversations</h2>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        className="pl-8 pr-8"
+                        placeholder="Search conversations..."
+                        value={conversationSearch}
+                        onChange={(e) => setConversationSearch(e.target.value)}
+                      />
+                      {conversationSearch && (
+                        <button 
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                          onClick={() => setConversationSearch("")}
+                        >
+                          <X className="h-4 w-4 text-gray-400" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   {loading && conversations.length === 0 ? (
                     <div className="flex justify-center items-center h-64">
                       <Loader2 className="h-6 w-6 animate-spin text-thryvance-green" />
                     </div>
-                  ) : conversations.length === 0 ? (
+                  ) : filteredConversations.length === 0 ? (
                     <div className="p-6 text-center">
-                      <MessageSquare className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-                      <h3 className="font-medium mb-1">No messages yet</h3>
-                      <p className="text-sm text-gray-500 mb-4">
-                        Start a conversation with someone offering or requesting help
-                      </p>
-                      <Button onClick={handleOpenNewMessage}>
-                        Start a conversation
-                      </Button>
+                      {conversationSearch ? (
+                        <>
+                          <p className="text-gray-500 mb-2">No conversations match your search</p>
+                          <Button variant="outline" size="sm" onClick={() => setConversationSearch("")}>
+                            Clear search
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquare className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                          <h3 className="font-medium mb-1">No messages yet</h3>
+                          <p className="text-sm text-gray-500 mb-4">
+                            Start a conversation with someone offering or requesting help
+                          </p>
+                          <Button onClick={handleOpenNewMessage}>
+                            Start a conversation
+                          </Button>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <MessageList 
-                      conversations={conversations}
+                      conversations={filteredConversations}
                       onSelect={handleSelectConversation}
                       selectedUserId={userId}
                       onViewProfile={handleViewProfile}

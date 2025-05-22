@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
@@ -85,9 +86,12 @@ const useConversation = (userId?: string) => {
     
     console.log("Fetching messages for conversation:", userId);
     
-    // Use an async function to handle the sequential loading
+    // Use an async function to handle the sequential loading with optimization
     const loadConversation = async () => {
       try {
+        // Add a small delay to avoid UI freezing
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
         // Step 1: Fetch messages
         await fetchMessages(userId);
         
@@ -119,12 +123,17 @@ const useConversation = (userId?: string) => {
     };
   }, [userId, user?.id, fetchMessages, setupRealtimeSubscription, markMessagesAsRead]);
 
-  // Fetch other user profile when userId changes
-  useEffect(() => {
+  // Fetch other user profile when userId changes - use memoization for performance
+  const memoizedFetchOtherUser = useCallback(() => {
     if (userId) {
       fetchOtherUser(userId);
     }
   }, [userId, fetchOtherUser]);
+
+  // Only fetch user profile when userId changes
+  useEffect(() => {
+    memoizedFetchOtherUser();
+  }, [memoizedFetchOtherUser]);
 
   return {
     user,

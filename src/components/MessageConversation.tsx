@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
@@ -35,12 +35,16 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleReconnect
   } = useConversation(userId);
   
-  // Log when conversation is selected
-  useEffect(() => {
-    if (userId) {
-      console.log("Conversation selected:", userId);
+  // Memoized function for viewing profile to reduce renders
+  const handleViewProfile = useCallback(() => {
+    if (otherUser) {
+      if (onViewProfile) {
+        onViewProfile(otherUser.id);
+      } else {
+        setIsProfileOpen(true);
+      }
     }
-  }, [userId]);
+  }, [otherUser, onViewProfile, setIsProfileOpen]);
   
   // Redirect if user is not authenticated
   if (!user) {
@@ -57,16 +61,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     );
   }
   
-  const handleViewProfile = () => {
-    if (otherUser) {
-      if (onViewProfile) {
-        onViewProfile(otherUser.id);
-      } else {
-        setIsProfileOpen(true);
-      }
-    }
-  };
-  
   // Show loading state when user profile is loading
   if (profileLoading && !otherUser) {
     return (
@@ -76,8 +70,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       </div>
     );
   }
-  
-  console.log("Messages in conversation:", messages);
   
   return (
     <>
