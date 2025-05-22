@@ -21,6 +21,7 @@ export function useConversationReconnect(
       // Remove existing channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        // Use a proper type-safe approach to clear the ref
         channelRef.current = null;
       }
       

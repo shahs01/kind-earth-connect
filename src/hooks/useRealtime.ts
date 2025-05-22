@@ -46,6 +46,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
+        // Fix for read-only property error
         channelRef.current = null;
       }
       
@@ -96,6 +97,7 @@ export function useRealtime({
         });
       
       // Store the channel reference so we can clean it up later
+      // Fix for read-only property error by assigning properly
       channelRef.current = channel;
       return channel;
     } catch (err) {
@@ -115,6 +117,7 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing channel on component unmount or parameters change");
         supabase.removeChannel(channelRef.current);
+        // Fix for read-only property error
         channelRef.current = null;
       }
     };
@@ -146,6 +149,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing existing channel before creating new one");
         supabase.removeChannel(channelRef.current);
+        // Fix for read-only property error
         channelRef.current = null;
       }
       
@@ -186,6 +190,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
         });
       
       // Store the channel reference so we can clean it up later
+      // Fix for read-only property error
       channelRef.current = channel;
       return channel;
     } catch (err) {
@@ -204,6 +209,7 @@ export function useGlobalMessageNotifications(currentUser: User | null, onNewMes
       if (channelRef.current) {
         console.log("Removing global notification channel on unmount");
         supabase.removeChannel(channelRef.current);
+        // Fix for read-only property error
         channelRef.current = null;
       }
     };

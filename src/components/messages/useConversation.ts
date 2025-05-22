@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
@@ -7,6 +8,7 @@ import { Message } from "@/hooks/useConversations";
 import { useConversationProfile } from "./hooks/useConversationProfile";
 import { useConversationReconnect } from "./hooks/useConversationReconnect";
 import { useConversationMessages } from "./hooks/useConversationMessages";
+import { supabase } from "@/integrations/supabase/client"; // Added missing import
 
 export const useConversation = (userId: string | undefined) => {
   const { loading, messages, fetchMessages, sendMessage, markMessagesAsRead, connectionError, setConnectionError, sending } = useMessages();
