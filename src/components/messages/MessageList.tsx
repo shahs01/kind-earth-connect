@@ -25,23 +25,12 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     }
   }, [messages, loading]);
   
-  // Improved scroll handling for new messages
+  // Always scroll to bottom when messages change
   useEffect(() => {
-    if (!messagesEndRef.current || !listContainerRef.current) return;
-    
-    const container = listContainerRef.current;
-    
-    // Always scroll to bottom on initial load
-    if (messages.length > 0) {
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-          console.log("Scrolled to bottom of messages");
-        }
-      }, 100);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      console.log("Scrolled to bottom of messages");
     }
-    
-    prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
   if (loading && messages.length === 0) {

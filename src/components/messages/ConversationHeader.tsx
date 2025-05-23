@@ -53,15 +53,18 @@ const ConversationHeader = ({
       <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10 cursor-pointer" onClick={onViewProfile}>
-            <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
+            <AvatarImage src={otherUser.avatar} alt={otherUser.name || otherUser.username} />
             <AvatarFallback>
-              {otherUser.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
+              {otherUser.name?.charAt(0) || otherUser.username?.charAt(0) || <UserIcon className="h-4 w-4" />}
             </AvatarFallback>
           </Avatar>
           <div>
             <h3 className="font-medium" onClick={onViewProfile} role="button">
-              {otherUser.name || otherUser.username}
+              {otherUser.name || otherUser.username || "Unknown User"}
             </h3>
+            {otherUser.username && otherUser.name && (
+              <p className="text-xs text-gray-500">@{otherUser.username}</p>
+            )}
           </div>
         </div>
         

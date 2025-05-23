@@ -23,7 +23,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
     }
     
     // Backup focus with timeouts to ensure focus works after rendering
-    const timers = [100, 300, 500, 1000].map(delay => 
+    const timers = [100, 300, 500].map(delay => 
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -56,7 +56,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           inputRef.current.focus();
           console.log("Re-focusing input after sending");
         }
-      }, 100);
+      }, 50);
     }
   }, [newMessage, onSendMessage]);
 
@@ -66,11 +66,6 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       handleSendMessage();
     }
   };
-
-  // Log whenever props change to help with debugging
-  useEffect(() => {
-    console.log("MessageInput props updated:", { sending, loading });
-  }, [sending, loading]);
 
   return (
     <div className="p-4 border-t border-gray-200">
@@ -87,7 +82,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          disabled={false} // Remove the disabled condition to ensure input is always enabled
+          disabled={sending}
           className="flex-1"
           autoComplete="off"
           aria-label="Message input"
