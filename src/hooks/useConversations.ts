@@ -63,77 +63,86 @@ export function useConversations() {
       
       // Process each conversation with other user details
       for (const convo of data || []) {
-        // Get other user profile (the one they're talking to)
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', convo.other_user_id)
-          .single();
-        
-        if (userError) {
-          console.error("Error fetching user:", userError);
+        try {
+          // Get other user profile (the one they're talking to)
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', convo.other_user_id)
+            .maybeSingle();
+          
+          if (userError) {
+            console.error("Error fetching user:", userError);
+            continue;
+          }
+          
+          if (!userData) {
+            console.error("No user found with ID:", convo.other_user_id);
+            continue;
+          }
+          
+          // Count unread messages
+          const { count, error: countError } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('sender_id', convo.other_user_id)
+            .eq('receiver_id', user.id)
+            .eq('read', false);
+          
+          if (countError) {
+            console.error("Error counting unread messages:", countError);
+            continue;
+          }
+          
+          // Get the last message
+          const { data: lastMessageData, error: msgError } = await supabase
+            .from('messages')
+            .select('*')
+            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${convo.other_user_id}),and(sender_id.eq.${convo.other_user_id},receiver_id.eq.${user.id})`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (msgError) {
+            console.error("Error fetching last message:", msgError);
+            continue;
+          }
+          
+          if (!lastMessageData) {
+            console.error("No last message found for conversation with", convo.other_user_id);
+            continue;
+          }
+          
+          // Create user object from profile
+          const otherUser: User = {
+            id: userData.id,
+            username: userData.username || '',
+            email: userData.email || '',
+            name: userData.name || '',
+            avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
+            bio: userData.bio || '',
+            location: userData.location || '',
+            trustScore: userData.trust_score || 0,
+            helpOffered: userData.help_offered || 0,
+            helpReceived: userData.help_received || 0,
+            volunteerHours: userData.volunteer_hours || 0,
+            createdAt: new Date(userData.created_at || Date.now()),
+            verifiedStatus: userData.verified_status || false,
+            emailVerified: true,
+            trustBadges: userData.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          };
+          
+          formattedConversations.push({
+            user: otherUser,
+            lastMessage: lastMessageData as Message,
+            unreadCount: count || 0
+          });
+        } catch (err) {
+          console.error("Error processing conversation:", err);
           continue;
         }
-        
-        // Count unread messages
-        const { count, error: countError } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('sender_id', convo.other_user_id)
-          .eq('receiver_id', user.id)
-          .eq('read', false);
-        
-        if (countError) {
-          console.error("Error counting unread messages:", countError);
-          continue;
-        }
-        
-        // Get the last message
-        const { data: lastMessageData, error: msgError } = await supabase
-          .from('messages')
-          .select('*')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .or(`sender_id.eq.${convo.other_user_id},receiver_id.eq.${convo.other_user_id}`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();  // Changed from single to maybeSingle to avoid errors
-        
-        if (msgError) {
-          console.error("Error fetching last message:", msgError);
-          continue;
-        }
-        
-        if (!lastMessageData) {
-          console.error("No last message found for conversation with", convo.other_user_id);
-          continue;
-        }
-        
-        // Create user object from profile
-        const otherUser: User = {
-          id: userData.id,
-          username: userData.username || '',
-          email: userData.email || '',
-          name: userData.name || '',
-          avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
-          bio: userData.bio || '',
-          location: userData.location || '',
-          trustScore: userData.trust_score || 0,
-          helpOffered: userData.help_offered || 0,
-          helpReceived: userData.help_received || 0,
-          volunteerHours: userData.volunteer_hours || 0,
-          createdAt: new Date(userData.created_at || Date.now()),
-          verifiedStatus: userData.verified_status || false,
-          emailVerified: true,
-          trustBadges: userData.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        };
-        
-        formattedConversations.push({
-          user: otherUser,
-          lastMessage: lastMessageData as Message,
-          unreadCount: count || 0
-        });
       }
       
       // Sort by most recent message

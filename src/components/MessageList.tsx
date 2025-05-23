@@ -13,6 +13,17 @@ interface MessageListProps {
 }
 
 const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }: MessageListProps) => {
+  if (conversations.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500 mb-2">No conversations yet</p>
+        <p className="text-sm text-gray-400">
+          Start a new chat to begin messaging
+        </p>
+      </div>
+    );
+  }
+  
   return (
     <div className="overflow-y-auto max-h-[calc(100vh-15rem)]">
       {conversations.map((convo) => (

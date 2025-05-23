@@ -51,7 +51,11 @@ export function useMessageActions() {
       const { data, error } = await supabase
         .from('messages')
         .insert(messageData)
-        .select();
+        .select(`
+          *,
+          sender:profiles!sender_id(*),
+          receiver:profiles!receiver_id(*)
+        `);
       
       if (error) {
         console.error("Error sending message:", error);
@@ -65,7 +69,51 @@ export function useMessageActions() {
       
       console.log("Message sent successfully:", data[0]?.id);
       
-      return data[0] as Message;
+      // Format the returned message
+      const message = data[0];
+      const formattedMessage: Message = {
+        ...message,
+        sender: message.sender ? {
+          id: message.sender.id,
+          username: message.sender.username || '',
+          email: message.sender.email || '',
+          name: message.sender.name || '',
+          avatar: message.sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.sender.name || '')}`,
+          bio: message.sender.bio || '',
+          location: message.sender.location || '',
+          trustScore: message.sender.trust_score || 0,
+          helpOffered: message.sender.help_offered || 0,
+          helpReceived: message.sender.help_received || 0,
+          volunteerHours: message.sender.volunteer_hours || 0,
+          createdAt: new Date(message.sender.created_at || Date.now()),
+          verifiedStatus: message.sender.verified_status || false,
+          emailVerified: true,
+          trustBadges: message.sender.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        } : undefined,
+        receiver: message.receiver ? {
+          id: message.receiver.id,
+          username: message.receiver.username || '',
+          email: message.receiver.email || '',
+          name: message.receiver.name || '',
+          avatar: message.receiver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.receiver.name || '')}`,
+          bio: message.receiver.bio || '',
+          location: message.receiver.location || '',
+          trustScore: message.receiver.trust_score || 0,
+          helpOffered: message.receiver.help_offered || 0,
+          helpReceived: message.receiver.help_received || 0,
+          volunteerHours: message.receiver.volunteer_hours || 0,
+          createdAt: new Date(message.receiver.created_at || Date.now()),
+          verifiedStatus: message.receiver.verified_status || false,
+          emailVerified: true,
+          trustBadges: message.receiver.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        } : undefined
+      };
+      
+      return formattedMessage;
     } catch (error: any) {
       console.error("Error sending message:", error);
       throw error;

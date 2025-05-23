@@ -79,6 +79,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         return;
       }
       await handleSendMessage(content);
+      console.log("Message sent successfully via onSendMessage");
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({

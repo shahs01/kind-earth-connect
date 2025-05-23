@@ -11,7 +11,7 @@ import { useAuthProfile } from "@/hooks/useAuthProfile";
 import { useGlobalMessageNotifications } from "@/hooks/useRealtime";
 
 // Import components
-import MessageConversation from "@/components/MessageConversation";
+import MessageConversation from "@/components/messages/MessageConversation";
 import ProfileDialog from "@/components/ProfileDialog";
 import MessagesContainer from "@/components/messages/MessagesContainer";
 import MessagesAuthRequired from "@/components/messages/MessagesAuthRequired";
@@ -47,7 +47,6 @@ const MessagesLayout = () => {
       setShowLoader(true);
       
       // Set a maximum timeout for the loading state
-      // @ts-ignore
       timerRef.current = window.setTimeout(() => {
         setShowLoader(false);
       }, 5000); // 5 seconds maximum loading time
@@ -89,14 +88,6 @@ const MessagesLayout = () => {
     }
   }, [location, navigate, user, loadConversation, params]);
   
-  // Force refresh conversations on component mount and when location changes
-  useEffect(() => {
-    if (user) {
-      console.log("MessagesLayout: Location changed, fetching conversations");
-      fetchConversations();
-    }
-  }, [location.pathname, user, fetchConversations]);
-  
   const handleNewMessage = () => {
     console.log("New message received, refreshing conversations");
     fetchConversations();
@@ -114,6 +105,7 @@ const MessagesLayout = () => {
     }
   }, [channel]);
   
+  // Initial setup when component mounts
   useEffect(() => {
     if (!user) return;
     

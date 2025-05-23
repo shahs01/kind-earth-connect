@@ -121,8 +121,18 @@ export function useMessages() {
         previousUserIdRef.current = userId;
       }
       
-      await fetchMessages(userId);
+      const fetchedMessages = await fetchMessages(userId);
+      console.log(`Loaded ${fetchedMessages.length} messages for conversation with ${userId}`);
+      
+      // Mark messages as read
       await markMessagesAsRead(userId);
+      
+      // Reload conversations to update unread counts
+      setTimeout(() => {
+        fetchConversations();
+      }, 300);
+      
+      return fetchedMessages;
     } catch (error) {
       console.error("Error loading conversation:", error);
       toast({
@@ -130,8 +140,9 @@ export function useMessages() {
         description: "Failed to load conversation. Please try again.",
         variant: "destructive"
       });
+      return [];
     }
-  }, [fetchMessages, markMessagesAsRead, setMessages, toast]);
+  }, [fetchMessages, markMessagesAsRead, setMessages, toast, fetchConversations]);
 
   // Clear local messages when unmounting or changing conversation
   const clearLocalMessages = useCallback(() => {

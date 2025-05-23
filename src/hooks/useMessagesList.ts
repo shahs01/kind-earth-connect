@@ -30,12 +30,14 @@ export function useMessagesList() {
       }
       
       // Get messages between current user and the selected user
-      // Using proper SQL syntax for the filter instead of or()
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${userId}`)
-        .or(`sender_id.eq.${userId},receiver_id.eq.${user.id}`)
+        .select(`
+          *,
+          sender:profiles!sender_id(*),
+          receiver:profiles!receiver_id(*)
+        `)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
       if (error) {
@@ -48,8 +50,50 @@ export function useMessagesList() {
       
       if (Array.isArray(data)) {
         console.log(`Retrieved ${data.length} messages for conversation with user: ${userId}`);
-        setMessages(data);
-        return data;
+        const messagesWithProfiles = data.map(msg => ({
+          ...msg,
+          sender: msg.sender ? {
+            id: msg.sender.id,
+            username: msg.sender.username || '',
+            email: msg.sender.email || '',
+            name: msg.sender.name || '',
+            avatar: msg.sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender.name || '')}`,
+            bio: msg.sender.bio || '',
+            location: msg.sender.location || '',
+            trustScore: msg.sender.trust_score || 0,
+            helpOffered: msg.sender.help_offered || 0,
+            helpReceived: msg.sender.help_received || 0,
+            volunteerHours: msg.sender.volunteer_hours || 0,
+            createdAt: new Date(msg.sender.created_at || Date.now()),
+            verifiedStatus: msg.sender.verified_status || false,
+            emailVerified: true,
+            trustBadges: msg.sender.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined,
+          receiver: msg.receiver ? {
+            id: msg.receiver.id,
+            username: msg.receiver.username || '',
+            email: msg.receiver.email || '',
+            name: msg.receiver.name || '',
+            avatar: msg.receiver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.receiver.name || '')}`,
+            bio: msg.receiver.bio || '',
+            location: msg.receiver.location || '',
+            trustScore: msg.receiver.trust_score || 0,
+            helpOffered: msg.receiver.help_offered || 0,
+            helpReceived: msg.receiver.help_received || 0,
+            volunteerHours: msg.receiver.volunteer_hours || 0,
+            createdAt: new Date(msg.receiver.created_at || Date.now()),
+            verifiedStatus: msg.receiver.verified_status || false,
+            emailVerified: true,
+            trustBadges: msg.receiver.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined
+        }));
+        
+        setMessages(messagesWithProfiles);
+        return messagesWithProfiles;
       } else {
         console.error("Expected array of messages but got:", data);
         setMessages([]);
