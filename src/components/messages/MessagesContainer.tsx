@@ -38,7 +38,6 @@ const MessagesContainer = ({
     } else {
       const term = searchTerm.toLowerCase();
       const filtered = conversations.filter(convo => {
-        // Handle potential undefined values gracefully
         const userName = convo.user?.name?.toLowerCase() || '';
         const userUsername = convo.user?.username?.toLowerCase() || '';
         const lastMessageContent = convo.lastMessage?.content?.toLowerCase() || '';
@@ -62,9 +61,10 @@ const MessagesContainer = ({
   return (
     <div className="container mx-auto px-0 md:px-4 h-full">
       <div className="max-w-7xl mx-auto h-full">
-        <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
-          {/* Conversation Sidebar */}
-          <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col h-full">
+        {/* Grid layout for proper conversation panel display */}
+        <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] bg-white rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
+          {/* Conversation Sidebar - Always visible on desktop */}
+          <div className="border-r border-gray-200 flex flex-col h-full">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold">Messages</h2>
               <Button onClick={onOpenNewMessage} size="sm" className="flex items-center gap-1">
@@ -106,8 +106,8 @@ const MessagesContainer = ({
             />
           </div>
           
-          {/* Message Content Area */}
-          <div className="flex-1 flex flex-col h-full">
+          {/* Message Content Area - Always visible, shows empty state or conversation */}
+          <div className={`flex flex-col h-full ${selectedUserId ? 'block' : 'hidden md:block'}`}>
             <Routes>
               <Route path=":userId" element={
                 <MessageConversation 

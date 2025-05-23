@@ -27,18 +27,18 @@ export function useMessages() {
     sending,
     sendMessage: sendMessageAction,
     markMessagesAsRead,
+    deleteConversation
   } = useMessageActions();
   
   const { toast } = useToast();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const previousUserIdRef = useRef<string | undefined>(undefined);
   
-  // Set active conversation
+  // Set active conversation and clear messages when component unmounts
   useEffect(() => {
     return () => {
       setActiveConversationId(null);
       previousUserIdRef.current = undefined;
-      // Clear messages when the hook is unmounted
       setMessages([]);
     };
   }, [setMessages]);
@@ -62,18 +62,16 @@ export function useMessages() {
       // Update messages state immediately without refetching
       if (message && message.sender) {
         console.log("Message sent successfully, updating local state");
-        // Type cast the message to unknown first to avoid direct type error
         addMessageToState(message as unknown as any);
         setActiveConversationId(receiverId);
         
-        // Make sure the message appears in the local state if this is a new conversation
+        // Update reference for current conversation
         if (previousUserIdRef.current !== receiverId) {
           previousUserIdRef.current = receiverId;
         }
       }
       
-      // Make sure we have the latest conversations after a message is sent
-      // Add a small delay to ensure database has time to update
+      // Refresh conversations list after sending message
       setTimeout(() => {
         fetchConversations();
       }, 300);
@@ -91,7 +89,10 @@ export function useMessages() {
   }, [sendMessageAction, addMessageToState, fetchConversations, toast]);
 
   const loadConversation = useCallback(async (userId: string) => {
-    if (!userId) return;
+    if (!userId) {
+      console.warn("loadConversation: No userId provided");
+      return;
+    }
     
     console.log(`Loading conversation with userId: ${userId}`);
     setActiveConversationId(userId);
@@ -99,6 +100,7 @@ export function useMessages() {
     try {
       // Clear previous messages if this is a different conversation
       if (previousUserIdRef.current !== userId) {
+        console.log("Clearing messages for new conversation");
         setMessages([]);
         previousUserIdRef.current = userId;
       }
@@ -128,6 +130,7 @@ export function useMessages() {
 
   // Clear local messages when unmounting or changing conversation
   const clearLocalMessages = useCallback(() => {
+    console.log("Clearing local messages");
     setMessages([]);
   }, [setMessages]);
 
@@ -141,6 +144,7 @@ export function useMessages() {
     fetchMessages,
     sendMessage,
     markMessagesAsRead,
+    deleteConversation,
     loadConversation,
     connectionError,
     setConnectionError,

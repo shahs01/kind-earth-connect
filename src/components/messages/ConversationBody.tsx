@@ -3,6 +3,7 @@ import React from "react";
 import ConversationHeader from "@/components/messages/ConversationHeader";
 import MessageList from "@/components/messages/MessageList";
 import MessageInput from "@/components/messages/MessageInput";
+import LoadingSkeleton from "@/components/messages/LoadingSkeleton";
 
 interface ConversationBodyProps {
   otherUser: any;
@@ -29,6 +30,35 @@ const ConversationBody = ({
   onArchiveConversation,
   onSendMessage
 }: ConversationBodyProps) => {
+  console.log("ConversationBody render:", {
+    hasOtherUser: !!otherUser,
+    loading,
+    messagesCount: messages.length,
+    currentUserId
+  });
+
+  // Show loading skeleton while loading user or initial messages
+  if (loading && !otherUser) {
+    return (
+      <div className="flex flex-col h-full">
+        <LoadingSkeleton type="profile" count={1} />
+        <div className="flex-1 bg-gray-50">
+          <LoadingSkeleton type="messages" count={3} />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no other user found
+  if (!loading && !otherUser) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">User not found</h3>
+        <p className="text-gray-500">This conversation may no longer be available.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -46,7 +76,7 @@ const ConversationBody = ({
         <div className="py-4 px-4 md:px-6">
           <MessageList 
             messages={messages} 
-            loading={loading} 
+            loading={loading && messages.length === 0} 
             currentUserId={currentUserId} 
           />
         </div>
