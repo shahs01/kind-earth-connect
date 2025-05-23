@@ -78,6 +78,10 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
             const isSameSenderAsPrevious = index > 0 && 
               dateMessages[index - 1].sender_id === message.sender_id;
             
+            // Get avatar from the sender if available, otherwise fallback
+            const avatarSrc = message.sender?.avatar || '';
+            const senderName = message.sender?.name || 'User';
+            
             return (
               <div
                 key={message.id}
@@ -87,9 +91,9 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
               >
                 {!isCurrentUser && !isSameSenderAsPrevious && (
                   <Avatar className="h-8 w-8 mb-1">
-                    <AvatarImage src={message.sender?.avatar} />
+                    <AvatarImage src={avatarSrc} />
                     <AvatarFallback>
-                      <UserIcon className="h-4 w-4" />
+                      {senderName.charAt(0) || <UserIcon className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -117,9 +121,9 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 
                 {isCurrentUser && !isSameSenderAsPrevious && (
                   <Avatar className="h-8 w-8 mb-1">
-                    <AvatarImage src={message.sender?.avatar} />
+                    <AvatarImage src={avatarSrc} />
                     <AvatarFallback>
-                      <UserIcon className="h-4 w-4" />
+                      {senderName.charAt(0) || <UserIcon className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                 )}

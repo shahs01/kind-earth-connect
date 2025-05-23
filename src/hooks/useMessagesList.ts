@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
@@ -32,11 +31,7 @@ export function useMessagesList() {
       // Get messages between current user and the selected user
       const { data, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:profiles!sender_id(*),
-          receiver:profiles!receiver_id(*)
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
@@ -48,57 +43,88 @@ export function useMessagesList() {
       
       setConnectionError(false);
       
-      if (Array.isArray(data)) {
-        console.log(`Retrieved ${data.length} messages for conversation with user: ${userId}`);
-        const messagesWithProfiles = data.map(msg => ({
-          ...msg,
-          sender: msg.sender ? {
-            id: msg.sender.id,
-            username: msg.sender.username || '',
-            email: msg.sender.email || '',
-            name: msg.sender.name || '',
-            avatar: msg.sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender.name || '')}`,
-            bio: msg.sender.bio || '',
-            location: msg.sender.location || '',
-            trustScore: msg.sender.trust_score || 0,
-            helpOffered: msg.sender.help_offered || 0,
-            helpReceived: msg.sender.help_received || 0,
-            volunteerHours: msg.sender.volunteer_hours || 0,
-            createdAt: new Date(msg.sender.created_at || Date.now()),
-            verifiedStatus: msg.sender.verified_status || false,
-            emailVerified: true,
-            trustBadges: msg.sender.trust_badges || [],
-            loginAttempts: 0,
-            lastLoginAttempt: null
-          } : undefined,
-          receiver: msg.receiver ? {
-            id: msg.receiver.id,
-            username: msg.receiver.username || '',
-            email: msg.receiver.email || '',
-            name: msg.receiver.name || '',
-            avatar: msg.receiver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.receiver.name || '')}`,
-            bio: msg.receiver.bio || '',
-            location: msg.receiver.location || '',
-            trustScore: msg.receiver.trust_score || 0,
-            helpOffered: msg.receiver.help_offered || 0,
-            helpReceived: msg.receiver.help_received || 0,
-            volunteerHours: msg.receiver.volunteer_hours || 0,
-            createdAt: new Date(msg.receiver.created_at || Date.now()),
-            verifiedStatus: msg.receiver.verified_status || false,
-            emailVerified: true,
-            trustBadges: msg.receiver.trust_badges || [],
-            loginAttempts: 0,
-            lastLoginAttempt: null
-          } : undefined
-        }));
-        
-        setMessages(messagesWithProfiles);
-        return messagesWithProfiles;
-      } else {
+      if (!Array.isArray(data)) {
         console.error("Expected array of messages but got:", data);
         setMessages([]);
         return [];
       }
+      
+      console.log(`Retrieved ${data.length} messages for conversation with user: ${userId}`);
+      
+      // Fetch sender and receiver profiles for each message
+      const processedMessages: Message[] = [];
+      
+      for (const message of data) {
+        // Get sender profile
+        const { data: senderData, error: senderError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', message.sender_id)
+          .single();
+          
+        if (senderError) {
+          console.error(`Error fetching sender profile for message ${message.id}:`, senderError);
+        }
+        
+        // Get receiver profile
+        const { data: receiverData, error: receiverError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', message.receiver_id)
+          .single();
+          
+        if (receiverError) {
+          console.error(`Error fetching receiver profile for message ${message.id}:`, receiverError);
+        }
+        
+        // Create formatted message
+        const formattedMessage: Message = {
+          ...message,
+          sender: senderData ? {
+            id: senderData.id,
+            username: senderData.username || '',
+            email: senderData.email || '',
+            name: senderData.name || '',
+            avatar: senderData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderData.name || '')}`,
+            bio: senderData.bio || '',
+            location: senderData.location || '',
+            trustScore: senderData.trust_score || 0,
+            helpOffered: senderData.help_offered || 0,
+            helpReceived: senderData.help_received || 0,
+            volunteerHours: senderData.volunteer_hours || 0,
+            createdAt: new Date(senderData.created_at || Date.now()),
+            verifiedStatus: senderData.verified_status || false,
+            emailVerified: true,
+            trustBadges: senderData.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined,
+          receiver: receiverData ? {
+            id: receiverData.id,
+            username: receiverData.username || '',
+            email: receiverData.email || '',
+            name: receiverData.name || '',
+            avatar: receiverData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverData.name || '')}`,
+            bio: receiverData.bio || '',
+            location: receiverData.location || '',
+            trustScore: receiverData.trust_score || 0,
+            helpOffered: receiverData.help_offered || 0,
+            helpReceived: receiverData.help_received || 0,
+            volunteerHours: receiverData.volunteer_hours || 0,
+            createdAt: new Date(receiverData.created_at || Date.now()),
+            verifiedStatus: receiverData.verified_status || false,
+            emailVerified: true,
+            trustBadges: receiverData.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined
+        };
+        
+        processedMessages.push(formattedMessage);
+      }
+      
+      setMessages(processedMessages);
+      return processedMessages;
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       setConnectionError(true);

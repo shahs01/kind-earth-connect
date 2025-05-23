@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
@@ -48,66 +47,84 @@ export function useMessageActions() {
       });
       
       // Insert the message
-      const { data, error } = await supabase
+      const { data: messageData_, error } = await supabase
         .from('messages')
         .insert(messageData)
-        .select(`
-          *,
-          sender:profiles!sender_id(*),
-          receiver:profiles!receiver_id(*)
-        `);
+        .select();
       
       if (error) {
         console.error("Error sending message:", error);
         throw error;
       }
       
-      if (!data || data.length === 0) {
+      if (!messageData_ || messageData_.length === 0) {
         console.error("No data returned from message insert");
         throw new Error("Failed to send message - no data returned");
       }
       
-      console.log("Message sent successfully:", data[0]?.id);
+      console.log("Message sent successfully:", messageData_[0]?.id);
+
+      // Get sender profile
+      const { data: senderProfile, error: senderError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (senderError) {
+        console.error("Error fetching sender profile:", senderError);
+      }
+      
+      // Get receiver profile
+      const { data: receiverProfile, error: receiverError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', receiverId)
+        .single();
+        
+      if (receiverError) {
+        console.error("Error fetching receiver profile:", receiverError);
+      }
       
       // Format the returned message
-      const message = data[0];
+      const message = messageData_[0];
       const formattedMessage: Message = {
         ...message,
-        sender: message.sender ? {
-          id: message.sender.id,
-          username: message.sender.username || '',
-          email: message.sender.email || '',
-          name: message.sender.name || '',
-          avatar: message.sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.sender.name || '')}`,
-          bio: message.sender.bio || '',
-          location: message.sender.location || '',
-          trustScore: message.sender.trust_score || 0,
-          helpOffered: message.sender.help_offered || 0,
-          helpReceived: message.sender.help_received || 0,
-          volunteerHours: message.sender.volunteer_hours || 0,
-          createdAt: new Date(message.sender.created_at || Date.now()),
-          verifiedStatus: message.sender.verified_status || false,
+        sender: senderProfile ? {
+          id: senderProfile.id,
+          username: senderProfile.username || '',
+          email: senderProfile.email || '',
+          name: senderProfile.name || '',
+          avatar: senderProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderProfile.name || '')}`,
+          bio: senderProfile.bio || '',
+          location: senderProfile.location || '',
+          trustScore: senderProfile.trust_score || 0,
+          helpOffered: senderProfile.help_offered || 0,
+          helpReceived: senderProfile.help_received || 0,
+          volunteerHours: senderProfile.volunteer_hours || 0,
+          createdAt: new Date(senderProfile.created_at || Date.now()),
+          verifiedStatus: senderProfile.verified_status || false,
           emailVerified: true,
-          trustBadges: message.sender.trust_badges || [],
+          trustBadges: senderProfile.trust_badges || [],
           loginAttempts: 0,
           lastLoginAttempt: null
         } : undefined,
-        receiver: message.receiver ? {
-          id: message.receiver.id,
-          username: message.receiver.username || '',
-          email: message.receiver.email || '',
-          name: message.receiver.name || '',
-          avatar: message.receiver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.receiver.name || '')}`,
-          bio: message.receiver.bio || '',
-          location: message.receiver.location || '',
-          trustScore: message.receiver.trust_score || 0,
-          helpOffered: message.receiver.help_offered || 0,
-          helpReceived: message.receiver.help_received || 0,
-          volunteerHours: message.receiver.volunteer_hours || 0,
-          createdAt: new Date(message.receiver.created_at || Date.now()),
-          verifiedStatus: message.receiver.verified_status || false,
+        receiver: receiverProfile ? {
+          id: receiverProfile.id,
+          username: receiverProfile.username || '',
+          email: receiverProfile.email || '',
+          name: receiverProfile.name || '',
+          avatar: receiverProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverProfile.name || '')}`,
+          bio: receiverProfile.bio || '',
+          location: receiverProfile.location || '',
+          trustScore: receiverProfile.trust_score || 0,
+          helpOffered: receiverProfile.help_offered || 0,
+          helpReceived: receiverProfile.help_received || 0,
+          volunteerHours: receiverProfile.volunteer_hours || 0,
+          createdAt: new Date(receiverProfile.created_at || Date.now()),
+          verifiedStatus: receiverProfile.verified_status || false,
           emailVerified: true,
-          trustBadges: message.receiver.trust_badges || [],
+          trustBadges: receiverProfile.trust_badges || [],
           loginAttempts: 0,
           lastLoginAttempt: null
         } : undefined
