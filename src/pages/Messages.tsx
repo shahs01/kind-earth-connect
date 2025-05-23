@@ -10,8 +10,6 @@ const Messages = () => {
   const { user } = useAuth();
   const location = useLocation();
   
-  console.log("Messages component rendering with route:", location.pathname);
-  
   useEffect(() => {
     // Update document title
     document.title = "Messages - Thryvance";
@@ -28,7 +26,7 @@ const Messages = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow bg-gray-50 py-4 md:py-8">
-        <MessagesLayout />
+        <MessagesLayout key={location.pathname} />
       </main>
       <Footer />
     </div>

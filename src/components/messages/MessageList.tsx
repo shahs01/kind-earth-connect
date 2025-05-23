@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Message } from "@/hooks/useMessages";
@@ -15,25 +15,31 @@ interface MessageListProps {
 const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
-  const prevMessagesLengthRef = useRef<number>(0);
-  
-  // Debug current message state
-  useEffect(() => {
-    console.log(`MessageList: Rendering with ${messages.length} messages, loading: ${loading}`);
-    if (messages.length > 0) {
-      console.log("First message:", messages[0].id, "Last message:", messages[messages.length - 1].id);
-    }
-    
-    // Update ref to track message count changes
-    prevMessagesLengthRef.current = messages.length;
-  }, [messages, loading]);
   
   // Always scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-      console.log("Scrolled to bottom of messages");
     }
+  }, [messages.length]);
+
+  // Memoize grouped messages to prevent unnecessary recalculations
+  const messagesByDate = useMemo(() => {
+    const groups: { [date: string]: Message[] } = {};
+    
+    if (messages && messages.length) {
+      messages.forEach((message) => {
+        if (!message.created_at) return;
+        
+        const date = new Date(message.created_at).toLocaleDateString();
+        if (!groups[date]) {
+          groups[date] = [];
+        }
+        groups[date].push(message);
+      });
+    }
+    
+    return groups;
   }, [messages]);
 
   if (loading && messages.length === 0) {
@@ -52,16 +58,6 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
       </div>
     );
   }
-
-  // Group messages by date
-  const messagesByDate: { [date: string]: Message[] } = {};
-  messages.forEach((message) => {
-    const date = new Date(message.created_at).toLocaleDateString();
-    if (!messagesByDate[date]) {
-      messagesByDate[date] = [];
-    }
-    messagesByDate[date].push(message);
-  });
 
   return (
     <div 
@@ -88,9 +84,6 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'} ${
                   isSameSenderAsPrevious ? 'mt-1' : 'mt-4'
                 }`}
-                data-testid={`message-${message.id}`}
-                data-sender={message.sender_id}
-                data-receiver={message.receiver_id}
               >
                 {!isCurrentUser && !isSameSenderAsPrevious && (
                   <Avatar className="h-8 w-8 mb-1">
@@ -118,7 +111,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                       isCurrentUser ? 'text-green-100' : 'text-gray-500'
                     }`}
                   >
-                    {format(new Date(message.created_at), 'h:mm a')}
+                    {message.created_at ? format(new Date(message.created_at), 'h:mm a') : ''}
                   </div>
                 </div>
                 

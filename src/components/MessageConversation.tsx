@@ -16,8 +16,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
   const { toast } = useToast();
   
-  console.log("MessageConversation: Rendering with userId:", userId);
-  
   const {
     user,
     otherUser,
@@ -44,7 +42,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   // Reset state when userId changes
   useEffect(() => {
-    console.log("MessageConversation: userId changed to:", userId);
     setFetchError(false);
   }, [userId, setFetchError]);
   
@@ -61,10 +58,10 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   // Memoize message sending function to prevent unnecessary re-renders
   const onSendMessage = useCallback(async (content: string) => {
+    if (!content.trim()) return;
+    
     try {
-      console.log("MessageConversation: Sending message:", content.substring(0, 20) + (content.length > 20 ? '...' : ''));
       if (!userId) {
-        console.error("Cannot send message: missing userId");
         toast({
           title: "Error",
           description: "Cannot send message: conversation not found",
@@ -84,15 +81,23 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   }, [handleSendMessage, toast, userId]);
   
   // Check for status error states first
-  if (!user || connectionError || fetchError || (profileLoading && !otherUser)) {
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center h-full p-6">
+        <p className="text-gray-500">Please log in to view messages</p>
+      </div>
+    );
+  }
+  
+  if (connectionError || fetchError) {
     return (
       <ConnectionStatusHandler
         user={user}
         connectionError={connectionError}
         isReconnecting={isReconnecting}
         fetchError={fetchError}
-        profileLoading={profileLoading}
-        otherUser={otherUser}
+        profileLoading={false}
+        otherUser={null}
         handleReconnect={handleReconnect}
         handleRetry={handleRetry}
       />

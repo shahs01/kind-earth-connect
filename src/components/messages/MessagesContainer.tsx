@@ -93,7 +93,12 @@ const MessagesContainer = ({
           {/* Message Content Area */}
           <div className="flex-1 flex flex-col h-full">
             <Routes>
-              <Route path=":userId" element={<MessageConversation onViewProfile={onViewProfile} />} />
+              <Route path=":userId" element={
+                <MessageConversation 
+                  key={selectedUserId} 
+                  onViewProfile={onViewProfile} 
+                />
+              } />
               <Route path="/" element={<EmptyConversation />} />
             </Routes>
           </div>

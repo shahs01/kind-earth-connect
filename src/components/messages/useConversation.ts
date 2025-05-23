@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMessages, Message } from "@/hooks/useMessages";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,6 @@ import { useMessageSync } from "./hooks/useMessageSync";
 
 const useConversation = (userId?: string) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [connectionError, setConnectionError] = useState(false);
   const previousUserIdRef = useRef<string | undefined>(undefined);
   const channelRef = useRef<any>(null);
@@ -113,12 +112,15 @@ const useConversation = (userId?: string) => {
     clearLocalMessages
   );
 
+  // Combine loading states
+  const loading = messagesLoading || isConnecting || profileLoading;
+
   return {
     user,
     otherUser,
-    loading: messagesLoading || isConnecting || profileLoading, // Combine all loading states
+    loading,
     profileLoading,
-    messages: messages.length > 0 ? messages : localMessages, // Use server messages if available, otherwise use local
+    messages: messages.length > 0 ? messages : localMessages,
     sending,
     isProfileOpen,
     setIsProfileOpen,

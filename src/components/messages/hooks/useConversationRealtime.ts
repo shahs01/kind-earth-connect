@@ -29,13 +29,9 @@ export function useConversationRealtime({
     setIsConnecting(true);
     
     try {
-      console.log(`Setting up realtime subscription for conversation between ${currentUserId} and ${userId}`);
-      
       // Create a unique channel name based on user IDs - ensures unique channel
       const userIds = [currentUserId, userId].sort();
       const channelName = `private:messages:${userIds[0]}:${userIds[1]}`;
-      
-      console.log(`Setting up realtime subscription on channel: ${channelName}`);
       
       // Create the channel
       const channel = supabase.channel(channelName);
@@ -51,16 +47,8 @@ export function useConversationRealtime({
             filter: `sender_id=eq.${userId}` 
           },
           (payload) => {
-            console.log(`Received message in ${channelName} from user ${userId}:`, {
-              messageId: payload.new.id,
-              sender: payload.new.sender_id,
-              receiver: payload.new.receiver_id,
-              timestamp: new Date().toISOString()
-            });
-            
             // Check if message is meant for current user and properly cast it
             if (payload.new.receiver_id === currentUserId) {
-              console.log(`Processing incoming message from ${userId} to ${currentUserId}`);
               const message = payload.new as unknown as Message;
               onMessageReceived(message);
             }
@@ -77,29 +65,23 @@ export function useConversationRealtime({
           },
           (payload) => {
             if (payload.new.receiver_id === userId) {
-              console.log(`Processing outgoing message from ${currentUserId} to ${userId}`);
               const message = payload.new as unknown as Message;
               onMessageReceived(message);
             }
           }
         )
         .subscribe((status) => {
-          console.log(`Realtime channel status: ${status}`);
           setIsConnecting(false);
           
           if (status === "SUBSCRIBED") {
-            console.log(`Successfully subscribed to realtime updates on channel ${channelName}`);
             setConnectionError(false);
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            console.error(`Error subscribing to realtime updates on channel ${channelName}:`, status);
             setConnectionError(true);
           }
         });
       
-      console.log(`Realtime subscription setup complete for channel ${channelName}`);
       return channel;
     } catch (err) {
-      console.error("Error setting up realtime:", err);
       setConnectionError(true);
       setIsConnecting(false);
       return null;

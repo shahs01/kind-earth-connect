@@ -18,20 +18,17 @@ export function useConversationLifecycle(
   
   // Component lifecycle tracking
   useEffect(() => {
-    console.log("useConversationLifecycle hook initialized with userId:", userId);
     isMountedRef.current = true;
     
     return () => {
-      console.log("useConversationLifecycle hook cleanup for userId:", userId);
       isMountedRef.current = false;
     };
-  }, [userId]);
+  }, []);
   
   // Clean up previous connection when switching conversations
   useEffect(() => {
     // If the userId has changed and there was a previous channel
     if (previousUserIdRef.current !== userId && channelRef.current) {
-      console.log("Cleaning up previous realtime subscription before creating a new one");
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
@@ -45,53 +42,34 @@ export function useConversationLifecycle(
     
     // Prevent multiple concurrent loads
     if (loadingRef.current) {
-      console.log("Already loading conversation, skipping redundant load");
       return;
     }
     
     loadingRef.current = true;
-    console.log("Fetching messages for conversation:", userId);
     
     // Use an async function to handle the sequential loading with optimization
     const loadConversation = async () => {
       try {
-        console.log("Starting conversation load sequence for userId:", userId);
-        
-        // Step 1: Fetch other user profile first
-        console.log("Fetching other user profile");
-        await fetchOtherUser(userId);
-        
-        if (!isMountedRef.current) {
-          console.log("Component unmounted during profile fetch, aborting");
-          return;
-        }
+        // Step 1: Fetch other user profile first (can happen in parallel)
+        const profilePromise = fetchOtherUser(userId);
         
         // Step 2: Fetch messages
-        console.log("Fetching messages");
-        const fetchedMessages = await fetchMessages(userId);
+        const messagesPromise = fetchMessages(userId);
+        
+        // Wait for both to complete
+        await Promise.all([profilePromise, messagesPromise]);
         
         if (!isMountedRef.current) {
-          console.log("Component unmounted during message fetch, aborting");
           return;
-        }
-        
-        // Ensure we have the full message list
-        if (fetchedMessages && fetchedMessages.length > 0) {
-          console.log(`Received ${fetchedMessages.length} messages from server`);
-        } else {
-          console.log("No messages found for this conversation");
         }
         
         // Step 3: Setup realtime only after messages are loaded
-        console.log("Setting up realtime for conversation:", userId);
         const channel = setupRealtimeSubscription();
         if (channel && isMountedRef.current) {
           channelRef.current = channel;
-          console.log("Realtime channel set up successfully");
         }
         
         // Step 4: Mark messages as read
-        console.log("Marking messages as read");
         await markMessagesAsRead(userId);
         
         if (isMountedRef.current) {
@@ -114,7 +92,6 @@ export function useConversationLifecycle(
     // Clean up realtime subscription when the component unmounts or userId changes
     return () => {
       if (channelRef.current) {
-        console.log("Cleaning up realtime subscription on unmount/userId change");
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }

@@ -17,19 +17,15 @@ export function useMessageSending({
   const { toast } = useToast();
   
   const handleSendMessage = useCallback(async (content: string) => {
-    if (!userId) {
-      console.error("Cannot send message: missing userId");
-      return Promise.reject(new Error("No user ID provided"));
+    if (!userId || !content.trim()) {
+      return Promise.reject(new Error("Missing user ID or empty message"));
     }
     
-    console.log(`Handling send message to userId: ${userId}, content: ${content.substring(0, 20)}${content.length > 20 ? '...' : ''}`);
-    
     try {
-      const sentMessage = await sendMessage(userId, content);
+      const sentMessage = await sendMessage(userId, content.trim());
       
       // Add sent message to local messages state immediately
       if (sentMessage) {
-        console.log("Message sent successfully, updating local state with:", sentMessage.id);
         setLocalMessages(prev => {
           // Check if message already exists to avoid duplicates
           const exists = prev.some(msg => msg.id === sentMessage.id);
@@ -45,7 +41,6 @@ export function useMessageSending({
       
       return sentMessage;
     } catch (error) {
-      console.error("Failed to send message:", error);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
