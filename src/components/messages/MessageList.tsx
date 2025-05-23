@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Message } from "@/hooks/useMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { UserIcon } from "lucide-react";
 
 interface MessageListProps {
@@ -12,7 +13,25 @@ interface MessageListProps {
   currentUserId: string | undefined;
 }
 
-const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
+interface GroupedMessages {
+  [date: string]: Message[];
+}
+
+const MessageSkeleton: React.FC = () => (
+  <div className="space-y-4">
+    {[...Array(3)].map((_, index) => (
+      <div key={index} className="flex items-end gap-2">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-16 w-64 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUserId }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   
@@ -24,11 +43,11 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   }, [messages.length]);
 
   // Memoize grouped messages to prevent unnecessary recalculations
-  const messagesByDate = useMemo(() => {
-    const groups: { [date: string]: Message[] } = {};
+  const messagesByDate = useMemo((): GroupedMessages => {
+    const groups: GroupedMessages = {};
     
     if (messages && messages.length) {
-      messages.forEach((message) => {
+      messages.forEach((message: Message) => {
         if (!message.created_at) return;
         
         const date = new Date(message.created_at).toLocaleDateString();
@@ -53,7 +72,12 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   if (loading && messages.length === 0) {
     return (
       <div className="flex justify-center items-center h-full py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+        <div className="space-y-4 w-full">
+          <div className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+          </div>
+          <MessageSkeleton />
+        </div>
       </div>
     );
   }
@@ -81,7 +105,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
             </div>
           </div>
           
-          {dateMessages.map((message, index) => {
+          {dateMessages.map((message: Message, index: number) => {
             const isCurrentUser = message.sender_id === currentUserId;
             const isSameSenderAsPrevious = index > 0 && 
               dateMessages[index - 1].sender_id === message.sender_id;

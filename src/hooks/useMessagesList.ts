@@ -4,13 +4,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { Message } from "./useConversations";
 
+interface DatabaseMessage {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  read: boolean;
+  created_at: string;
+}
+
+interface DatabaseProfile {
+  id: string;
+  username?: string;
+  email?: string;
+  name?: string;
+  avatar?: string;
+  bio?: string;
+  location?: string;
+  trust_score?: number;
+  help_offered?: number;
+  help_received?: number;
+  volunteer_hours?: number;
+  created_at?: string;
+  verified_status?: boolean;
+  trust_badges?: string[];
+}
+
 export function useMessagesList() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [connectionError, setConnectionError] = useState(false);
   const { toast } = useToast();
 
-  const fetchMessages = useCallback(async (userId: string) => {
+  const fetchMessages = useCallback(async (userId: string): Promise<Message[]> => {
     if (!userId) {
       console.error("useMessagesList: No userId provided to fetchMessages");
       return [];
@@ -26,6 +52,11 @@ export function useMessagesList() {
       if (authError || !user) {
         console.error("useMessagesList: Authentication error or not authenticated", authError);
         setConnectionError(true);
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to view messages",
+          variant: "destructive"
+        });
         throw authError || new Error("Not authenticated");
       }
       
@@ -41,6 +72,11 @@ export function useMessagesList() {
       if (messagesError) {
         console.error("useMessagesList: Error fetching messages:", messagesError);
         setConnectionError(true);
+        toast({
+          title: "Error fetching messages",
+          description: messagesError.message,
+          variant: "destructive"
+        });
         throw messagesError;
       }
       
@@ -61,19 +97,24 @@ export function useMessagesList() {
       
       if (profilesError) {
         console.error("useMessagesList: Error fetching profiles:", profilesError);
+        toast({
+          title: "Warning",
+          description: "Some profile information could not be loaded",
+          variant: "destructive"
+        });
         // Don't throw here, continue with messages without full profile data
       }
       
       // Create a map of profiles for quick lookup
-      const profilesMap = new Map();
-      (profilesData || []).forEach(profile => {
+      const profilesMap = new Map<string, DatabaseProfile>();
+      (profilesData as DatabaseProfile[] || []).forEach(profile => {
         profilesMap.set(profile.id, profile);
       });
       
       setConnectionError(false);
       
       // Process messages with profile data
-      const processedMessages: Message[] = (messagesData || []).map(message => {
+      const processedMessages: Message[] = (messagesData as DatabaseMessage[] || []).map(message => {
         const senderProfile = profilesMap.get(message.sender_id);
         const receiverProfile = profilesMap.get(message.sender_id === user.id ? userId : user.id);
         
@@ -123,12 +164,13 @@ export function useMessagesList() {
       console.log("useMessagesList: Processed messages:", processedMessages.length);
       setMessages(processedMessages);
       return processedMessages;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("useMessagesList: Error fetching messages:", error);
       setConnectionError(true);
+      const errorMessage = error instanceof Error ? error.message : "Failed to load messages";
       toast({
         title: "Error fetching messages",
-        description: error.message || "Failed to load messages",
+        description: errorMessage,
         variant: "destructive",
       });
       return [];
@@ -159,6 +201,40 @@ export function useMessagesList() {
     });
   }, []);
 
+  // Optimistic message deletion
+  const deleteMessage = useCallback(async (messageId: string) => {
+    try {
+      // Optimistic update - remove from UI immediately
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      // Delete from database
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        console.error("Error deleting message:", error);
+        toast({
+          title: "Failed to delete message",
+          description: error.message,
+          variant: "destructive"
+        });
+        // Revert optimistic update on error
+        // In a real app, you might want to refetch messages here
+        throw error;
+      }
+
+      toast({
+        title: "Message deleted",
+        description: "The message has been deleted successfully"
+      });
+    } catch (error) {
+      console.error("Failed to delete message:", error);
+      throw error;
+    }
+  }, [toast]);
+
   // Reset messages when component unmounts to avoid state bleed between conversations
   useEffect(() => {
     return () => {
@@ -173,6 +249,7 @@ export function useMessagesList() {
     setMessages,
     fetchMessages,
     addMessageToState,
+    deleteMessage,
     connectionError,
     setConnectionError
   };

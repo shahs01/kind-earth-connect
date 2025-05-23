@@ -20,11 +20,12 @@ export function useConversationRealtime({
   const [isConnecting, setIsConnecting] = useState(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   
-  // Clean up previous channel when component unmounts
+  // Clean up previous channel when component unmounts or dependencies change
   useEffect(() => {
     return () => {
       if (channelRef.current) {
-        console.log("Removing existing channel on unmount");
+        console.log("Cleaning up realtime channel on unmount");
+        channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -41,6 +42,7 @@ export function useConversationRealtime({
     // Clean up any existing channel first
     if (channelRef.current) {
       console.log("Removing existing channel before creating a new one");
+      channelRef.current.unsubscribe();
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }

@@ -22,13 +22,38 @@ export interface Message {
   receiver?: User;
 }
 
+interface DatabaseMessage {
+  sender_id: string;
+  receiver_id: string;
+  created_at: string;
+  content: string;
+  read: boolean;
+}
+
+interface DatabaseProfile {
+  id: string;
+  username?: string;
+  email?: string;
+  name?: string;
+  avatar?: string;
+  bio?: string;
+  location?: string;
+  trust_score?: number;
+  help_offered?: number;
+  help_received?: number;
+  volunteer_hours?: number;
+  created_at?: string;
+  verified_status?: boolean;
+  trust_badges?: string[];
+}
+
 export function useConversations() {
   const [loading, setLoading] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [connectionError, setConnectionError] = useState(false);
   const { toast } = useToast();
   
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (): Promise<Conversation[]> => {
     setLoading(true);
     try {
       console.log("Fetching conversations");
@@ -38,12 +63,22 @@ export function useConversations() {
       if (authError) {
         console.error("Authentication error:", authError);
         setConnectionError(true);
+        toast({
+          title: "Authentication Error",
+          description: authError.message,
+          variant: "destructive",
+        });
         throw new Error(authError.message);
       }
       
       if (!user) {
         console.error("Not authenticated");
         setConnectionError(true);
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to view conversations",
+          variant: "destructive",
+        });
         throw new Error("Not authenticated");
       }
       
@@ -57,6 +92,11 @@ export function useConversations() {
       if (messagesError) {
         console.error("Error fetching messages:", messagesError);
         setConnectionError(true);
+        toast({
+          title: "Error fetching messages",
+          description: messagesError.message,
+          variant: "destructive",
+        });
         throw messagesError;
       }
       
@@ -76,7 +116,7 @@ export function useConversations() {
         conversationId: string;
       }>();
       
-      for (const message of messagesData) {
+      for (const message of messagesData as DatabaseMessage[]) {
         const otherUserId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
         if (!otherUserId) continue;
         
@@ -112,6 +152,11 @@ export function useConversations() {
       
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
+        toast({
+          title: "Warning",
+          description: "Some profile information could not be loaded",
+          variant: "destructive",
+        });
         // Continue without profiles
       }
       
@@ -119,7 +164,7 @@ export function useConversations() {
       const formattedConversations: Conversation[] = [];
       
       for (const [userId, convData] of conversationMap.entries()) {
-        const profile = profilesData?.find(p => p.id === userId);
+        const profile = (profilesData as DatabaseProfile[] || []).find(p => p.id === userId);
         
         if (!profile) {
           console.warn("No profile found for user:", userId);
@@ -162,12 +207,13 @@ export function useConversations() {
       console.log("Formatted conversations:", formattedConversations.length);
       setConversations(formattedConversations);
       return formattedConversations;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching conversations:", error);
       setConnectionError(true);
+      const errorMessage = error instanceof Error ? error.message : "Failed to load conversations";
       toast({
         title: "Error fetching conversations",
-        description: error.message || "Failed to load conversations",
+        description: errorMessage,
         variant: "destructive",
       });
       return [];
@@ -176,8 +222,10 @@ export function useConversations() {
     }
   }, [toast]);
   
-  // Set up real-time subscription for new messages
+  // Set up real-time subscription for new messages with proper cleanup
   useEffect(() => {
+    let channel: any = null;
+    
     const setupRealtimeSubscription = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -186,7 +234,7 @@ export function useConversations() {
 
         console.log("Setting up global realtime subscription for new messages");
         
-        const channel = supabase.channel('public:messages')
+        channel = supabase.channel('public:messages')
           .on(
             'postgres_changes',
             {
@@ -200,7 +248,7 @@ export function useConversations() {
               fetchConversations();
             }
           )
-          .subscribe((status) => {
+          .subscribe((status: string) => {
             console.log("Global messages subscription status:", status);
           });
         
@@ -211,13 +259,13 @@ export function useConversations() {
       }
     };
     
-    const channel = setupRealtimeSubscription();
+    setupRealtimeSubscription();
     
     return () => {
       if (channel) {
-        channel.then(ch => {
-          if (ch) supabase.removeChannel(ch);
-        });
+        console.log("Cleaning up conversations realtime subscription");
+        channel.unsubscribe();
+        supabase.removeChannel(channel);
       }
     };
   }, [fetchConversations]);
