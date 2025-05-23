@@ -33,6 +33,40 @@ const MessagesLayout = () => {
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const globalChannelRef = useRef<RealtimeChannel | null>(null);
+  const [showLoader, setShowLoader] = useState(true);
+  const timerRef = useRef<number | null>(null);
+  
+  // Use a timer to prevent the loading spinner from showing indefinitely
+  useEffect(() => {
+    if (loading) {
+      // Clear any existing timer
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+      
+      setShowLoader(true);
+      
+      // Set a maximum timeout for the loading state
+      // @ts-ignore
+      timerRef.current = window.setTimeout(() => {
+        setShowLoader(false);
+      }, 5000); // 5 seconds maximum loading time
+    } else {
+      setShowLoader(false);
+      
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [loading]);
   
   // Check if we're coming from a post with the direct message intent
   useEffect(() => {
@@ -44,12 +78,16 @@ const MessagesLayout = () => {
       // Ensure we have a conversation loaded for this user
       if (user) {
         loadConversation(state.receiverId);
+        // Navigate to the messages/{userId} route if not already there
+        if (!params.userId) {
+          navigate(`/messages/${state.receiverId}`, { replace: true });
+        }
       }
       
       // Clear the state to prevent reloading on subsequent navigations
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigate, user, loadConversation]);
+  }, [location, navigate, user, loadConversation, params]);
   
   // Force refresh conversations on component mount and when location changes
   useEffect(() => {
@@ -193,7 +231,7 @@ const MessagesLayout = () => {
   return (
     <>
       <MessagesContainer 
-        loading={loading || isConnecting}
+        loading={showLoader || isConnecting}
         conversations={conversations}
         onSelectConversation={handleSelectConversation}
         onOpenNewMessage={handleOpenNewMessage}

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PostActionMenu from "@/components/PostActionMenu";
-import { useFavorites } from "@/hooks/useFavorites";
 
 interface Post {
   id: string;
@@ -61,29 +60,70 @@ const PostsList = ({
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isFavorited, getFavoriteId, addFavorite, removeFavorite } = useFavorites();
   
-  const checkFavoriteStatus = async (post: Post) => {
-    if (!user) return post;
-    
+  // Function to check if a post is favorited by the current user
+  const checkFavoriteStatus = useCallback(async (post: Post, currentUserId: string) => {
     try {
-      const favorited = await isFavorited(post.id);
-      let favoriteId = null;
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUserId)
+        .maybeSingle();
       
-      if (favorited) {
-        favoriteId = await getFavoriteId(post.id);
+      if (error) {
+        console.error("Error checking favorite status:", error);
+        return { ...post, isFavorited: false, favoriteId: null };
       }
       
-      return {
-        ...post,
-        isFavorited: favorited,
-        favoriteId: favoriteId
+      return { 
+        ...post, 
+        isFavorited: !!data, 
+        favoriteId: data?.id || null 
       };
     } catch (err) {
-      console.error("Error checking favorite status:", err);
-      return post;
+      console.error("Error in checkFavoriteStatus:", err);
+      return { ...post, isFavorited: false, favoriteId: null };
     }
-  };
+  }, []);
+  
+  // Function to add a post to favorites
+  const addToFavorites = useCallback(async (postId: string, userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .insert({
+          post_id: postId,
+          user_id: userId
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      return data.id;
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      throw error;
+    }
+  }, []);
+  
+  // Function to remove a post from favorites
+  const removeFromFavorites = useCallback(async (favoriteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('id', favoriteId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      throw error;
+    }
+  }, []);
   
   useEffect(() => {
     const fetchPosts = async () => {
@@ -140,49 +180,37 @@ const PostsList = ({
         
         // Fetch user information separately for each post
         if (postsData && postsData.length > 0) {
-          const formattedPosts: Post[] = await Promise.all(postsData.map(async (post) => {
-            try {
-              const { data: userData } = await supabase
-                .from('profiles')
-                .select('name, avatar, username')
-                .eq('id', post.user_id)
-                .single();
-              
-              // Ensure the post type is correctly typed as "offer" or "request"
-              const postType = post.type === "offer" ? "offer" as const : "request" as const;
-              
-              const typedPost: Post = {
-                ...post,
-                type: postType,
-                user: userData ? {
-                  name: userData.name || "Unknown User",
-                  avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}`,
-                  username: userData.username
-                } : {
-                  name: "Unknown User",
-                  avatar: "https://ui-avatars.com/api/?name=Unknown"
-                }
-              };
-              
-              // Check favorite status
-              const postWithFavoriteStatus = await checkFavoriteStatus(typedPost);
-              return postWithFavoriteStatus;
-            } catch (err) {
-              console.error("Error fetching user data for post:", err);
-              // Still return a post with default user data if we can't get the real user
-              const postType = post.type === "offer" ? "offer" as const : "request" as const;
-              return {
-                ...post,
-                type: postType,
-                user: {
-                  name: "Unknown User",
-                  avatar: "https://ui-avatars.com/api/?name=Unknown"
-                }
-              };
+          const formattedPostsPromises = postsData.map(async (post) => {
+            // Get user data
+            const { data: userData } = await supabase
+              .from('profiles')
+              .select('name, avatar, username')
+              .eq('id', post.user_id)
+              .maybeSingle();
+            
+            const typedPost: Post = {
+              ...post,
+              type: post.type as "offer" | "request",
+              user: userData ? {
+                name: userData.name || "Unknown User",
+                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}`,
+                username: userData.username
+              } : {
+                name: "Unknown User",
+                avatar: "https://ui-avatars.com/api/?name=Unknown"
+              }
+            };
+            
+            // Check if user is logged in to get favorite status
+            if (user) {
+              return await checkFavoriteStatus(typedPost, user.id);
             }
-          }));
+            
+            return typedPost;
+          });
           
-          console.log("Formatted posts:", formattedPosts.length);
+          const formattedPosts = await Promise.all(formattedPostsPromises);
+          console.log("Formatted posts with favorite info:", formattedPosts.length);
           setPosts(formattedPosts);
         } else {
           setPosts([]);
@@ -201,7 +229,7 @@ const PostsList = ({
     };
 
     fetchPosts();
-  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, isFavorited, getFavoriteId]);
+  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, checkFavoriteStatus]);
 
   const handleMessageClick = (postUserId: string) => {
     if (!isAuthenticated) {
@@ -237,7 +265,7 @@ const PostsList = ({
     try {
       if (post.isFavorited && post.favoriteId) {
         // Remove from favorites
-        await removeFavorite(post.favoriteId);
+        await removeFromFavorites(post.favoriteId);
         
         // Update local state
         setPosts(prevPosts => prevPosts.map(p => 
@@ -246,20 +274,19 @@ const PostsList = ({
         
         toast({ title: "Removed from favorites" });
       } else {
-        // Add to favorites
-        const success = await addFavorite(post.id);
-        
-        if (success) {
-          // Get the new favorite ID
-          const favoriteId = await getFavoriteId(post.id);
-          
-          // Update local state
-          setPosts(prevPosts => prevPosts.map(p => 
-            p.id === post.id ? { ...p, isFavorited: true, favoriteId } : p
-          ));
-          
-          toast({ title: "Added to favorites" });
+        if (!user) {
+          throw new Error("User not authenticated");
         }
+        
+        // Add to favorites
+        const favoriteId = await addToFavorites(post.id, user.id);
+        
+        // Update local state
+        setPosts(prevPosts => prevPosts.map(p => 
+          p.id === post.id ? { ...p, isFavorited: true, favoriteId } : p
+        ));
+        
+        toast({ title: "Added to favorites" });
       }
     } catch (err) {
       console.error("Error toggling favorite:", err);

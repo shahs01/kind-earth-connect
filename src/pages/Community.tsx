@@ -138,7 +138,7 @@ const Community = () => {
                 )}
               </div>
               
-              <TabsContent value="posts" className="mt-0">
+              <TabsContent value="posts">
                 <PostsList 
                   searchQuery={searchQuery} 
                   categoryFilter={selectedCategory !== "All Categories" ? selectedCategory : ""}
@@ -148,7 +148,7 @@ const Community = () => {
                 />
               </TabsContent>
               
-              <TabsContent value="nonprofits" className="mt-0">
+              <TabsContent value="nonprofits">
                 <div className="text-center py-10">
                   <h2 className="text-2xl font-bold mb-4">Nonprofit Directory</h2>
                   <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
@@ -165,7 +165,7 @@ const Community = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="volunteers" className="mt-0">
+              <TabsContent value="volunteers">
                 <div className="text-center py-10">
                   <h2 className="text-2xl font-bold mb-4">Volunteer Opportunities</h2>
                   <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
@@ -177,7 +177,7 @@ const Community = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="all" className="mt-0">
+              <TabsContent value="all">
                 <div className="space-y-8">
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Community Posts</h2>
@@ -187,8 +187,8 @@ const Community = () => {
                       limit={3}
                     />
                     <div className="mt-4 text-center">
-                      <Button variant="outline" asChild>
-                        <a href="/community" onClick={() => setSearchTab('posts')}>See All Posts</a>
+                      <Button variant="outline" onClick={() => setSearchTab('posts')}>
+                        See All Posts
                       </Button>
                     </div>
                   </div>
@@ -224,8 +224,7 @@ const Community = () => {
       </div>
       
       <main className="flex-grow container mx-auto px-4 pb-10">
-        {/* This section should be removed since it duplicates the TabsContent */}
-        {/* The content is now correctly placed within the Tabs component above */}
+        {/* Content is now correctly placed within the Tabs component above */}
       </main>
       <Footer />
     </div>

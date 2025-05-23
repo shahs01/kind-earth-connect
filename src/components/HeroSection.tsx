@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Users, Sprout } from "lucide-react";
+import { Users, Sprout, Search } from "lucide-react";
 import Logo from "./Logo";
 
 const HeroSection = () => {
@@ -30,6 +30,12 @@ const HeroSection = () => {
               </Button>
               <Button asChild variant="outline" className="border-thryvance-blue text-thryvance-blue hover:bg-thryvance-blue-light px-8 py-6 h-auto">
                 <Link to="/request-help">Request Help</Link>
+              </Button>
+              <Button asChild className="bg-thryvance-green-light text-thryvance-green border border-thryvance-green hover:bg-thryvance-green-light/80 px-8 py-6 h-auto">
+                <Link to="/community" className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  <span>Search Community</span>
+                </Link>
               </Button>
             </div>
             

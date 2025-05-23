@@ -5,10 +5,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
 import MessagesLayout from "@/components/messages/MessagesLayout";
+import { useToast } from "@/hooks/use-toast";
 
 const Messages = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
   
   useEffect(() => {
     // Update document title
@@ -21,10 +23,18 @@ const Messages = () => {
       pathName: location.pathname
     });
     
+    // Show toast for users coming from a post
+    if (state?.action === 'newMessage' && state?.receiverId) {
+      toast({
+        title: "Starting new conversation",
+        description: "You can now send a message to this user.",
+      });
+    }
+    
     return () => {
       console.log("Messages page unmounted");
     };
-  }, [location]);
+  }, [location, toast]);
   
   return (
     <div className="flex flex-col min-h-screen">

@@ -15,25 +15,25 @@ const Index = () => {
       <main className="flex-grow">
         <HeroSection />
         
-        {/* Search and Help Actions Section */}
+        {/* Search and Help Actions Section - Moved to hero section */}
         <div className="container mx-auto px-4 py-8 mt-4">
           <div className="flex flex-col md:flex-row justify-center gap-6">
             <Button asChild size="lg" className="bg-thryvance-green hover:bg-thryvance-green-dark">
-              <Link to="/community" className="flex items-center gap-2">
-                <Search className="w-5 h-5" />
-                Search Community
-              </Link>
-            </Button>
-            <Button asChild size="lg" className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
               <Link to="/offer-help" className="flex items-center gap-2">
                 <HandHelping className="w-5 h-5" />
                 Offer Help
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-thryvance-blue text-thryvance-blue">
+            <Button asChild size="lg" className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
               <Link to="/request-help" className="flex items-center gap-2">
                 <HelpCircle className="w-5 h-5" />
                 Request Help
+              </Link>
+            </Button>
+            <Button asChild size="lg" className="bg-thryvance-green-light text-thryvance-green border border-thryvance-green hover:bg-thryvance-green-light/80">
+              <Link to="/community" className="flex items-center gap-2">
+                <Search className="w-5 h-5" />
+                Search Community
               </Link>
             </Button>
           </div>
