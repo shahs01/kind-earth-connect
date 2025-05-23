@@ -1,87 +1,79 @@
 
-import { format, isToday, isYesterday } from "date-fns";
+import React from "react";
+import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Conversation } from "@/hooks/useMessagingSystem";
-import { UserIcon } from "lucide-react";
+import { Conversation } from "@/hooks/useMessages";
 
 interface ConversationsListProps {
   conversations: Conversation[];
   selectedUserId?: string;
-  onSelect: (userId: string) => void;
+  onSelectConversation: (userId: string) => void;
 }
 
-const ConversationsList = ({ conversations, selectedUserId, onSelect }: ConversationsListProps) => {
-  // Format the date in a more human-readable way
-  const formatMessageDate = (date: Date) => {
-    if (isToday(date)) {
-      return format(date, 'h:mm a');
-    } else if (isYesterday(date)) {
-      return 'Yesterday';
-    } else if (date.getFullYear() === new Date().getFullYear()) {
-      return format(date, 'MMM d');
-    } else {
-      return format(date, 'MM/dd/yy');
-    }
-  };
+const ConversationsList = ({ 
+  conversations, 
+  selectedUserId, 
+  onSelectConversation 
+}: ConversationsListProps) => {
+  if (conversations.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        <p>No conversations yet</p>
+        <p className="text-sm mt-1">Start a conversation by messaging someone</p>
+      </div>
+    );
+  }
 
   return (
     <div className="divide-y divide-gray-100">
-      {conversations.map((conversation) => {
-        const lastMessageDate = conversation.lastMessage 
-          ? new Date(conversation.lastMessage.created_at) 
-          : new Date();
-        
-        return (
-          <div
-            key={conversation.userId}
-            className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-              selectedUserId === conversation.userId ? 'bg-gray-100' : ''
-            }`}
-            onClick={() => onSelect(conversation.userId)}
-            role="button"
-            tabIndex={0}
-            aria-selected={selectedUserId === conversation.userId}
-          >
-            <div className="flex items-start space-x-3">
-              <Avatar className="h-12 w-12 flex-shrink-0">
-                <AvatarImage 
-                  src={conversation.user.avatar} 
-                  alt={conversation.user.name || 'User'}
-                />
-                <AvatarFallback>
-                  {conversation.user.name?.charAt(0) || <UserIcon className="h-5 w-5" />}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="min-w-0 flex-1">
-                <div className="flex justify-between items-baseline">
-                  <h4 className="text-sm font-medium text-gray-900 truncate">
-                    {conversation.user.name || conversation.user.username || 'Unknown User'}
-                  </h4>
-                  <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                    {formatMessageDate(lastMessageDate)}
+      {conversations.map((conversation) => (
+        <div
+          key={conversation.other_user.id}
+          onClick={() => onSelectConversation(conversation.other_user.id)}
+          className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+            selectedUserId === conversation.other_user.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-12 w-12">
+              <AvatarImage 
+                src={conversation.other_user.avatar || ''} 
+                alt={conversation.other_user.name || 'User'} 
+              />
+              <AvatarFallback>
+                {conversation.other_user.name?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {conversation.other_user.name || conversation.other_user.username || 'User'}
+                </p>
+                {conversation.last_message_at && (
+                  <p className="text-xs text-gray-500">
+                    {format(new Date(conversation.last_message_at), 'MMM d')}
                   </p>
-                </div>
-                
-                <div className="mt-1 flex items-center justify-between">
-                  <p className={`text-sm truncate ${
-                    conversation.unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-500'
-                  }`} style={{ maxWidth: '180px' }}>
-                    {conversation.lastMessage?.content || "No messages yet"}
-                  </p>
-                  
-                  {conversation.unreadCount > 0 && (
-                    <Badge className="bg-thryvance-green text-white ml-1">
-                      {conversation.unreadCount}
-                    </Badge>
-                  )}
-                </div>
+                )}
               </div>
+              
+              {conversation.last_message && (
+                <p className="text-sm text-gray-500 truncate mt-1">
+                  {conversation.last_message.content}
+                </p>
+              )}
+              
+              {conversation.unread_count > 0 && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {conversation.unread_count} new
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 };
