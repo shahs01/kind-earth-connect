@@ -13,6 +13,12 @@ interface MessageListProps {
 }
 
 const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }: MessageListProps) => {
+  // Debug log
+  console.log("MessageList component (conversations sidebar):", {
+    conversations: conversations.length,
+    selectedUserId
+  });
+
   if (conversations.length === 0) {
     return (
       <div className="p-6 text-center">
@@ -37,6 +43,8 @@ const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }:
         
         // Skip invalid conversations
         if (!userId) return null;
+
+        console.log("Rendering conversation item:", { userId, userName, selectedUserId, isSelected: selectedUserId === userId });
         
         return (
           <div 

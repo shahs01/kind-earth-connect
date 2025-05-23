@@ -1,5 +1,5 @@
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
@@ -15,6 +15,7 @@ interface MessageConversationProps {
 const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
   const { toast } = useToast();
+  const [initialLoading, setInitialLoading] = useState(true);
   
   const {
     user,
@@ -40,12 +41,20 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleReconnect
   );
   
-  // Reset state when userId changes
+  // Reset error state when userId changes
   useEffect(() => {
     setFetchError(false);
+    console.log("MessageConversation mounted with userId:", userId);
+    
+    // Hide initial loading after a timeout to prevent long blank screens
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 1000); // Reduced from 2000 to make the UI more responsive
+    
+    return () => clearTimeout(timer);
   }, [userId, setFetchError]);
   
-  // Memoized function for viewing profile to reduce renders
+  // Memoized function for viewing profile
   const handleViewProfile = useCallback(() => {
     if (otherUser) {
       if (onViewProfile) {
@@ -56,7 +65,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [otherUser, onViewProfile, setIsProfileOpen]);
   
-  // Memoize message sending function to prevent unnecessary re-renders
+  // Memoize message sending function
   const onSendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
     
@@ -70,6 +79,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         return;
       }
       await handleSendMessage(content);
+      console.log("Message sent successfully via onSendMessage");
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
@@ -80,7 +90,28 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [handleSendMessage, toast, userId]);
   
-  // Check for status error states first
+  console.log("MessageConversation render state:", { 
+    hasUserId: !!userId, 
+    hasUser: !!user, 
+    hasOtherUser: !!otherUser,
+    messagesCount: messages.length,
+    connectionError,
+    fetchError,
+    loading,
+    initialLoading
+  });
+  
+  // Initial loading state
+  if (initialLoading && loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
+        <p className="text-gray-500">Loading conversation...</p>
+      </div>
+    );
+  }
+  
+  // Check for authentication
   if (!user) {
     return (
       <div className="flex justify-center items-center h-full p-6">
@@ -89,6 +120,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     );
   }
   
+  // Check for connection errors
   if (connectionError || fetchError) {
     return (
       <ConnectionStatusHandler
@@ -101,6 +133,18 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         handleReconnect={handleReconnect}
         handleRetry={handleRetry}
       />
+    );
+  }
+  
+  // No conversation selected
+  if (!userId) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full p-6">
+        <h3 className="text-xl font-medium mb-2 text-gray-700">Select a conversation</h3>
+        <p className="text-gray-500 text-center mb-4">
+          Choose a conversation from the sidebar or start a new one
+        </p>
+      </div>
     );
   }
   

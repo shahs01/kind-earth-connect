@@ -36,6 +36,16 @@ const ConversationSidebar = ({
     return !loading && conversations.length === 0 && !searchTerm && initialLoadComplete;
   }, [loading, conversations.length, searchTerm, initialLoadComplete]);
 
+  // Add console log to help debug
+  console.log("ConversationSidebar render:", {
+    conversationsCount: conversations.length,
+    loading,
+    selectedUserId,
+    showEmptyState,
+    showNoResults,
+    initialLoadComplete
+  });
+
   return (
     <div className="flex-1 overflow-y-auto">
       {loading && !initialLoadComplete ? (
