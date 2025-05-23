@@ -32,68 +32,92 @@ export function useMessagesList() {
       console.log(`useMessagesList: Current user: ${user.id}, Other user: ${userId}`);
       
       // Get messages between current user and the selected user
-      const { data, error } = await supabase
+      const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(*),
-          receiver:profiles!messages_receiver_id_fkey(*)
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
-      if (error) {
-        console.error("useMessagesList: Error fetching messages:", error);
+      if (messagesError) {
+        console.error("useMessagesList: Error fetching messages:", messagesError);
         setConnectionError(true);
-        throw error;
+        throw messagesError;
       }
       
-      console.log(`useMessagesList: Retrieved ${data?.length || 0} messages for conversation with user: ${userId}`);
+      console.log(`useMessagesList: Retrieved ${messagesData?.length || 0} messages for conversation with user: ${userId}`);
+      
+      // Get unique user IDs from messages
+      const userIds = Array.from(new Set([
+        ...(messagesData || []).map(msg => msg.sender_id),
+        ...(messagesData || []).map(msg => msg.receiver_id)
+      ]));
+      
+      // Fetch user profiles for all users involved in the conversation
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error("useMessagesList: Error fetching profiles:", profilesError);
+        // Don't throw here, continue with messages without full profile data
+      }
+      
+      // Create a map of profiles for quick lookup
+      const profilesMap = new Map();
+      (profilesData || []).forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
       
       setConnectionError(false);
       
-      // Process messages to ensure proper format
-      const processedMessages: Message[] = (data || []).map(message => ({
-        ...message,
-        sender: message.sender ? {
-          id: message.sender.id,
-          username: message.sender.username || '',
-          email: message.sender.email || '',
-          name: message.sender.name || '',
-          avatar: message.sender.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.sender.name || '')}`,
-          bio: message.sender.bio || '',
-          location: message.sender.location || '',
-          trustScore: message.sender.trust_score || 0,
-          helpOffered: message.sender.help_offered || 0,
-          helpReceived: message.sender.help_received || 0,
-          volunteerHours: message.sender.volunteer_hours || 0,
-          createdAt: message.sender.created_at ? new Date(message.sender.created_at) : new Date(),
-          verifiedStatus: message.sender.verified_status || false,
-          emailVerified: true,
-          trustBadges: message.sender.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        } : undefined,
-        receiver: message.receiver ? {
-          id: message.receiver.id,
-          username: message.receiver.username || '',
-          email: message.receiver.email || '',
-          name: message.receiver.name || '',
-          avatar: message.receiver.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.receiver.name || '')}`,
-          bio: message.receiver.bio || '',
-          location: message.receiver.location || '',
-          trustScore: message.receiver.trust_score || 0,
-          helpOffered: message.receiver.help_offered || 0,
-          helpReceived: message.receiver.help_received || 0,
-          volunteerHours: message.receiver.volunteer_hours || 0,
-          createdAt: message.receiver.created_at ? new Date(message.receiver.created_at) : new Date(),
-          verifiedStatus: message.receiver.verified_status || false,
-          emailVerified: true,
-          trustBadges: message.receiver.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        } : undefined
-      }));
+      // Process messages with profile data
+      const processedMessages: Message[] = (messagesData || []).map(message => {
+        const senderProfile = profilesMap.get(message.sender_id);
+        const receiverProfile = profilesMap.get(message.receiver_id);
+        
+        return {
+          ...message,
+          sender: senderProfile ? {
+            id: senderProfile.id,
+            username: senderProfile.username || '',
+            email: senderProfile.email || '',
+            name: senderProfile.name || '',
+            avatar: senderProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderProfile.name || '')}`,
+            bio: senderProfile.bio || '',
+            location: senderProfile.location || '',
+            trustScore: senderProfile.trust_score || 0,
+            helpOffered: senderProfile.help_offered || 0,
+            helpReceived: senderProfile.help_received || 0,
+            volunteerHours: senderProfile.volunteer_hours || 0,
+            createdAt: senderProfile.created_at ? new Date(senderProfile.created_at) : new Date(),
+            verifiedStatus: senderProfile.verified_status || false,
+            emailVerified: true,
+            trustBadges: senderProfile.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined,
+          receiver: receiverProfile ? {
+            id: receiverProfile.id,
+            username: receiverProfile.username || '',
+            email: receiverProfile.email || '',
+            name: receiverProfile.name || '',
+            avatar: receiverProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverProfile.name || '')}`,
+            bio: receiverProfile.bio || '',
+            location: receiverProfile.location || '',
+            trustScore: receiverProfile.trust_score || 0,
+            helpOffered: receiverProfile.help_offered || 0,
+            helpReceived: receiverProfile.help_received || 0,
+            volunteerHours: receiverProfile.volunteer_hours || 0,
+            createdAt: receiverProfile.created_at ? new Date(receiverProfile.created_at) : new Date(),
+            verifiedStatus: receiverProfile.verified_status || false,
+            emailVerified: true,
+            trustBadges: receiverProfile.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined
+        };
+      });
       
       console.log("useMessagesList: Processed messages:", processedMessages.length);
       setMessages(processedMessages);
