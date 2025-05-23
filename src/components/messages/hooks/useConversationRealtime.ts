@@ -27,6 +27,7 @@ export function useConversationRealtime({
     }
     
     setIsConnecting(true);
+    console.log(`Setting up realtime subscription for conversation between ${currentUserId} and ${userId}`);
     
     try {
       // Create a unique channel name based on user IDs - ensures unique channel
@@ -46,11 +47,48 @@ export function useConversationRealtime({
             table: 'messages',
             filter: `sender_id=eq.${userId}` 
           },
-          (payload) => {
-            // Check if message is meant for current user and properly cast it
-            if (payload.new.receiver_id === currentUserId) {
-              const message = payload.new as unknown as Message;
-              onMessageReceived(message);
+          async (payload) => {
+            console.log("Realtime: New message received from other user", payload);
+            // Check if message is meant for current user
+            if (payload.new && payload.new.receiver_id === currentUserId) {
+              try {
+                // Fetch the sender profile
+                const { data: senderData } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', payload.new.sender_id)
+                  .single();
+                
+                // Construct message with sender data
+                const message = {
+                  ...payload.new,
+                  sender: senderData ? {
+                    id: senderData.id,
+                    username: senderData.username || '',
+                    email: senderData.email || '',
+                    name: senderData.name || '',
+                    avatar: senderData.avatar || '',
+                    bio: senderData.bio || '',
+                    location: senderData.location || '',
+                    trustScore: senderData.trust_score || 0,
+                    helpOffered: senderData.help_offered || 0,
+                    helpReceived: senderData.help_received || 0,
+                    volunteerHours: senderData.volunteer_hours || 0,
+                    createdAt: new Date(),
+                    verifiedStatus: false,
+                    emailVerified: true,
+                    trustBadges: [],
+                    loginAttempts: 0,
+                    lastLoginAttempt: null
+                  } : undefined
+                };
+                
+                onMessageReceived(message as Message);
+              } catch (err) {
+                console.error("Error processing realtime message:", err);
+                // Still add message even without profile data
+                onMessageReceived(payload.new as Message);
+              }
             }
           }
         )
@@ -63,25 +101,66 @@ export function useConversationRealtime({
             table: 'messages',
             filter: `sender_id=eq.${currentUserId}` 
           },
-          (payload) => {
-            if (payload.new.receiver_id === userId) {
-              const message = payload.new as unknown as Message;
-              onMessageReceived(message);
+          async (payload) => {
+            console.log("Realtime: New message sent by current user", payload);
+            if (payload.new && payload.new.receiver_id === userId) {
+              try {
+                // Fetch the sender profile (current user)
+                const { data: senderData } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', payload.new.sender_id)
+                  .single();
+                
+                // Construct message with sender data
+                const message = {
+                  ...payload.new,
+                  sender: senderData ? {
+                    id: senderData.id,
+                    username: senderData.username || '',
+                    email: senderData.email || '',
+                    name: senderData.name || '',
+                    avatar: senderData.avatar || '',
+                    bio: senderData.bio || '',
+                    location: senderData.location || '',
+                    trustScore: senderData.trust_score || 0,
+                    helpOffered: senderData.help_offered || 0,
+                    helpReceived: senderData.help_received || 0,
+                    volunteerHours: senderData.volunteer_hours || 0,
+                    createdAt: new Date(),
+                    verifiedStatus: false,
+                    emailVerified: true,
+                    trustBadges: [],
+                    loginAttempts: 0,
+                    lastLoginAttempt: null
+                  } : undefined
+                };
+                
+                onMessageReceived(message as Message);
+              } catch (err) {
+                console.error("Error processing realtime message:", err);
+                // Still add message even without profile data
+                onMessageReceived(payload.new as Message);
+              }
             }
           }
         )
         .subscribe((status) => {
           setIsConnecting(false);
+          console.log(`Realtime subscription status: ${status}`);
           
           if (status === "SUBSCRIBED") {
+            console.log("Successfully subscribed to realtime messages");
             setConnectionError(false);
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.error("Error subscribing to realtime messages:", status);
             setConnectionError(true);
           }
         });
       
       return channel;
     } catch (err) {
+      console.error("Error setting up realtime subscription:", err);
       setConnectionError(true);
       setIsConnecting(false);
       return null;

@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { User } from "@/types";
@@ -46,29 +46,47 @@ export function useConversations() {
         throw new Error("Not authenticated");
       }
       
-      // Get the latest message with each user the current user has conversed with
-      const { data, error } = await supabase.rpc('get_conversations');
-      
-      if (error) {
-        console.error("Error fetching conversations:", error);
+      // Get all users the current user has sent messages to or received messages from
+      const { data: sentToUsers, error: sentError } = await supabase
+        .from('messages')
+        .select('receiver_id')
+        .eq('sender_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      const { data: receivedFromUsers, error: receivedError } = await supabase
+        .from('messages')
+        .select('sender_id')
+        .eq('receiver_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (sentError || receivedError) {
+        console.error("Error fetching conversation users:", sentError || receivedError);
         setConnectionError(true);
-        throw error;
+        throw sentError || receivedError;
       }
       
-      console.log("Raw conversations data:", data);
+      // Extract unique user IDs
+      const userIdSet = new Set<string>();
+      
+      sentToUsers?.forEach(msg => userIdSet.add(msg.receiver_id));
+      receivedFromUsers?.forEach(msg => userIdSet.add(msg.sender_id));
+      
+      const uniqueUserIds = Array.from(userIdSet);
+      
+      console.log("Found conversations with users:", uniqueUserIds);
       setConnectionError(false);
       
       // Format conversations and fetch user details
       const formattedConversations: Conversation[] = [];
       
       // Process each conversation with other user details
-      for (const convo of data || []) {
+      for (const otherUserId of uniqueUserIds) {
         try {
-          // Get other user profile (the one they're talking to)
+          // Get other user profile
           const { data: userData, error: userError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', convo.other_user_id)
+            .eq('id', otherUserId)
             .maybeSingle();
           
           if (userError) {
@@ -77,7 +95,7 @@ export function useConversations() {
           }
           
           if (!userData) {
-            console.error("No user found with ID:", convo.other_user_id);
+            console.error("No user found with ID:", otherUserId);
             continue;
           }
           
@@ -85,7 +103,7 @@ export function useConversations() {
           const { count, error: countError } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
-            .eq('sender_id', convo.other_user_id)
+            .eq('sender_id', otherUserId)
             .eq('receiver_id', user.id)
             .eq('read', false);
           
@@ -98,7 +116,7 @@ export function useConversations() {
           const { data: lastMessageData, error: msgError } = await supabase
             .from('messages')
             .select('*')
-            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${convo.other_user_id}),and(sender_id.eq.${convo.other_user_id},receiver_id.eq.${user.id})`)
+            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -109,7 +127,7 @@ export function useConversations() {
           }
           
           if (!lastMessageData) {
-            console.error("No last message found for conversation with", convo.other_user_id);
+            console.error("No last message found for conversation with", otherUserId);
             continue;
           }
           
@@ -150,7 +168,7 @@ export function useConversations() {
         new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
       );
       
-      console.log("Formatted conversations:", formattedConversations);
+      console.log("Formatted conversations:", formattedConversations.length);
       setConversations(formattedConversations);
       return formattedConversations;
     } catch (error: any) {
@@ -166,6 +184,67 @@ export function useConversations() {
       setLoading(false);
     }
   }, [toast]);
+  
+  // Set up real-time subscription for new messages
+  useEffect(() => {
+    const setupRealtimeSubscription = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return null;
+
+        console.log("Setting up global realtime subscription for new messages");
+        
+        const channel = supabase.channel('public:messages')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'messages',
+              filter: `receiver_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log("Received new message notification:", payload);
+              // Refresh conversations to update last message and unread count
+              fetchConversations();
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'messages',
+              filter: `sender_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log("New message sent notification:", payload);
+              // Refresh conversations to update last message
+              fetchConversations();
+            }
+          )
+          .subscribe((status) => {
+            console.log("Global messages subscription status:", status);
+          });
+        
+        return channel;
+      } catch (error) {
+        console.error("Error setting up realtime subscription:", error);
+        return null;
+      }
+    };
+    
+    const channel = setupRealtimeSubscription();
+    
+    return () => {
+      if (channel) {
+        channel.then(ch => {
+          if (ch) supabase.removeChannel(ch);
+        });
+      }
+    };
+  }, [fetchConversations]);
   
   return {
     loading,

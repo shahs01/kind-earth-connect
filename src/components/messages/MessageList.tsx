@@ -42,6 +42,8 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     return groups;
   }, [messages]);
 
+  console.log("MessageList render with messages:", messages.length, "loading:", loading);
+
   if (loading && messages.length === 0) {
     return (
       <div className="flex justify-center items-center h-full py-12">
@@ -78,9 +80,9 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
             const isSameSenderAsPrevious = index > 0 && 
               dateMessages[index - 1].sender_id === message.sender_id;
             
-            // Get avatar from the sender if available, otherwise fallback
-            const avatarSrc = message.sender?.avatar || '';
+            // Handle missing sender/receiver data
             const senderName = message.sender?.name || 'User';
+            const avatarSrc = message.sender?.avatar || '';
             
             return (
               <div
@@ -91,7 +93,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
               >
                 {!isCurrentUser && !isSameSenderAsPrevious && (
                   <Avatar className="h-8 w-8 mb-1">
-                    <AvatarImage src={avatarSrc} />
+                    <AvatarImage src={avatarSrc} alt={senderName} />
                     <AvatarFallback>
                       {senderName.charAt(0) || <UserIcon className="h-4 w-4" />}
                     </AvatarFallback>
@@ -121,7 +123,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 
                 {isCurrentUser && !isSameSenderAsPrevious && (
                   <Avatar className="h-8 w-8 mb-1">
-                    <AvatarImage src={avatarSrc} />
+                    <AvatarImage src={avatarSrc} alt={senderName} />
                     <AvatarFallback>
                       {senderName.charAt(0) || <UserIcon className="h-4 w-4" />}
                     </AvatarFallback>

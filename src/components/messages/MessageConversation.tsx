@@ -44,15 +44,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   // Reset state when userId changes
   useEffect(() => {
     setFetchError(false);
+    console.log("MessageConversation mounted with userId:", userId);
   }, [userId, setFetchError]);
-  
-  // Ensure we redirect if no userId is provided
-  useEffect(() => {
-    if (!userId && user) {
-      // If we're on /messages with no userId, but have conversations, redirect to the first one
-      navigate('/messages', { replace: true });
-    }
-  }, [userId, user, navigate]);
   
   // Memoized function for viewing profile to reduce renders
   const handleViewProfile = useCallback(() => {
@@ -89,6 +82,15 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       });
     }
   }, [handleSendMessage, toast, userId]);
+  
+  console.log("MessageConversation render state:", { 
+    hasUserId: !!userId, 
+    hasUser: !!user, 
+    messagesCount: messages.length,
+    connectionError,
+    fetchError,
+    loading
+  });
   
   // Check for status error states first
   if (!user) {

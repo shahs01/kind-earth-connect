@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
@@ -64,73 +65,73 @@ export function useMessageActions() {
       
       console.log("Message sent successfully:", messageData_[0]?.id);
 
-      // Get sender profile
-      const { data: senderProfile, error: senderError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (senderError) {
-        console.error("Error fetching sender profile:", senderError);
-      }
-      
-      // Get receiver profile
-      const { data: receiverProfile, error: receiverError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', receiverId)
-        .single();
-        
-      if (receiverError) {
-        console.error("Error fetching receiver profile:", receiverError);
-      }
-      
-      // Format the returned message
+      // Get the sent message
       const message = messageData_[0];
-      const formattedMessage: Message = {
-        ...message,
-        sender: senderProfile ? {
-          id: senderProfile.id,
-          username: senderProfile.username || '',
-          email: senderProfile.email || '',
-          name: senderProfile.name || '',
-          avatar: senderProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderProfile.name || '')}`,
-          bio: senderProfile.bio || '',
-          location: senderProfile.location || '',
-          trustScore: senderProfile.trust_score || 0,
-          helpOffered: senderProfile.help_offered || 0,
-          helpReceived: senderProfile.help_received || 0,
-          volunteerHours: senderProfile.volunteer_hours || 0,
-          createdAt: new Date(senderProfile.created_at || Date.now()),
-          verifiedStatus: senderProfile.verified_status || false,
-          emailVerified: true,
-          trustBadges: senderProfile.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        } : undefined,
-        receiver: receiverProfile ? {
-          id: receiverProfile.id,
-          username: receiverProfile.username || '',
-          email: receiverProfile.email || '',
-          name: receiverProfile.name || '',
-          avatar: receiverProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverProfile.name || '')}`,
-          bio: receiverProfile.bio || '',
-          location: receiverProfile.location || '',
-          trustScore: receiverProfile.trust_score || 0,
-          helpOffered: receiverProfile.help_offered || 0,
-          helpReceived: receiverProfile.help_received || 0,
-          volunteerHours: receiverProfile.volunteer_hours || 0,
-          createdAt: new Date(receiverProfile.created_at || Date.now()),
-          verifiedStatus: receiverProfile.verified_status || false,
-          emailVerified: true,
-          trustBadges: receiverProfile.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        } : undefined
-      };
-      
-      return formattedMessage;
+
+      try {
+        // Get sender profile
+        const { data: senderProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        // Get receiver profile
+        const { data: receiverProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', receiverId)
+          .single();
+          
+        // Format the returned message
+        const formattedMessage: Message = {
+          ...message,
+          sender: senderProfile ? {
+            id: senderProfile.id,
+            username: senderProfile.username || '',
+            email: senderProfile.email || '',
+            name: senderProfile.name || '',
+            avatar: senderProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderProfile.name || '')}`,
+            bio: senderProfile.bio || '',
+            location: senderProfile.location || '',
+            trustScore: senderProfile.trust_score || 0,
+            helpOffered: senderProfile.help_offered || 0,
+            helpReceived: senderProfile.help_received || 0,
+            volunteerHours: senderProfile.volunteer_hours || 0,
+            createdAt: new Date(senderProfile.created_at || Date.now()),
+            verifiedStatus: senderProfile.verified_status || false,
+            emailVerified: true,
+            trustBadges: senderProfile.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined,
+          receiver: receiverProfile ? {
+            id: receiverProfile.id,
+            username: receiverProfile.username || '',
+            email: receiverProfile.email || '',
+            name: receiverProfile.name || '',
+            avatar: receiverProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverProfile.name || '')}`,
+            bio: receiverProfile.bio || '',
+            location: receiverProfile.location || '',
+            trustScore: receiverProfile.trust_score || 0,
+            helpOffered: receiverProfile.help_offered || 0,
+            helpReceived: receiverProfile.help_received || 0,
+            volunteerHours: receiverProfile.volunteer_hours || 0,
+            createdAt: new Date(receiverProfile.created_at || Date.now()),
+            verifiedStatus: receiverProfile.verified_status || false,
+            emailVerified: true,
+            trustBadges: receiverProfile.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          } : undefined
+        };
+        
+        return formattedMessage;
+      } catch (profileError) {
+        console.error("Error fetching profiles for message:", profileError);
+        // Return message without profile data
+        return message as Message;
+      }
     } catch (error: any) {
       console.error("Error sending message:", error);
       throw error;
