@@ -1,5 +1,5 @@
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Message } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,7 +61,7 @@ export function useConversationRealtime({
             // Check if message is meant for current user and properly cast it
             if (payload.new.receiver_id === currentUserId) {
               console.log(`Processing incoming message from ${userId} to ${currentUserId}`);
-              const message = payload.new as Message;
+              const message = payload.new as unknown as Message;
               onMessageReceived(message);
             }
           }
@@ -78,7 +78,7 @@ export function useConversationRealtime({
           (payload) => {
             if (payload.new.receiver_id === userId) {
               console.log(`Processing outgoing message from ${currentUserId} to ${userId}`);
-              const message = payload.new as Message;
+              const message = payload.new as unknown as Message;
               onMessageReceived(message);
             }
           }

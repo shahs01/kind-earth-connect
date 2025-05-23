@@ -13,6 +13,7 @@ interface ConversationBodyProps {
   onViewProfile: () => void;
   onReportUser: () => void;
   onDeleteConversation: () => void;
+  onArchiveConversation: () => void;
   onSendMessage: (content: string) => void;
 }
 
@@ -25,6 +26,7 @@ const ConversationBody = ({
   onViewProfile,
   onReportUser,
   onDeleteConversation,
+  onArchiveConversation,
   onSendMessage
 }: ConversationBodyProps) => {
   return (
@@ -36,15 +38,18 @@ const ConversationBody = ({
         onViewProfile={onViewProfile}
         onReportUser={onReportUser}
         onDeleteConversation={onDeleteConversation}
+        onArchiveConversation={onArchiveConversation}
       />
       
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <MessageList 
-          messages={messages} 
-          loading={loading} 
-          currentUserId={currentUserId} 
-        />
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="py-4 px-4 md:px-6">
+          <MessageList 
+            messages={messages} 
+            loading={loading} 
+            currentUserId={currentUserId} 
+          />
+        </div>
       </div>
       
       {/* Input */}

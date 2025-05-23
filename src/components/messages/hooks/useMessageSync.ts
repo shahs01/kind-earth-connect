@@ -16,10 +16,11 @@ export function useMessageSync(
       
       // Create a combined message array with no duplicates
       const combinedMessages = [...messages];
+      const existingIds = new Set(messages.map(msg => msg.id));
       
       // Add local messages that aren't already in the combined array
       localMessages.forEach(localMsg => {
-        if (!combinedMessages.some(msg => msg.id === localMsg.id)) {
+        if (!existingIds.has(localMsg.id)) {
           combinedMessages.push(localMsg);
         }
       });
@@ -41,6 +42,9 @@ export function useMessageSync(
       console.log("Conversation changed, clearing message state");
       clearLocalMessages();
       setMessages([]);
+      
+      // Update the reference
+      previousUserIdRef.current = userId;
     }
   }, [userId, setMessages, clearLocalMessages, previousUserIdRef]);
 }

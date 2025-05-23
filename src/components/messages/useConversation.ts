@@ -20,6 +20,7 @@ const useConversation = (userId?: string) => {
   const [connectionError, setConnectionError] = useState(false);
   const previousUserIdRef = useRef<string | undefined>(undefined);
   const channelRef = useRef<any>(null);
+  const navigate = useNavigate();
   
   // Get local messages state management
   const {
@@ -84,7 +85,7 @@ const useConversation = (userId?: string) => {
   }, [clearLocalMessages, setMessages]);
 
   // Set up conversation actions (delete, archive)
-  const { handleDeleteConversation } = useConversationActions({
+  const { handleDeleteConversation, handleArchiveConversation } = useConversationActions({
     userId,
     currentUserId: user?.id,
     clearMessages: clearAllMessages
@@ -126,7 +127,9 @@ const useConversation = (userId?: string) => {
     handleSendMessage,
     handleReportUser,
     handleDeleteConversation,
-    handleReconnect
+    handleArchiveConversation,
+    handleReconnect,
+    navigate
   };
 };
 

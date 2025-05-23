@@ -1,6 +1,6 @@
 
 import React, { useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,6 @@ interface MessageConversationProps {
 
 const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
-  const navigate = useNavigate();
   const { toast } = useToast();
   
   console.log("MessageConversation: Rendering with userId:", userId);
@@ -33,7 +32,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleSendMessage,
     handleReportUser,
     handleDeleteConversation,
-    handleReconnect
+    handleReconnect,
+    handleArchiveConversation
   } = useConversation(userId);
   
   const { fetchError, setFetchError, handleRetry } = useConnectionState(
@@ -83,63 +83,21 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [handleSendMessage, toast, userId]);
   
-  // Handle delete conversation
-  const onDeleteConversation = useCallback(async () => {
-    if (!userId) return;
-    
-    try {
-      console.log("Deleting conversation with user:", userId);
-      await handleDeleteConversation();
-      navigate("/messages");
-      toast({
-        title: "Conversation deleted",
-        description: "The conversation has been permanently deleted."
-      });
-    } catch (error) {
-      console.error("Failed to delete conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete conversation. Please try again.",
-        variant: "destructive"
-      });
-    }
-  }, [userId, handleDeleteConversation, navigate, toast]);
-  
-  // Log lifecycle for debugging
-  useEffect(() => {
-    console.log("MessageConversation mounted with userId:", userId);
-    return () => {
-      console.log("MessageConversation unmounting, userId was:", userId);
-    };
-  }, [userId]);
-  
   // Check for status error states first
-  const statusHandler = (
-    <ConnectionStatusHandler
-      user={user}
-      connectionError={connectionError}
-      isReconnecting={isReconnecting}
-      fetchError={fetchError}
-      profileLoading={profileLoading}
-      otherUser={otherUser}
-      handleReconnect={handleReconnect}
-      handleRetry={handleRetry}
-    />
-  );
-  
-  if (statusHandler.props.user === null || 
-      statusHandler.props.connectionError || 
-      statusHandler.props.fetchError || 
-      (statusHandler.props.profileLoading && !statusHandler.props.otherUser)) {
-    return statusHandler;
+  if (!user || connectionError || fetchError || (profileLoading && !otherUser)) {
+    return (
+      <ConnectionStatusHandler
+        user={user}
+        connectionError={connectionError}
+        isReconnecting={isReconnecting}
+        fetchError={fetchError}
+        profileLoading={profileLoading}
+        otherUser={otherUser}
+        handleReconnect={handleReconnect}
+        handleRetry={handleRetry}
+      />
+    );
   }
-  
-  console.log("MessageConversation rendering with:", {
-    messageCount: messages.length,
-    otherUser: otherUser?.name || "unknown",
-    loading,
-    sending
-  });
   
   return (
     <>
@@ -151,7 +109,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         currentUserId={user?.id}
         onViewProfile={handleViewProfile}
         onReportUser={handleReportUser}
-        onDeleteConversation={onDeleteConversation}
+        onDeleteConversation={handleDeleteConversation}
+        onArchiveConversation={handleArchiveConversation}
         onSendMessage={onSendMessage}
       />
 

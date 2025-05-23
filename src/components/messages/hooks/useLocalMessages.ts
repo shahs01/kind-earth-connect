@@ -33,11 +33,6 @@ export function useLocalMessages() {
     setLocalMessages([]);
   }, []);
 
-  // Debugging - log messages whenever they change
-  useEffect(() => {
-    console.log(`Local messages state updated: ${localMessages.length} messages`);
-  }, [localMessages]);
-
   return {
     localMessages,
     setLocalMessages,

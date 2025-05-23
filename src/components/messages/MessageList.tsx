@@ -38,7 +38,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
 
   if (loading && messages.length === 0) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-full py-12">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
       </div>
     );
@@ -46,8 +46,8 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
 
   if (!loading && messages.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No messages yet</p>
+      <div className="text-center py-12 text-gray-500">
+        <p className="font-medium">No messages yet</p>
         <p className="text-sm mt-1">Start the conversation by sending a message</p>
       </div>
     );
@@ -66,34 +66,43 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   return (
     <div 
       ref={listContainerRef}
-      className="space-y-4 pb-2 overflow-y-auto h-full" 
+      className="space-y-6" 
       data-testid="messages-container"
     >
       {Object.entries(messagesByDate).map(([date, dateMessages]) => (
         <div key={date} className="space-y-4">
           <div className="flex justify-center">
-            <div className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
+            <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
               {new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </div>
           </div>
           
-          {dateMessages.map((message) => {
+          {dateMessages.map((message, index) => {
             const isCurrentUser = message.sender_id === currentUserId;
+            const isSameSenderAsPrevious = index > 0 && 
+              dateMessages[index - 1].sender_id === message.sender_id;
+            
             return (
               <div
                 key={message.id}
-                className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'} ${
+                  isSameSenderAsPrevious ? 'mt-1' : 'mt-4'
+                }`}
                 data-testid={`message-${message.id}`}
                 data-sender={message.sender_id}
                 data-receiver={message.receiver_id}
               >
-                {!isCurrentUser && (
-                  <Avatar className="h-6 w-6">
+                {!isCurrentUser && !isSameSenderAsPrevious && (
+                  <Avatar className="h-8 w-8 mb-1">
                     <AvatarImage src={message.sender?.avatar} />
                     <AvatarFallback>
-                      <UserIcon className="h-3 w-3" />
+                      <UserIcon className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
+                )}
+                
+                {!isCurrentUser && isSameSenderAsPrevious && (
+                  <div className="w-8"></div> 
                 )}
                 
                 <div
@@ -113,13 +122,17 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                   </div>
                 </div>
                 
-                {isCurrentUser && (
-                  <Avatar className="h-6 w-6">
+                {isCurrentUser && !isSameSenderAsPrevious && (
+                  <Avatar className="h-8 w-8 mb-1">
                     <AvatarImage src={message.sender?.avatar} />
                     <AvatarFallback>
-                      <UserIcon className="h-3 w-3" />
+                      <UserIcon className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
+                )}
+                
+                {isCurrentUser && isSameSenderAsPrevious && (
+                  <div className="w-8"></div>
                 )}
               </div>
             );
@@ -129,6 +142,6 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
       <div ref={messagesEndRef} />
     </div>
   );
-}
+};
 
 export default MessageList;

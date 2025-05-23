@@ -14,63 +14,57 @@ interface MessageListProps {
 
 const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }: MessageListProps) => {
   return (
-    <div className="overflow-y-auto max-h-[70vh]">
-      {conversations.length === 0 ? (
-        <div className="p-4 text-center text-gray-500">
-          No conversations yet
-        </div>
-      ) : (
-        conversations.map((convo) => (
-          <div 
-            key={convo.user.id}
-            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-              selectedUserId === convo.user.id ? 'bg-gray-100' : ''
-            }`}
-            onClick={() => onSelect(convo.user.id)}
-            role="button"
-            tabIndex={0}
-            aria-selected={selectedUserId === convo.user.id}
-          >
-            <div className="flex items-start gap-3">
-              <Avatar 
-                className="h-10 w-10 cursor-pointer" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewProfile(convo.user.id);
-                }}
-              >
-                <AvatarImage src={convo.user.avatar} alt={convo.user.name} />
-                <AvatarFallback>
-                  {convo.user.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
-                </AvatarFallback>
-              </Avatar>
+    <div className="overflow-y-auto max-h-[calc(100vh-15rem)]">
+      {conversations.map((convo) => (
+        <div 
+          key={convo.user.id}
+          className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
+            selectedUserId === convo.user.id ? 'bg-gray-100' : ''
+          }`}
+          onClick={() => onSelect(convo.user.id)}
+          role="button"
+          tabIndex={0}
+          aria-selected={selectedUserId === convo.user.id}
+        >
+          <div className="flex items-start gap-3">
+            <Avatar 
+              className="h-10 w-10 cursor-pointer flex-shrink-0" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile(convo.user.id);
+              }}
+            >
+              <AvatarImage src={convo.user.avatar} alt={convo.user.name || 'User'} />
+              <AvatarFallback>
+                {convo.user.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <h4 className="font-medium truncate">
+                  {convo.user.name || convo.user.username || 'Unknown User'}
+                </h4>
+                <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                  {format(new Date(convo.lastMessage.created_at), 'MMM d, h:mm a')}
+                </span>
+              </div>
               
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-medium truncate">
-                    {convo.user.name || convo.user.username}
-                  </h4>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">
-                    {format(new Date(convo.lastMessage.created_at), 'MMM d, h:mm a')}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm text-gray-600 truncate max-w-[180px]">
+                  {convo.lastMessage.content}
+                </p>
                 
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-sm text-gray-600 truncate">
-                    {convo.lastMessage.content}
-                  </p>
-                  
-                  {convo.unreadCount > 0 && (
-                    <Badge variant="secondary" className="bg-thryvance-green text-white ml-2">
-                      {convo.unreadCount}
-                    </Badge>
-                  )}
-                </div>
+                {convo.unreadCount > 0 && (
+                  <Badge variant="secondary" className="bg-thryvance-green text-white ml-2 flex-shrink-0">
+                    {convo.unreadCount}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
-        ))
-      )}
+        </div>
+      ))}
     </div>
   );
 };

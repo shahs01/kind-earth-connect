@@ -155,10 +155,19 @@ export function useMessageActions() {
     }
   }, []);
 
+  // Archive conversation (in production, this would update a status field in the database)
+  const archiveConversation = useCallback(async (otherUserId: string) => {
+    // This is a mock function for now - in a real implementation, we would add an 'archived' field
+    // to the messages table and update it here.
+    console.log(`Archiving conversation with user ${otherUserId}`);
+    return true;
+  }, []);
+
   return {
     sending,
     sendMessage,
     markMessagesAsRead,
-    deleteConversation
+    deleteConversation,
+    archiveConversation
   };
 }

@@ -25,9 +25,9 @@ const Messages = () => {
   }, []);
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow py-8 bg-gray-50">
+      <main className="flex-grow bg-gray-50 py-4 md:py-8">
         <MessagesLayout />
       </main>
       <Footer />

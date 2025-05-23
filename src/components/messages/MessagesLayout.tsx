@@ -17,6 +17,7 @@ import MessagesContainer from "@/components/messages/MessagesContainer";
 import MessagesAuthRequired from "@/components/messages/MessagesAuthRequired";
 import MessagesConnectionError from "@/components/messages/MessagesConnectionError";
 import MessagesDialogs from "@/components/messages/MessagesDialogs";
+import { Loader2 } from "lucide-react";
 
 const MessagesLayout = () => {
   const { loading, conversations, fetchConversations, connectionError, setConnectionError } = useMessages();
@@ -167,7 +168,7 @@ const MessagesLayout = () => {
   return (
     <>
       <MessagesContainer 
-        loading={loading}
+        loading={loading || isConnecting}
         conversations={conversations}
         onSelectConversation={handleSelectConversation}
         onOpenNewMessage={handleOpenNewMessage}

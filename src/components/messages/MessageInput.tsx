@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface MessageInputProps {
   sending: boolean;
@@ -12,30 +13,36 @@ interface MessageInputProps {
 
 const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [rows, setRows] = useState(1);
+  const maxRows = 5;
   
   // Focus input when component mounts or conversation changes
   useEffect(() => {
-    // Immediate focus attempt
-    if (inputRef.current) {
-      inputRef.current.focus();
-      console.log("Immediate focus attempt on message input");
+    if (textareaRef.current && !loading) {
+      textareaRef.current.focus();
+      console.log("Focus on message input");
     }
-    
-    // Backup focus with timeouts to ensure focus works after rendering
-    const timers = [100, 300, 500].map(delay => 
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-          console.log(`Focus attempt after ${delay}ms on message input`);
-        }
-      }, delay)
-    );
-    
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
   }, [loading]);
+
+  // Adjust textarea height based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Reset height to auto to get the correct scrollHeight
+      textareaRef.current.style.height = 'auto';
+      
+      // Calculate new height
+      const newRows = Math.min(
+        maxRows,
+        Math.max(1, Math.ceil(textareaRef.current.scrollHeight / 24))
+      );
+      
+      setRows(newRows);
+      
+      // Set the height
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [newMessage, maxRows]);
 
   const handleSendMessage = useCallback(() => {
     if (newMessage.trim()) {
@@ -52,15 +59,15 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       
       // Re-focus input after sending
       setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
+        if (textareaRef.current) {
+          textareaRef.current.focus();
           console.log("Re-focusing input after sending");
         }
       }, 50);
     }
   }, [newMessage, onSendMessage]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -68,35 +75,40 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   };
 
   return (
-    <div className="p-4 border-t border-gray-200">
+    <div className="p-3 border-t border-gray-200">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSendMessage();
         }}
-        className="flex items-center space-x-2"
+        className="flex items-end space-x-2"
       >
-        <Input
-          ref={inputRef}
+        <Textarea
+          ref={textareaRef}
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          disabled={sending}
-          className="flex-1"
+          placeholder="Type a message..."
+          disabled={sending || loading}
+          className="flex-1 min-h-[40px] max-h-[120px] p-2 resize-none"
           autoComplete="off"
+          rows={rows}
           aria-label="Message input"
           data-testid="message-input"
         />
         <Button 
           type="submit" 
-          disabled={sending || !newMessage.trim()}
+          disabled={sending || !newMessage.trim() || loading}
           data-testid="send-button"
+          className="h-10"
         >
           {sending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Send className="h-4 w-4" />
+            <>
+              <Send className="h-4 w-4 mr-1" />
+              <span>Send</span>
+            </>
           )}
         </Button>
       </form>
