@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMessages } from "@/hooks/useMessages";
+import { useMessages, Message } from "@/hooks/useMessages";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationProfile } from "./hooks/useConversationProfile";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -20,10 +20,12 @@ const useConversation = (userId?: string) => {
   const previousUserIdRef = useRef<string | undefined>(undefined);
   const loadingRef = useRef<boolean>(false);
   const isMountedRef = useRef<boolean>(true);
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
   // Log when conversation is accessed
   useEffect(() => {
     console.log("useConversation hook initialized with userId:", userId);
+    isMountedRef.current = true;
     
     return () => {
       console.log("useConversation hook cleanup for userId:", userId);
@@ -47,14 +49,66 @@ const useConversation = (userId?: string) => {
     sendMessage,
     markMessagesAsRead, 
     sending,
-    setMessages // Correctly destructured here
+    setMessages
   } = useMessages();
 
   // When a new message is received via realtime, add it to the messages list
-  const handleMessageReceived = useCallback((message: any) => {
-    console.log("Message received in conversation:", message);
-    // The actual handling is in useMessages through the addMessageToState function
-  }, []);
+  const handleMessageReceived = useCallback((newMessage: any) => {
+    console.log(`Message received in conversation with ${userId}:`, newMessage);
+    
+    if (!isMountedRef.current) {
+      console.log("Component unmounted, not updating state");
+      return;
+    }
+    
+    // Add message to state to display immediately
+    setLocalMessages(prev => {
+      // Check if message already exists to avoid duplicates
+      const exists = prev.some(msg => msg.id === newMessage.id);
+      if (exists) {
+        console.log("Message already in local state, not adding duplicate");
+        return prev;
+      }
+      
+      const updatedMessages = [...prev, newMessage].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
+      console.log(`Updated local messages state, now contains ${updatedMessages.length} messages`);
+      return updatedMessages;
+    });
+    
+    // Mark as read since we just received and displayed it
+    if (user?.id && newMessage.sender_id !== user.id) {
+      console.log("Marking received message as read");
+      markMessagesAsRead(newMessage.sender_id);
+    }
+  }, [userId, user?.id, markMessagesAsRead]);
+
+  // Merge messages from server and local state
+  useEffect(() => {
+    if (messages.length > 0) {
+      console.log(`Merging ${messages.length} server messages with ${localMessages.length} local messages`);
+      
+      // Create a combined message array with no duplicates
+      const combinedMessages = [...messages];
+      
+      // Add local messages that aren't already in the combined array
+      localMessages.forEach(localMsg => {
+        if (!combinedMessages.some(msg => msg.id === localMsg.id)) {
+          combinedMessages.push(localMsg);
+        }
+      });
+      
+      // Sort by created_at date
+      combinedMessages.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
+      // Update server messages state with combined messages
+      setMessages(combinedMessages);
+    }
+  }, [messages, localMessages, setMessages]);
 
   // Set up realtime subscription to listen for new messages
   const { setupRealtimeSubscription, isConnecting } = useRealtime({
@@ -74,17 +128,51 @@ const useConversation = (userId?: string) => {
     setConnectionError
   );
 
-  // Set up message sending handler
-  const { handleSendMessage } = useConversationMessages(
-    sendMessage,
-    fetchMessages,
-    setConnectionError
-  );
+  // Set up message sending handler with improved error handling
+  const handleSendMessage = useCallback(async (content: string) => {
+    if (!userId) {
+      console.error("Cannot send message: missing userId");
+      return Promise.reject(new Error("No user ID provided"));
+    }
+    
+    console.log(`Handling send message to userId: ${userId}, content: ${content.substring(0, 20)}${content.length > 20 ? '...' : ''}`);
+    
+    try {
+      const sentMessage = await sendMessage(userId, content);
+      
+      // Add sent message to local messages state immediately
+      if (sentMessage) {
+        console.log("Message sent successfully, updating local state");
+        setLocalMessages(prev => {
+          // Check if message already exists to avoid duplicates
+          const exists = prev.some(msg => msg.id === sentMessage.id);
+          if (exists) return prev;
+          
+          const updatedMessages = [...prev, sentMessage].sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          
+          return updatedMessages;
+        });
+      }
+      
+      return sentMessage;
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [userId, sendMessage, toast]);
 
   // Clear messages when switching conversations
   useEffect(() => {
     if (previousUserIdRef.current !== userId) {
       console.log("Conversation changed, clearing message state");
+      setLocalMessages([]);
       setMessages([]);
     }
   }, [userId, setMessages]);
@@ -106,7 +194,10 @@ const useConversation = (userId?: string) => {
     if (!userId || !user?.id || !isMountedRef.current) return;
     
     // Prevent multiple concurrent loads
-    if (loadingRef.current) return;
+    if (loadingRef.current) {
+      console.log("Already loading conversation, skipping redundant load");
+      return;
+    }
     
     loadingRef.current = true;
     console.log("Fetching messages for conversation:", userId);
@@ -118,24 +209,40 @@ const useConversation = (userId?: string) => {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Step 1: Fetch other user profile first
+        console.log("Fetching other user profile");
         await fetchOtherUser(userId);
         
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {
+          console.log("Component unmounted during profile fetch, aborting");
+          return;
+        }
         
         // Step 2: Fetch messages
-        await fetchMessages(userId);
+        console.log("Fetching messages");
+        const fetchedMessages = await fetchMessages(userId);
         
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {
+          console.log("Component unmounted during message fetch, aborting");
+          return;
+        }
+        
+        // Ensure we have the full message list
+        if (fetchedMessages && fetchedMessages.length > 0) {
+          console.log(`Received ${fetchedMessages.length} messages from server`);
+        } else {
+          console.log("No messages found for this conversation");
+        }
         
         // Step 3: Setup realtime only after messages are loaded
         console.log("Setting up realtime for conversation:", userId);
         const channel = setupRealtimeSubscription();
         if (channel && isMountedRef.current) {
           channelRef.current = channel;
+          console.log("Realtime channel set up successfully");
         }
-        console.log("Realtime channel set up:", !!channel);
         
         // Step 4: Mark messages as read
+        console.log("Marking messages as read");
         await markMessagesAsRead(userId);
         
         if (isMountedRef.current) {
@@ -171,19 +278,13 @@ const useConversation = (userId?: string) => {
     otherUser,
     loading: messagesLoading || isConnecting || profileLoading, // Combine all loading states
     profileLoading,
-    messages,
+    messages: messages.length > 0 ? messages : localMessages, // Use server messages if available, otherwise use local
     sending,
     isProfileOpen,
     setIsProfileOpen,
     connectionError,
     isReconnecting,
-    handleSendMessage: (content: string) => {
-      if (userId) {
-        console.log("Handling send message to userId:", userId, "content:", content.substring(0, 20) + (content.length > 20 ? '...' : ''));
-        return handleSendMessage(userId, content);
-      }
-      return Promise.reject(new Error("No user ID provided"));
-    },
+    handleSendMessage,
     handleReportUser,
     handleReconnect
   };

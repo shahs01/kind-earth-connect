@@ -14,19 +14,37 @@ interface MessageListProps {
 
 const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
+  const prevScrollHeightRef = useRef<number>(0);
   
-  // Scroll to bottom when messages change
+  // Improved scroll handling for new messages
   useEffect(() => {
-    if (messages.length > 0 && messagesEndRef.current) {
-      // Only auto-scroll if messages count increased (new message)
-      if (messages.length > prevMessagesLengthRef.current) {
+    if (messagesEndRef.current && listContainerRef.current) {
+      const container = listContainerRef.current;
+      const isScrolledToBottom = 
+        container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+      
+      // Always scroll to bottom on initial load or if already at bottom
+      if (prevMessagesLengthRef.current === 0 || 
+          messages.length > prevMessagesLengthRef.current || 
+          isScrolledToBottom) {
         setTimeout(() => {
           if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+            console.log("Scrolling to bottom of messages");
           }
         }, 100);
+      } else {
+        // Maintain scroll position when loading older messages
+        const newScrollHeight = container.scrollHeight;
+        const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
+        if (scrollDiff > 0) {
+          container.scrollTop += scrollDiff;
+        }
       }
+      
+      prevScrollHeightRef.current = container.scrollHeight;
       prevMessagesLengthRef.current = messages.length;
     }
   }, [messages]);
@@ -35,6 +53,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+      console.log("Initial scroll to bottom on mount");
     }
   }, []);
 
@@ -46,7 +65,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     );
   }
 
-  if (messages.length === 0) {
+  if (!loading && messages.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No messages yet</p>
@@ -66,7 +85,11 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   });
 
   return (
-    <div className="space-y-4 pb-2" data-testid="messages-container">
+    <div 
+      ref={listContainerRef}
+      className="space-y-4 pb-2 overflow-y-auto h-full" 
+      data-testid="messages-container"
+    >
       {Object.entries(messagesByDate).map(([date, dateMessages]) => (
         <div key={date} className="space-y-4">
           <div className="flex justify-center">
@@ -82,6 +105,8 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 key={message.id}
                 className={`flex items-end gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                 data-testid={`message-${message.id}`}
+                data-sender={message.sender_id}
+                data-receiver={message.receiver_id}
               >
                 {!isCurrentUser && (
                   <Avatar className="h-6 w-6">

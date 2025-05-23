@@ -31,6 +31,14 @@ export function useMessages() {
   } = useMessageActions();
   
   const { toast } = useToast();
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  
+  // Set active conversation
+  useEffect(() => {
+    return () => {
+      setActiveConversationId(null);
+    };
+  }, []);
   
   // Set up event listener for user reporting
   useEffect(() => {
@@ -55,15 +63,22 @@ export function useMessages() {
   // Handle message sending with local state update
   const sendMessage = useCallback(async (receiverId: string, content: string) => {
     try {
+      console.log(`Preparing to send message to ${receiverId}: ${content.substring(0, 20)}${content.length > 20 ? '...' : ''}`);
+      
       const message = await sendMessageAction(receiverId, content);
       
       // Update messages state immediately without refetching
       if (message) {
+        console.log("Message sent successfully, updating local state");
         addMessageToState(message);
+        setActiveConversationId(receiverId);
       }
       
       // Make sure we have the latest conversations after a message is sent
-      fetchConversations();
+      // Add a small delay to ensure database has time to update
+      setTimeout(() => {
+        fetchConversations();
+      }, 300);
       
       return message;
     } catch (error) {
@@ -71,6 +86,20 @@ export function useMessages() {
       throw error;
     }
   }, [sendMessageAction, addMessageToState, fetchConversations]);
+
+  const loadConversation = useCallback(async (userId: string) => {
+    if (!userId) return;
+    
+    console.log(`Loading conversation with userId: ${userId}`);
+    setActiveConversationId(userId);
+    
+    try {
+      await fetchMessages(userId);
+      await markMessagesAsRead(userId);
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    }
+  }, [fetchMessages, markMessagesAsRead]);
 
   const loading = conversationsLoading || messagesLoading;
   
@@ -82,9 +111,11 @@ export function useMessages() {
     fetchMessages,
     sendMessage,
     markMessagesAsRead,
+    loadConversation,
     connectionError,
     setConnectionError,
     sending,
-    setMessages // Expose setMessages so it's available to components that use this hook
+    activeConversationId,
+    setMessages
   };
 }

@@ -10,12 +10,13 @@ export function useMessageActions() {
 
   const sendMessage = useCallback(async (receiverId: string, content: string) => {
     if (!receiverId || !content.trim()) {
-      console.error("Missing receiverId or content");
+      console.error("Missing receiverId or content", { receiverId, contentLength: content?.length || 0 });
       throw new Error("Recipient and message content are required");
     }
     
     // Set sending state immediately
     setSending(true);
+    console.log(`Sending message to user ${receiverId}: ${content.substring(0, 20)}${content.length > 20 ? '...' : ''}`);
     
     try {
       // Get the authenticated user's ID
@@ -39,6 +40,8 @@ export function useMessageActions() {
         read: false
       };
       
+      console.log("Message data structured:", { receiver_id: receiverId, sender_id: user.id, contentLength: content.length });
+      
       // Insert the message
       const { data, error } = await supabase
         .from('messages')
@@ -49,6 +52,8 @@ export function useMessageActions() {
         console.error("Error sending message:", error);
         throw error;
       }
+      
+      console.log("Message sent successfully:", data?.[0]?.id);
       
       return data?.[0] as Message;
     } catch (error: any) {
@@ -68,6 +73,8 @@ export function useMessageActions() {
       return;
     }
     
+    console.log(`Marking messages from user ${senderId} as read`);
+    
     try {
       // Get the authenticated user's ID
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -78,15 +85,18 @@ export function useMessageActions() {
       }
       
       // Mark all messages from the sender as read
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .update({ read: true })
         .eq('sender_id', senderId)
         .eq('receiver_id', user.id)
-        .eq('read', false);
+        .eq('read', false)
+        .select();
       
       if (error) {
         console.error("Error marking messages as read:", error);
+      } else {
+        console.log(`Marked ${data?.length || 0} messages as read`);
       }
     } catch (error) {
       console.error("Error marking messages as read:", error);

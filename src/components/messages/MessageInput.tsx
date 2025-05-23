@@ -17,12 +17,19 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     if (!loading && inputRef.current) {
-      // Use a reliable focus method with a delay to ensure DOM is ready
-      const timer = setTimeout(() => {
+      // Better focus handling with multiple attempts
+      const focusInput = () => {
         if (inputRef.current) {
           inputRef.current.focus();
+          console.log("Message input focused");
         }
-      }, 300);
+      };
+      
+      // Initial focus attempt
+      focusInput();
+      
+      // Backup focus attempt after DOM has settled
+      const timer = setTimeout(focusInput, 300);
       
       return () => clearTimeout(timer);
     }
@@ -30,6 +37,8 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
 
   const handleSendMessage = useCallback(() => {
     if (newMessage.trim()) {
+      console.log("Preparing to send message:", newMessage.substring(0, 20) + (newMessage.length > 20 ? '...' : ''));
+      
       // Store message locally before clearing input
       const messageToSend = newMessage.trim();
       
@@ -43,6 +52,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
+          console.log("Input refocused after sending");
         }
       }, 50);
     }
@@ -74,10 +84,12 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           className="flex-1"
           autoComplete="off"
           aria-label="Message input"
+          data-testid="message-input"
         />
         <Button 
           type="submit" 
           disabled={sending || !newMessage.trim() || loading}
+          data-testid="send-button"
         >
           {sending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

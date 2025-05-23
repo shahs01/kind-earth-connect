@@ -17,6 +17,7 @@ export function useMessagesList() {
     }
     
     setLoading(true);
+    console.log(`Fetching messages for conversation with user: ${userId}`);
     
     try {
       // Get the authenticated user's ID
@@ -29,10 +30,12 @@ export function useMessagesList() {
       }
       
       // Get messages between current user and the selected user
+      // Using proper SQL syntax for the filter instead of or()
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${userId}`)
+        .or(`sender_id.eq.${userId},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: true });
       
       if (error) {
@@ -44,6 +47,7 @@ export function useMessagesList() {
       setConnectionError(false);
       
       if (Array.isArray(data)) {
+        console.log(`Retrieved ${data.length} messages for conversation with user: ${userId}`);
         setMessages(data);
         return data;
       } else {
@@ -66,21 +70,31 @@ export function useMessagesList() {
   }, [toast]);
 
   const addMessageToState = useCallback((newMessage: Message) => {
+    console.log(`Adding new message to state: ${newMessage.id}`);
+    
     // Use functional update to prevent race conditions
     setMessages(prev => {
       // Check if message already exists to avoid duplicates
       const exists = prev.some(msg => msg.id === newMessage.id);
       if (exists) {
+        console.log("Message already exists in state, skipping");
         return prev;
       }
       
-      return [...prev, newMessage];
+      // Sort messages by created_at date
+      const updatedMessages = [...prev, newMessage].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
+      console.log(`Updated message list now contains ${updatedMessages.length} messages`);
+      return updatedMessages;
     });
   }, []);
 
   // Reset messages when component unmounts to avoid state bleed between conversations
   useEffect(() => {
     return () => {
+      console.log("Resetting messages list on unmount");
       setMessages([]);
     };
   }, []);
