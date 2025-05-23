@@ -55,8 +55,7 @@ export function useConversationLifecycle(
     // Use an async function to handle the sequential loading with optimization
     const loadConversation = async () => {
       try {
-        // Add a small delay to avoid UI freezing
-        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log("Starting conversation load sequence for userId:", userId);
         
         // Step 1: Fetch other user profile first
         console.log("Fetching other user profile");

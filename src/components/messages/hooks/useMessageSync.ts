@@ -11,7 +11,7 @@ export function useMessageSync(
 ) {
   // Merge messages from server and local state
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 || localMessages.length > 0) {
       console.log(`Merging ${messages.length} server messages with ${localMessages.length} local messages`);
       
       // Create a combined message array with no duplicates
@@ -31,6 +31,7 @@ export function useMessageSync(
       
       // Update server messages state with combined messages
       setMessages(combinedMessages);
+      console.log(`Combined message list contains ${combinedMessages.length} messages`);
     }
   }, [messages, localMessages, setMessages]);
 

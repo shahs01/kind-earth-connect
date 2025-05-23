@@ -1,5 +1,5 @@
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Message } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,8 +17,8 @@ export function useConversationRealtime({
   onMessageReceived,
   setConnectionError
 }: UseConversationRealtimeProps) {
-  const channelRef = useRef<RealtimeChannel | null>(null);
-
+  const [isConnecting, setIsConnecting] = useState(false);
+  
   // Set up realtime subscription to listen for new messages
   const setupRealtimeSubscription = useCallback(() => {
     if (!userId || !currentUserId) {
@@ -26,15 +26,10 @@ export function useConversationRealtime({
       return null;
     }
     
+    setIsConnecting(true);
+    
     try {
       console.log(`Setting up realtime subscription for conversation between ${currentUserId} and ${userId}`);
-      
-      // Clean up any existing channel first
-      if (channelRef.current) {
-        console.log("Removing existing channel before creating new one");
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
       
       // Create a unique channel name based on user IDs - ensures unique channel
       const userIds = [currentUserId, userId].sort();
@@ -63,11 +58,11 @@ export function useConversationRealtime({
               timestamp: new Date().toISOString()
             });
             
-            // Process messages meant for current user
+            // Check if message is meant for current user and properly cast it
             if (payload.new.receiver_id === currentUserId) {
               console.log(`Processing incoming message from ${userId} to ${currentUserId}`);
-              // Cast the payload to Message type since we know it has the right structure
-              onMessageReceived(payload.new as Message);
+              const message = payload.new as Message;
+              onMessageReceived(message);
             }
           }
         )
@@ -83,13 +78,15 @@ export function useConversationRealtime({
           (payload) => {
             if (payload.new.receiver_id === userId) {
               console.log(`Processing outgoing message from ${currentUserId} to ${userId}`);
-              // Cast the payload to Message type since we know it has the right structure
-              onMessageReceived(payload.new as Message);
+              const message = payload.new as Message;
+              onMessageReceived(message);
             }
           }
         )
         .subscribe((status) => {
           console.log(`Realtime channel status: ${status}`);
+          setIsConnecting(false);
+          
           if (status === "SUBSCRIBED") {
             console.log(`Successfully subscribed to realtime updates on channel ${channelName}`);
             setConnectionError(false);
@@ -104,13 +101,13 @@ export function useConversationRealtime({
     } catch (err) {
       console.error("Error setting up realtime:", err);
       setConnectionError(true);
+      setIsConnecting(false);
       return null;
     }
   }, [userId, currentUserId, onMessageReceived, setConnectionError]);
   
   return {
-    channelRef,
     setupRealtimeSubscription,
-    isConnecting: false
+    isConnecting
   };
 }
