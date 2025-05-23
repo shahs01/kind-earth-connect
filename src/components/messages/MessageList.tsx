@@ -25,14 +25,18 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     const container = listContainerRef.current;
     
     // Always scroll to bottom on initial load
-    if (prevMessagesLengthRef.current === 0) {
-      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-      console.log("Initial scroll to bottom of messages");
+    if (prevMessagesLengthRef.current === 0 && messages.length > 0) {
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+          console.log("Initial scroll to bottom of messages");
+        }
+      }, 100);
       prevMessagesLengthRef.current = messages.length;
       return;
     }
     
-    // Check if we're already at the bottom
+    // Check if we're already near the bottom
     const isScrolledToBottom = 
       container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
     
@@ -58,6 +62,10 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
         console.log("Initial scroll to bottom on mount");
       }
     }, 200);
+    
+    return () => {
+      prevMessagesLengthRef.current = 0;
+    };
   }, []);
 
   if (loading && messages.length === 0) {
@@ -127,7 +135,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                       : 'bg-gray-100 text-gray-800 rounded-bl-none'
                   }`}
                 >
-                  <p className="whitespace-pre-line">{message.content}</p>
+                  <p className="whitespace-pre-line break-words">{message.content}</p>
                   <div
                     className={`text-xs mt-1 ${
                       isCurrentUser ? 'text-green-100' : 'text-gray-500'

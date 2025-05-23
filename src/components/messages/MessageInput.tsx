@@ -25,10 +25,10 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       };
       
       // Immediate focus
-      focusInput();
+      setTimeout(focusInput, 100);
       
       // Backup focus attempts
-      const timer1 = setTimeout(focusInput, 300);
+      const timer1 = setTimeout(focusInput, 500);
       const timer2 = setTimeout(focusInput, 1000);
       
       return () => {
@@ -40,7 +40,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
 
   const handleSendMessage = useCallback(() => {
     if (newMessage.trim()) {
-      console.log("Preparing to send message:", newMessage.substring(0, 20) + (newMessage.length > 20 ? '...' : ''));
+      console.log("Sending message:", newMessage.substring(0, 20) + (newMessage.length > 20 ? '...' : ''));
       
       // Store message locally before clearing input
       const messageToSend = newMessage.trim();
@@ -55,9 +55,8 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          console.log("Input refocused after sending");
         }
-      }, 50);
+      }, 100);
     }
   }, [newMessage, onSendMessage]);
 

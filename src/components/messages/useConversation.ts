@@ -10,6 +10,7 @@ import { useConversationReconnect } from "./hooks/useConversationReconnect";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useMessageActions } from "@/hooks/useMessageActions";
 
 const useConversation = (userId?: string) => {
   const { user } = useAuth();
@@ -21,6 +22,9 @@ const useConversation = (userId?: string) => {
   const loadingRef = useRef<boolean>(false);
   const isMountedRef = useRef<boolean>(true);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  
+  // Access message actions directly for delete functionality
+  const { deleteConversation: deleteConversationAction } = useMessageActions();
   
   // Log when conversation is accessed
   useEffect(() => {
@@ -168,6 +172,28 @@ const useConversation = (userId?: string) => {
     }
   }, [userId, sendMessage, toast]);
 
+  // Delete conversation handler
+  const handleDeleteConversation = useCallback(async () => {
+    if (!userId || !user?.id) {
+      console.error("Cannot delete conversation: missing userId or not logged in");
+      return Promise.reject(new Error("Missing user information"));
+    }
+    
+    try {
+      console.log("Deleting conversation with user:", userId);
+      await deleteConversationAction(userId);
+      
+      // Clean up state after deletion
+      setLocalMessages([]);
+      setMessages([]);
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      throw error;
+    }
+  }, [userId, user?.id, deleteConversationAction, setMessages]);
+
   // Clear messages when switching conversations
   useEffect(() => {
     if (previousUserIdRef.current !== userId) {
@@ -286,6 +312,7 @@ const useConversation = (userId?: string) => {
     isReconnecting,
     handleSendMessage,
     handleReportUser,
+    handleDeleteConversation,
     handleReconnect
   };
 };

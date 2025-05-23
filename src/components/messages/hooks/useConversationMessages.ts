@@ -29,25 +29,43 @@ export function useConversationMessages(
       // Send the message with retries
       let attempts = 0;
       let sentMessage = null;
+      const maxAttempts = 3;
       
-      while (attempts < 2 && !sentMessage) {
+      while (attempts < maxAttempts && !sentMessage) {
         try {
+          console.log(`Attempt ${attempts + 1} to send message`);
           sentMessage = await sendMessage(userId, message.trim());
           
           if (sentMessage) {
             console.log("Message sent successfully:", sentMessage.id);
+          } else {
+            console.error("Send message returned null");
+            attempts++;
+            if (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
           
         } catch (err) {
+          console.error(`Error in attempt ${attempts + 1}:`, err);
           attempts++;
-          if (attempts < 2) {
-            console.log(`Retrying send message, attempt ${attempts + 1}`);
-            // Short delay before retry
-            await new Promise(resolve => setTimeout(resolve, 300));
+          if (attempts < maxAttempts) {
+            console.log(`Retrying send message, attempt ${attempts + 1} of ${maxAttempts}`);
+            // Increasing delay before retry
+            await new Promise(resolve => setTimeout(resolve, 500 * attempts));
           } else {
             throw err;
           }
         }
+      }
+      
+      // If successful, refresh the conversation to ensure we have the latest messages
+      if (sentMessage && userId) {
+        setTimeout(() => {
+          refreshConversation(userId).catch(err => 
+            console.error("Error refreshing conversation after send:", err)
+          );
+        }, 300);
       }
       
       return sentMessage;
@@ -62,7 +80,9 @@ export function useConversationMessages(
       return null;
     } finally {
       // Ensure isSending is always reset
-      setIsSending(false);
+      setTimeout(() => {
+        setIsSending(false);
+      }, 300);
     }
   }, [sendMessage, setConnectionError, toast]);
 

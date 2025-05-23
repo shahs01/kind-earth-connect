@@ -62,7 +62,8 @@ export function useRealtime({
             console.log(`Received message in ${channelName} from user ${userId}:`, {
               messageId: payload.new.id,
               sender: payload.new.sender_id,
-              receiver: payload.new.receiver_id
+              receiver: payload.new.receiver_id,
+              timestamp: new Date().toISOString()
             });
             
             // Only process messages meant for current user
@@ -118,6 +119,7 @@ export function useGlobalMessageNotifications(
     
     try {
       console.log("Setting up global message notifications for user:", user.id);
+      setIsConnecting(true);
       
       // Clean up any existing channel first
       if (channelRef.current) {
@@ -144,7 +146,8 @@ export function useGlobalMessageNotifications(
             console.log("New message notification received:", {
               messageId: payload.new.id,
               from: payload.new.sender_id,
-              to: payload.new.receiver_id
+              to: payload.new.receiver_id,
+              timestamp: new Date().toISOString()
             });
             
             // Only process messages intended for current user
@@ -157,15 +160,18 @@ export function useGlobalMessageNotifications(
           console.log(`Global notification channel status: ${status}`);
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to global notifications");
+            setIsConnecting(false);
             setChannel(newChannel);
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to global notifications");
+            setIsConnecting(false);
           }
         });
       
       return newChannel;
     } catch (error) {
       console.error("Error setting up global message notifications:", error);
+      setIsConnecting(false);
       return null;
     }
   }, [user?.id, onNewMessage]);

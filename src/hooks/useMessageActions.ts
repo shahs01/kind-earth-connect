@@ -40,7 +40,12 @@ export function useMessageActions() {
         read: false
       };
       
-      console.log("Message data structured:", { receiver_id: receiverId, sender_id: user.id, contentLength: content.length });
+      console.log("Message data structured:", { 
+        receiver_id: receiverId, 
+        sender_id: user.id, 
+        contentLength: content.length,
+        timestamp: new Date().toISOString()
+      });
       
       // Insert the message
       const { data, error } = await supabase
@@ -53,8 +58,13 @@ export function useMessageActions() {
         throw error;
       }
       
+      if (!data || data.length === 0) {
+        console.error("No data returned from message insert");
+        throw new Error("Failed to send message - no data returned");
+      }
+      
       // Add a small delay to ensure the message is processed by the database
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       console.log("Message sent successfully:", data?.[0]?.id);
       
@@ -66,7 +76,7 @@ export function useMessageActions() {
       // Add a small delay to avoid UI jitter
       setTimeout(() => {
         setSending(false);
-      }, 300);
+      }, 500);
     }
   }, []);
   
@@ -105,10 +115,53 @@ export function useMessageActions() {
       console.error("Error marking messages as read:", error);
     }
   }, []);
+  
+  // Add function to delete conversation
+  const deleteConversation = useCallback(async (otherUserId: string) => {
+    if (!otherUserId) {
+      console.error("No otherUserId provided to deleteConversation");
+      throw new Error("User ID is required to delete conversation");
+    }
+    
+    console.log(`Deleting conversation with user ${otherUserId}`);
+    
+    try {
+      // Get the authenticated user's ID
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Authentication error:", authError);
+        throw new Error(authError.message);
+      }
+      
+      if (!user) {
+        console.error("Not authenticated");
+        throw new Error("Not authenticated");
+      }
+      
+      // Delete all messages between the current user and the other user
+      const { error: deleteError } = await supabase
+        .from('messages')
+        .delete()
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`);
+      
+      if (deleteError) {
+        console.error("Error deleting conversation:", deleteError);
+        throw deleteError;
+      }
+      
+      console.log(`Successfully deleted conversation with user ${otherUserId}`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      throw error;
+    }
+  }, []);
 
   return {
     sending,
     sendMessage,
-    markMessagesAsRead
+    markMessagesAsRead,
+    deleteConversation
   };
 }

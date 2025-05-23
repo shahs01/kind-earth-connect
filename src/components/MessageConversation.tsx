@@ -1,6 +1,6 @@
 
 import React, { useEffect, useCallback, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
 import ConversationHeader from "@/components/messages/ConversationHeader";
@@ -17,6 +17,7 @@ interface MessageConversationProps {
 
 const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [fetchError, setFetchError] = useState(false);
   
@@ -35,6 +36,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     isReconnecting,
     handleSendMessage,
     handleReportUser,
+    handleDeleteConversation,
     handleReconnect
   } = useConversation(userId);
   
@@ -88,6 +90,28 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [handleSendMessage, toast]);
   
+  // Handle delete conversation
+  const onDeleteConversation = useCallback(async () => {
+    if (!userId) return;
+    
+    try {
+      console.log("Deleting conversation with user:", userId);
+      await handleDeleteConversation();
+      navigate("/messages");
+      toast({
+        title: "Conversation deleted",
+        description: "The conversation has been permanently deleted."
+      });
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [userId, handleDeleteConversation, navigate, toast]);
+  
   // Redirect if user is not authenticated
   if (!user) {
     return <div className="p-8 text-center">Please log in to view messages</div>;
@@ -127,6 +151,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
           loading={loading}
           onViewProfile={handleViewProfile}
           onReportUser={handleReportUser}
+          onDeleteConversation={onDeleteConversation}
         />
         
         {/* Messages */}
