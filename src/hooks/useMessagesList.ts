@@ -79,7 +79,7 @@ export function useMessagesList() {
             console.error(`Error fetching receiver profile for message ${message.id}:`, receiverError);
           }
           
-          // Create formatted message
+          // Create formatted message with proper null checking
           const formattedMessage: Message = {
             ...message,
             sender: senderData ? {

@@ -1,12 +1,13 @@
 
-import React, { useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useCallback, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
 import { useToast } from "@/hooks/use-toast";
 import ConnectionStatusHandler from "@/components/messages/ConnectionStatusHandler";
 import ConversationBody from "@/components/messages/ConversationBody";
 import { useConnectionState } from "@/components/messages/hooks/useConnectionState";
+import { Loader2 } from "lucide-react";
 
 interface MessageConversationProps {
   onViewProfile?: (userId: string) => void;
@@ -16,6 +17,15 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const { userId } = useParams<{ userId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  // Extract navigation state if present
+  const navigationState = location.state as { 
+    action?: string; 
+    receiverId?: string;
+    receiverName?: string;
+  } | null;
   
   const {
     user,
@@ -41,13 +51,33 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleReconnect
   );
   
-  // Reset state when userId changes
+  // Reset error state when userId changes
   useEffect(() => {
     setFetchError(false);
     console.log("MessageConversation mounted with userId:", userId);
+    
+    // Hide initial loading after a timeout to prevent long blank screens
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   }, [userId, setFetchError]);
   
-  // Memoized function for viewing profile to reduce renders
+  // Show notification if we're coming from a post
+  useEffect(() => {
+    if (navigationState?.action === 'newMessage' && navigationState.receiverName) {
+      toast({
+        title: "Starting conversation",
+        description: `You can now send a message to ${navigationState.receiverName}`,
+      });
+      
+      // Clear navigation state to prevent showing the toast again on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [navigationState, toast, navigate, location.pathname]);
+  
+  // Memoized function for viewing profile
   const handleViewProfile = useCallback(() => {
     if (otherUser) {
       if (onViewProfile) {
@@ -58,7 +88,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [otherUser, onViewProfile, setIsProfileOpen]);
   
-  // Memoize message sending function to prevent unnecessary re-renders
+  // Memoized message sending function
   const onSendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
     
@@ -86,13 +116,25 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   console.log("MessageConversation render state:", { 
     hasUserId: !!userId, 
     hasUser: !!user, 
+    hasOtherUser: !!otherUser,
     messagesCount: messages.length,
     connectionError,
     fetchError,
-    loading
+    loading,
+    initialLoading
   });
   
-  // Check for status error states first
+  // Initial loading state
+  if (initialLoading && loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
+        <p className="text-gray-500">Loading conversation...</p>
+      </div>
+    );
+  }
+  
+  // Check for authentication
   if (!user) {
     return (
       <div className="flex justify-center items-center h-full p-6">
@@ -101,6 +143,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     );
   }
   
+  // Check for connection errors
   if (connectionError || fetchError) {
     return (
       <ConnectionStatusHandler
@@ -116,6 +159,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     );
   }
   
+  // No conversation selected
   if (!userId) {
     return (
       <div className="flex flex-col justify-center items-center h-full p-6">

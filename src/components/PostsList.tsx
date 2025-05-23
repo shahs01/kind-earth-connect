@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -231,7 +230,7 @@ const PostsList = ({
     fetchPosts();
   }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, checkFavoriteStatus]);
 
-  const handleMessageClick = (postUserId: string) => {
+  const handleMessageClick = async (postUserId: string) => {
     if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
@@ -240,14 +239,91 @@ const PostsList = ({
       navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
-
-    // Navigate directly to the conversation with the post creator
-    navigate(`/messages/${postUserId}`, { 
-      state: { 
-        action: 'newMessage',
-        receiverId: postUserId
-      } 
-    });
+    
+    if (user?.id === postUserId) {
+      toast({
+        title: "Cannot message yourself",
+        description: "You cannot send messages to yourself",
+      });
+      return;
+    }
+    
+    try {
+      // Show loading toast
+      toast({
+        title: "Opening conversation",
+        description: "Preparing your conversation...",
+      });
+      
+      // First check if user exists
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', postUserId)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error("Error checking user profile:", profileError);
+        throw new Error("Failed to verify user profile");
+      }
+      
+      if (!profileData) {
+        toast({
+          title: "User not found",
+          description: "This user no longer exists",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Initialize conversation with an empty message to ensure the conversation exists
+      // This helps with navigation and prevents blank screens
+      const initialMessage = {
+        receiver_id: postUserId,
+        sender_id: user?.id,
+        content: "", // Empty string that won't be displayed
+        read: true
+      };
+      
+      // Check if a conversation already exists by looking for any messages
+      const { data: existingMessages, error: checkError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${postUserId}),and(sender_id.eq.${postUserId},receiver_id.eq.${user?.id})`)
+        .limit(1);
+        
+      if (checkError) {
+        console.error("Error checking for existing conversation:", checkError);
+      }
+      
+      // If no conversation exists, create one with a system message
+      if (!existingMessages || existingMessages.length === 0) {
+        const { error: insertError } = await supabase
+          .from('messages')
+          .insert([initialMessage]);
+          
+        if (insertError) {
+          console.error("Error creating initial conversation:", insertError);
+          // Continue anyway as this is just a helper, not critical
+        }
+      }
+      
+      // Navigate to the conversation with the correct state
+      navigate(`/messages/${postUserId}`, { 
+        state: { 
+          action: 'newMessage',
+          receiverId: postUserId,
+          receiverName: profileData.name || "User"
+        } 
+      });
+    } catch (err) {
+      console.error("Error initializing conversation:", err);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleToggleFavorite = async (post: Post) => {

@@ -69,21 +69,29 @@ export function useMessageActions() {
       const message = messageData_[0];
 
       try {
-        // Get sender profile
-        const { data: senderProfile } = await supabase
+        // Get sender profile with proper error handling
+        const { data: senderProfile, error: senderError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
           
-        // Get receiver profile
-        const { data: receiverProfile } = await supabase
+        if (senderError) {
+          console.error("Error fetching sender profile:", senderError);
+        }
+          
+        // Get receiver profile with proper error handling
+        const { data: receiverProfile, error: receiverError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', receiverId)
-          .single();
+          .maybeSingle();
           
-        // Format the returned message
+        if (receiverError) {
+          console.error("Error fetching receiver profile:", receiverError);
+        }
+          
+        // Format the returned message with proper null checking
         const formattedMessage: Message = {
           ...message,
           sender: senderProfile ? {

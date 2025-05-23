@@ -80,9 +80,12 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
             const isSameSenderAsPrevious = index > 0 && 
               dateMessages[index - 1].sender_id === message.sender_id;
             
-            // Handle missing sender/receiver data
+            // Handle potentially missing sender/receiver data
             const senderName = message.sender?.name || 'User';
             const avatarSrc = message.sender?.avatar || '';
+            
+            // Skip empty initialization messages (if there are any)
+            if (message.content.trim() === '') return null;
             
             return (
               <div
@@ -92,7 +95,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 }`}
               >
                 {!isCurrentUser && !isSameSenderAsPrevious && (
-                  <Avatar className="h-8 w-8 mb-1">
+                  <Avatar className="h-8 w-8 mb-1 flex-shrink-0">
                     <AvatarImage src={avatarSrc} alt={senderName} />
                     <AvatarFallback>
                       {senderName.charAt(0) || <UserIcon className="h-4 w-4" />}
@@ -101,7 +104,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 )}
                 
                 {!isCurrentUser && isSameSenderAsPrevious && (
-                  <div className="w-8"></div> 
+                  <div className="w-8 flex-shrink-0"></div> 
                 )}
                 
                 <div
@@ -122,7 +125,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 </div>
                 
                 {isCurrentUser && !isSameSenderAsPrevious && (
-                  <Avatar className="h-8 w-8 mb-1">
+                  <Avatar className="h-8 w-8 mb-1 flex-shrink-0">
                     <AvatarImage src={avatarSrc} alt={senderName} />
                     <AvatarFallback>
                       {senderName.charAt(0) || <UserIcon className="h-4 w-4" />}
@@ -131,7 +134,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
                 )}
                 
                 {isCurrentUser && isSameSenderAsPrevious && (
-                  <div className="w-8"></div>
+                  <div className="w-8 flex-shrink-0"></div>
                 )}
               </div>
             );
