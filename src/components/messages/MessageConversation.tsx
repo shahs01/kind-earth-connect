@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -168,8 +167,14 @@ const MessageConversation = () => {
             .eq('id', payload.new.sender_id)
             .single();
 
-          const newMessage = {
-            ...payload.new,
+          // Construct the complete message object with all required properties
+          const newMessage: Message = {
+            id: payload.new.id,
+            sender_id: payload.new.sender_id,
+            receiver_id: payload.new.receiver_id,
+            content: payload.new.content,
+            read: payload.new.read,
+            created_at: payload.new.created_at,
             sender: senderProfile ? {
               id: senderProfile.id,
               username: senderProfile.username || '',
@@ -188,7 +193,8 @@ const MessageConversation = () => {
               trustBadges: senderProfile.trust_badges || [],
               loginAttempts: 0,
               lastLoginAttempt: null
-            } : undefined
+            } : undefined,
+            receiver: undefined // This can be undefined as it's not always needed
           };
 
           setMessages(prev => {
