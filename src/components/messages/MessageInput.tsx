@@ -17,7 +17,6 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     if (!loading && inputRef.current) {
-      // Better focus handling with multiple attempts
       const focusInput = () => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -25,13 +24,17 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
         }
       };
       
-      // Initial focus attempt
+      // Immediate focus
       focusInput();
       
-      // Backup focus attempt after DOM has settled
-      const timer = setTimeout(focusInput, 300);
+      // Backup focus attempts
+      const timer1 = setTimeout(focusInput, 300);
+      const timer2 = setTimeout(focusInput, 1000);
       
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     }
   }, [loading]);
 

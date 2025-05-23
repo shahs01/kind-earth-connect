@@ -11,7 +11,7 @@ export function useConversationMessages(
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   
-  // Improved message sending function with better error handling and state management
+  // Enhanced message sending function with better error handling and state management
   const handleSendMessage = useCallback(async (userId: string, message: string) => {
     if (!message.trim() || !userId) {
       console.log("Cannot send: empty message or missing userId");
@@ -26,11 +26,28 @@ export function useConversationMessages(
       // Clear any previous connection error state
       setConnectionError(false);
       
-      // Send the message
-      const sentMessage = await sendMessage(userId, message.trim());
+      // Send the message with retries
+      let attempts = 0;
+      let sentMessage = null;
       
-      if (sentMessage) {
-        console.log("Message sent successfully:", sentMessage.id);
+      while (attempts < 2 && !sentMessage) {
+        try {
+          sentMessage = await sendMessage(userId, message.trim());
+          
+          if (sentMessage) {
+            console.log("Message sent successfully:", sentMessage.id);
+          }
+          
+        } catch (err) {
+          attempts++;
+          if (attempts < 2) {
+            console.log(`Retrying send message, attempt ${attempts + 1}`);
+            // Short delay before retry
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } else {
+            throw err;
+          }
+        }
       }
       
       return sentMessage;
@@ -44,6 +61,7 @@ export function useConversationMessages(
       });
       return null;
     } finally {
+      // Ensure isSending is always reset
       setIsSending(false);
     }
   }, [sendMessage, setConnectionError, toast]);

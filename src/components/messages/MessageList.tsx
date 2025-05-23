@@ -20,41 +20,44 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   
   // Improved scroll handling for new messages
   useEffect(() => {
-    if (messagesEndRef.current && listContainerRef.current) {
-      const container = listContainerRef.current;
-      const isScrolledToBottom = 
-        container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-      
-      // Always scroll to bottom on initial load or if already at bottom
-      if (prevMessagesLengthRef.current === 0 || 
-          messages.length > prevMessagesLengthRef.current || 
-          isScrolledToBottom) {
-        setTimeout(() => {
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-            console.log("Scrolling to bottom of messages");
-          }
-        }, 100);
-      } else {
-        // Maintain scroll position when loading older messages
-        const newScrollHeight = container.scrollHeight;
-        const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
-        if (scrollDiff > 0) {
-          container.scrollTop += scrollDiff;
-        }
-      }
-      
-      prevScrollHeightRef.current = container.scrollHeight;
+    if (!messagesEndRef.current || !listContainerRef.current) return;
+    
+    const container = listContainerRef.current;
+    
+    // Always scroll to bottom on initial load
+    if (prevMessagesLengthRef.current === 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+      console.log("Initial scroll to bottom of messages");
       prevMessagesLengthRef.current = messages.length;
+      return;
     }
+    
+    // Check if we're already at the bottom
+    const isScrolledToBottom = 
+      container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+    
+    // New messages arrived, scroll to bottom if we were already there
+    if (messages.length > prevMessagesLengthRef.current && isScrolledToBottom) {
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+          console.log("New messages - scrolling to bottom");
+        }
+      }, 100);
+    }
+    
+    prevScrollHeightRef.current = container.scrollHeight;
+    prevMessagesLengthRef.current = messages.length;
   }, [messages]);
 
-  // Initial scroll to bottom when component mounts
+  // Force initial scroll to bottom when component mounts
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-      console.log("Initial scroll to bottom on mount");
-    }
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+        console.log("Initial scroll to bottom on mount");
+      }
+    }, 200);
   }, []);
 
   if (loading && messages.length === 0) {

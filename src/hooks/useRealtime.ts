@@ -38,7 +38,7 @@ export function useRealtime({
         channelRef.current = null;
       }
       
-      // Create a unique channel name based on user IDs
+      // Create a unique channel name based on user IDs - ensures unique channel
       const userIds = [currentUserId, userId].sort();
       const channelName = `private:messages:${userIds[0]}:${userIds[1]}`;
       
@@ -47,7 +47,7 @@ export function useRealtime({
       // Create the channel
       const channel = supabase.channel(channelName);
       
-      // Subscribe to message inserts with fixed filter syntax
+      // Fix filter syntax to correctly capture messages between these users
       channel
         .on(
           'postgres_changes',
@@ -55,40 +55,38 @@ export function useRealtime({
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `sender_id=eq.${userId},receiver_id=eq.${currentUserId}` 
+            filter: `sender_id=eq.${userId}` 
           },
           (payload) => {
-            console.log(`Received message from user ${userId}:`, payload.new);
-            onMessageReceived(payload.new);
-          }
-        )
-        .on(
-          'postgres_changes',
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `sender_id=eq.${currentUserId},receiver_id=eq.${userId}` 
-          },
-          (payload) => {
-            console.log(`Received echo of sent message to user ${userId}:`, payload.new);
-            // We handle sent messages through direct state updates, not realtime echo
-            // This just confirms our message was saved in the database
+            // Log specific incoming message details
+            console.log(`Received message in ${channelName} from user ${userId}:`, {
+              messageId: payload.new.id,
+              sender: payload.new.sender_id,
+              receiver: payload.new.receiver_id
+            });
+            
+            // Only process messages meant for current user
+            if (payload.new.receiver_id === currentUserId) {
+              console.log(`Processing message to current user ${currentUserId}`);
+              onMessageReceived(payload.new);
+            } else {
+              console.log(`Ignoring message not meant for current user`);
+            }
           }
         )
         .subscribe((status) => {
           console.log(`Realtime channel status: ${status}`);
           if (status === "SUBSCRIBED") {
-            console.log("Successfully subscribed to realtime updates");
+            console.log(`Successfully subscribed to realtime updates on channel ${channelName}`);
             setIsConnecting(false);
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            console.error("Error subscribing to realtime updates:", status);
+            console.error(`Error subscribing to realtime updates on channel ${channelName}:`, status);
             setConnectionError(true);
             setIsConnecting(false);
           }
         });
       
-      console.log("Realtime subscription setup complete");
+      console.log(`Realtime subscription setup complete for channel ${channelName}`);
       return channel;
     } catch (err) {
       console.error("Error setting up realtime:", err);
@@ -143,8 +141,16 @@ export function useGlobalMessageNotifications(
             filter: `receiver_id=eq.${user.id}` 
           },
           (payload) => {
-            console.log("New message notification received:", payload.new);
-            onNewMessage();
+            console.log("New message notification received:", {
+              messageId: payload.new.id,
+              from: payload.new.sender_id,
+              to: payload.new.receiver_id
+            });
+            
+            // Only process messages intended for current user
+            if (payload.new.receiver_id === user.id) {
+              onNewMessage();
+            }
           }
         )
         .subscribe((status) => {

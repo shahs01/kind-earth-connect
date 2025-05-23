@@ -53,6 +53,9 @@ export function useMessageActions() {
         throw error;
       }
       
+      // Add a small delay to ensure the message is processed by the database
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log("Message sent successfully:", data?.[0]?.id);
       
       return data?.[0] as Message;
