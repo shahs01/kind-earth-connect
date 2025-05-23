@@ -23,6 +23,9 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     if (messages.length > 0) {
       console.log("First message:", messages[0].id, "Last message:", messages[messages.length - 1].id);
     }
+    
+    // Update ref to track message count changes
+    prevMessagesLengthRef.current = messages.length;
   }, [messages, loading]);
   
   // Always scroll to bottom when messages change
@@ -126,6 +129,6 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
       <div ref={messagesEndRef} />
     </div>
   );
-};
+}
 
 export default MessageList;

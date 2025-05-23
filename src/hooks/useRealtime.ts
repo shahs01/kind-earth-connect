@@ -47,32 +47,34 @@ export function useRealtime({
       // Create the channel
       const channel = supabase.channel(channelName);
       
-      // Fix filter syntax to correctly capture messages between these users
+      // Set up subscription to listen for messages in both directions
       channel
+        // Listen for messages from other user to current user
         .on(
           'postgres_changes',
           { 
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `sender_id=eq.${userId}` 
+            filter: `and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})` 
           },
           (payload) => {
-            // Log specific incoming message details
-            console.log(`Received message in ${channelName} from user ${userId}:`, {
-              messageId: payload.new.id,
-              sender: payload.new.sender_id,
-              receiver: payload.new.receiver_id,
-              timestamp: new Date().toISOString()
-            });
-            
-            // Only process messages meant for current user
-            if (payload.new.receiver_id === currentUserId) {
-              console.log(`Processing message to current user ${currentUserId}`);
-              onMessageReceived(payload.new);
-            } else {
-              console.log(`Ignoring message not meant for current user`);
-            }
+            console.log(`Received message in ${channelName} from user ${userId} to ${currentUserId}:`, payload.new.id);
+            onMessageReceived(payload.new);
+          }
+        )
+        // Also listen for messages from current user to other user (for multi-device sync)
+        .on(
+          'postgres_changes',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `and(sender_id.eq.${currentUserId},receiver_id.eq.${userId})` 
+          },
+          (payload) => {
+            console.log(`Received message in ${channelName} from current user ${currentUserId} to ${userId}:`, payload.new.id);
+            onMessageReceived(payload.new);
           }
         )
         .subscribe((status) => {

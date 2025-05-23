@@ -29,7 +29,7 @@ export function useMessageSending({
       
       // Add sent message to local messages state immediately
       if (sentMessage) {
-        console.log("Message sent successfully, updating local state");
+        console.log("Message sent successfully, updating local state with:", sentMessage.id);
         setLocalMessages(prev => {
           // Check if message already exists to avoid duplicates
           const exists = prev.some(msg => msg.id === sentMessage.id);

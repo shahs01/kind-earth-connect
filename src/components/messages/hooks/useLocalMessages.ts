@@ -6,7 +6,7 @@ export function useLocalMessages() {
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
   // When a new message is received via realtime, add it to the messages list
-  const handleMessageReceived = useCallback((newMessage: any) => {
+  const handleMessageReceived = useCallback((newMessage: Message) => {
     console.log(`Message received:`, newMessage);
     
     // Add message to state to display immediately
@@ -32,6 +32,11 @@ export function useLocalMessages() {
     console.log("Clearing local messages");
     setLocalMessages([]);
   }, []);
+
+  // Debugging - log messages whenever they change
+  useEffect(() => {
+    console.log(`Local messages state updated: ${localMessages.length} messages`);
+  }, [localMessages]);
 
   return {
     localMessages,
