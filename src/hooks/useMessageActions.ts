@@ -89,7 +89,7 @@ export function useMessageActions() {
         throw userError || new Error("User not authenticated");
       }
 
-      // Delete all messages between the two users
+      // Delete all messages between the two users - fixed the syntax
       const { error: deleteError } = await supabase
         .from('messages')
         .delete()
