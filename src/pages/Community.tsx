@@ -137,92 +137,95 @@ const Community = () => {
                   </div>
                 )}
               </div>
+              
+              <TabsContent value="posts" className="mt-0">
+                <PostsList 
+                  searchQuery={searchQuery} 
+                  categoryFilter={selectedCategory !== "All Categories" ? selectedCategory : ""}
+                  typeFilter={postType === "all" ? null : (postType === "offers" ? "offer" : "request")}
+                  locationFilter={locationFilter}
+                  sortBy={sortBy}
+                />
+              </TabsContent>
+              
+              <TabsContent value="nonprofits" className="mt-0">
+                <div className="text-center py-10">
+                  <h2 className="text-2xl font-bold mb-4">Nonprofit Directory</h2>
+                  <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                    Find nonprofits in your area or list your nonprofit organization.
+                  </p>
+                  <div className="flex justify-center gap-4">
+                    <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                      <a href="/nonprofit-directory">Browse Nonprofits</a>
+                    </Button>
+                    <Button asChild variant="outline">
+                      <a href="/list-nonprofit">List Your Nonprofit</a>
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="volunteers" className="mt-0">
+                <div className="text-center py-10">
+                  <h2 className="text-2xl font-bold mb-4">Volunteer Opportunities</h2>
+                  <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                    Find volunteer opportunities in your community or post opportunities for your organization.
+                  </p>
+                  <Button asChild className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
+                    <a href="/volunteer">View Volunteer Opportunities</a>
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="all" className="mt-0">
+                <div className="space-y-8">
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">Community Posts</h2>
+                    <PostsList 
+                      searchQuery={searchQuery} 
+                      locationFilter={locationFilter}
+                      limit={3}
+                    />
+                    <div className="mt-4 text-center">
+                      <Button variant="outline" asChild>
+                        <a href="/community" onClick={() => setSearchTab('posts')}>See All Posts</a>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">Nonprofits</h2>
+                    <div className="text-center py-6">
+                      <p className="text-gray-600 mb-4">
+                        Find nonprofits in your area or list your nonprofit organization.
+                      </p>
+                      <Button asChild size="sm">
+                        <a href="/nonprofit-directory">Browse Nonprofits</a>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">Volunteer Opportunities</h2>
+                    <div className="text-center py-6">
+                      <p className="text-gray-600 mb-4">
+                        Find volunteer opportunities or post opportunities for volunteers.
+                      </p>
+                      <Button asChild size="sm">
+                        <a href="/volunteer">View Opportunities</a>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
       
       <main className="flex-grow container mx-auto px-4 pb-10">
-        <TabsContent value="posts" className="mt-0">
-          <PostsList 
-            searchQuery={searchQuery} 
-            categoryFilter={selectedCategory !== "All Categories" ? selectedCategory : ""}
-            typeFilter={postType === "all" ? null : (postType === "offers" ? "offer" : "request")}
-            locationFilter={locationFilter}
-            sortBy={sortBy}
-          />
-        </TabsContent>
-        
-        <TabsContent value="nonprofits" className="mt-0">
-          <div className="text-center py-10">
-            <h2 className="text-2xl font-bold mb-4">Nonprofit Directory</h2>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Find nonprofits in your area or list your nonprofit organization.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                <a href="/nonprofit-directory">Browse Nonprofits</a>
-              </Button>
-              <Button asChild variant="outline">
-                <a href="/list-nonprofit">List Your Nonprofit</a>
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="volunteers" className="mt-0">
-          <div className="text-center py-10">
-            <h2 className="text-2xl font-bold mb-4">Volunteer Opportunities</h2>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Find volunteer opportunities in your community or post opportunities for your organization.
-            </p>
-            <Button asChild className="bg-thryvance-blue hover:bg-thryvance-blue-dark">
-              <a href="/volunteer">View Volunteer Opportunities</a>
-            </Button>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="all" className="mt-0">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Community Posts</h2>
-              <PostsList 
-                searchQuery={searchQuery} 
-                locationFilter={locationFilter}
-                limit={3}
-              />
-              <div className="mt-4 text-center">
-                <Button variant="outline" asChild>
-                  <a href="/community" onClick={() => setSearchTab('posts')}>See All Posts</a>
-                </Button>
-              </div>
-            </div>
-            
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Nonprofits</h2>
-              <div className="text-center py-6">
-                <p className="text-gray-600 mb-4">
-                  Find nonprofits in your area or list your nonprofit organization.
-                </p>
-                <Button asChild size="sm">
-                  <a href="/nonprofit-directory">Browse Nonprofits</a>
-                </Button>
-              </div>
-            </div>
-            
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Volunteer Opportunities</h2>
-              <div className="text-center py-6">
-                <p className="text-gray-600 mb-4">
-                  Find volunteer opportunities or post opportunities for volunteers.
-                </p>
-                <Button asChild size="sm">
-                  <a href="/volunteer">View Opportunities</a>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
+        {/* This section should be removed since it duplicates the TabsContent */}
+        {/* The content is now correctly placed within the Tabs component above */}
       </main>
       <Footer />
     </div>
