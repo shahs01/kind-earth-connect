@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpData, PasswordResetData, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 export const useAuthOperations = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   /**
    * Logs a user in
