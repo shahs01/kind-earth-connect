@@ -4,7 +4,6 @@ import { useConversations } from "./useConversations";
 import { useMessagesList } from "./useMessagesList";
 import { useMessageActions } from "./useMessageActions";
 import { useToast } from "./use-toast";
-import { Message } from "./useConversations";
 export type { Conversation, Message } from "./useConversations";
 
 export function useMessages() {
@@ -63,7 +62,8 @@ export function useMessages() {
       // Update messages state immediately without refetching
       if (message && message.sender) {
         console.log("Message sent successfully, updating local state");
-        addMessageToState(message as Message);
+        // Type cast the message to unknown first to avoid direct type error
+        addMessageToState(message as unknown as any);
         setActiveConversationId(receiverId);
         
         // Make sure the message appears in the local state if this is a new conversation

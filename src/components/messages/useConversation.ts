@@ -12,12 +12,16 @@ import { useConversationRealtime } from "./hooks/useConversationRealtime";
 import { useMessageSending } from "./hooks/useMessageSending";
 import { useConversationActions } from "./hooks/useConversationActions";
 import { useMessageSync } from "./hooks/useMessageSync";
+import { RealtimeChannel } from "@supabase/supabase-js";
+
+// Fix for the type definition issue in useConversationReconnect
+type SetupRealtimeFunction = () => RealtimeChannel | null;
 
 const useConversation = (userId?: string) => {
   const { user } = useAuth();
   const [connectionError, setConnectionError] = useState(false);
   const previousUserIdRef = useRef<string | undefined>(undefined);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -69,13 +73,10 @@ const useConversation = (userId?: string) => {
     }
   }, [realtimeChannelRef]);
 
-  // Set up reconnection handler with proper type
+  // Set up reconnection handler with proper type casting
   const { isReconnecting, handleReconnect } = useConversationReconnect(
     fetchMessages,
-    async () => {
-      const channel = await setupRealtimeSubscription();
-      return channel;
-    },
+    setupRealtimeSubscription as SetupRealtimeFunction, // Type cast to match expected signature
     userId,
     channelRef,
     setConnectionError
@@ -153,7 +154,7 @@ const useConversation = (userId?: string) => {
           // Set up realtime only after messages are loaded
           if (isMounted) {
             console.log("useConversation: Setting up realtime subscription");
-            const channel = await setupRealtimeSubscription();
+            const channel = setupRealtimeSubscription();
             if (channel) {
               channelRef.current = channel;
             }

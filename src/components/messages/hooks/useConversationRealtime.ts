@@ -32,7 +32,7 @@ export function useConversationRealtime({
   }, []);
   
   // Set up realtime subscription to listen for new messages
-  const setupRealtimeSubscription = useCallback(async (): Promise<RealtimeChannel | null> => {
+  const setupRealtimeSubscription = useCallback((): RealtimeChannel | null => {
     if (!userId || !currentUserId) {
       console.error("Cannot set up realtime without userId and currentUserId");
       return null;
@@ -114,11 +114,12 @@ export function useConversationRealtime({
                 } : undefined
               };
               
-              onMessageReceived(message as Message);
+              // Type cast to Message before passing to callback
+              onMessageReceived(message as unknown as Message);
             } catch (err) {
               console.error("Error processing realtime message:", err);
               // Still add message even without profile data
-              onMessageReceived(newMessage as Message);
+              onMessageReceived(newMessage as unknown as Message);
             }
           }
         )
