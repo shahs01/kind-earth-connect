@@ -39,23 +39,26 @@ const ProfileCard = ({
     try {
       if (!createdAt) return 'Unknown';
       
-      // Handle different date formats
       let date;
-      if (typeof createdAt === 'string') {
-        date = new Date(createdAt);
-      } else if (createdAt instanceof Date) {
-        date = createdAt;
-      } else if (createdAt.value && createdAt.value.iso) {
-        // Handle the complex object format from console logs
+      
+      // Handle the complex nested object structure from console logs
+      if (createdAt.value?.iso) {
         date = new Date(createdAt.value.iso);
       } else if (createdAt.iso) {
         date = new Date(createdAt.iso);
+      } else if (typeof createdAt === 'string') {
+        date = new Date(createdAt);
+      } else if (createdAt instanceof Date) {
+        date = createdAt;
+      } else if (createdAt._type === 'Date' && createdAt.value?.iso) {
+        date = new Date(createdAt.value.iso);
       } else {
+        console.log('Unhandled date format:', createdAt);
         return 'Unknown';
       }
       
-      // Validate the date
       if (isNaN(date.getTime())) {
+        console.log('Invalid date created from:', createdAt);
         return 'Unknown';
       }
       
