@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import PostsList from "@/components/PostsList";
+import PostsGrid from "@/components/PostsGrid";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -139,7 +138,7 @@ const Community = () => {
               </div>
               
               <TabsContent value="posts">
-                <PostsList 
+                <PostsGrid 
                   searchQuery={searchQuery} 
                   categoryFilter={selectedCategory !== "All Categories" ? selectedCategory : ""}
                   typeFilter={postType === "all" ? null : (postType === "offers" ? "offer" : "request")}
@@ -181,10 +180,10 @@ const Community = () => {
                 <div className="space-y-8">
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Community Posts</h2>
-                    <PostsList 
+                    <PostsGrid 
                       searchQuery={searchQuery} 
                       locationFilter={locationFilter}
-                      limit={3}
+                      limit={6}
                     />
                     <div className="mt-4 text-center">
                       <Button variant="outline" onClick={() => setSearchTab('posts')}>

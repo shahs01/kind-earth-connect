@@ -3,13 +3,9 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchFilters from "@/components/search/SearchFilters";
-import PostsList from "@/components/PostsList";
+import PostsGrid from "@/components/PostsGrid";
 import { categories } from "@/data/searchHelpData";
 import { useAuth } from "@/context/AuthContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 
 const SearchHelp = () => {
   const [activeTab, setActiveTab] = useState("all");
@@ -61,7 +57,7 @@ const SearchHelp = () => {
             categories={categories}
           />
           
-          <PostsList
+          <PostsGrid
             searchQuery={searchQuery}
             categoryFilter={selectedCategory !== "All Categories" ? selectedCategory : ""}
             typeFilter={postType === "all" ? null : (postType === "offers" ? "offer" : "request")}
