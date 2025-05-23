@@ -125,31 +125,40 @@ const useConversation = (userId?: string) => {
   
   // Load conversation and set up realtime when userId changes
   useEffect(() => {
-    if (!userId || !user?.id) return;
+    if (!userId || !user?.id) {
+      console.log("useConversation: Missing userId or user.id", { userId, userExists: !!user?.id });
+      return;
+    }
     
-    console.log(`Setting up conversation with userId: ${userId}`);
+    console.log(`useConversation: Setting up conversation with userId: ${userId}`);
     let isMounted = true;
     
     const loadConversationData = async () => {
       try {
+        console.log("useConversation: Starting to load conversation data");
+        
         // First fetch other user profile
+        console.log("useConversation: Fetching other user profile");
         await fetchOtherUser(userId);
         
         // Then fetch messages
         if (isMounted) {
+          console.log("useConversation: Fetching messages");
           const fetchedMessages = await fetchMessages(userId);
-          console.log(`Loaded ${fetchedMessages.length} messages`);
+          console.log(`useConversation: Loaded ${fetchedMessages.length} messages`);
           
           // Set up realtime only after messages are loaded
           if (isMounted) {
+            console.log("useConversation: Setting up realtime subscription");
             setupRealtimeSubscription();
           }
           
           // Mark messages as read
+          console.log("useConversation: Marking messages as read");
           await markMessagesAsRead(userId);
         }
       } catch (error) {
-        console.error("Error loading conversation data:", error);
+        console.error("useConversation: Error loading conversation data:", error);
         if (isMounted) {
           setConnectionError(true);
           toast({
@@ -167,7 +176,7 @@ const useConversation = (userId?: string) => {
     return () => {
       isMounted = false;
       if (channelRef.current) {
-        console.log("Removing channel on conversation cleanup");
+        console.log("useConversation: Removing channel on conversation cleanup");
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -186,6 +195,15 @@ const useConversation = (userId?: string) => {
 
   // Combine loading states
   const loading = messagesLoading || isConnecting || profileLoading;
+
+  console.log("useConversation: Current state", {
+    userId,
+    hasOtherUser: !!otherUser,
+    messagesCount: messages.length,
+    localMessagesCount: localMessages.length,
+    loading,
+    connectionError
+  });
 
   return {
     user,

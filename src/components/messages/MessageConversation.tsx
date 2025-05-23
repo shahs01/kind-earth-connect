@@ -54,16 +54,16 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   // Reset error state when userId changes
   useEffect(() => {
     setFetchError(false);
-    console.log("MessageConversation mounted with userId:", userId);
+    console.log("MessageConversation: mounted with userId:", userId);
     
     // Hide initial loading after a timeout to prevent long blank screens
     const timer = setTimeout(() => {
       setInitialLoading(false);
-    }, 800);
+    }, 1000);
     
     return () => {
       clearTimeout(timer);
-      console.log("MessageConversation unmounted");
+      console.log("MessageConversation: unmounted");
     };
   }, [userId, setFetchError]);
   
@@ -105,9 +105,9 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         return;
       }
       await handleSendMessage(content);
-      console.log("Message sent successfully via onSendMessage");
+      console.log("MessageConversation: Message sent successfully");
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("MessageConversation: Failed to send message:", error);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
@@ -116,15 +116,28 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [handleSendMessage, toast, userId]);
   
-  console.log("MessageConversation render with:", {
+  console.log("MessageConversation: render state", {
     userId,
     hasOtherUser: !!otherUser,
     messagesCount: messages.length,
-    loading
+    loading,
+    initialLoading,
+    connectionError,
+    fetchError
   });
   
   // Initial loading state with proper animation
-  if ((initialLoading && loading) || !userId) {
+  if (!userId) {
+    console.log("MessageConversation: No userId provided");
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <p className="text-gray-500">No conversation selected</p>
+      </div>
+    );
+  }
+
+  if (initialLoading && loading) {
+    console.log("MessageConversation: Showing initial loading state");
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
@@ -135,6 +148,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   // Check for authentication
   if (!user) {
+    console.log("MessageConversation: No user authenticated");
     return (
       <div className="flex justify-center items-center h-full p-6">
         <p className="text-gray-500">Please log in to view messages</p>
@@ -144,6 +158,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   // Check for connection errors
   if (connectionError || fetchError) {
+    console.log("MessageConversation: Connection error detected");
     return (
       <ConnectionStatusHandler
         user={user}
@@ -157,6 +172,11 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       />
     );
   }
+  
+  console.log("MessageConversation: Rendering conversation body", {
+    hasOtherUser: !!otherUser,
+    messagesCount: messages.length
+  });
   
   return (
     <>
