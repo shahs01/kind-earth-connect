@@ -66,7 +66,8 @@ export function useConversationRealtime({
             // Process messages meant for current user
             if (payload.new.receiver_id === currentUserId) {
               console.log(`Processing incoming message from ${userId} to ${currentUserId}`);
-              onMessageReceived(payload.new);
+              // Cast the payload to Message type since we know it has the right structure
+              onMessageReceived(payload.new as Message);
             }
           }
         )
@@ -82,7 +83,8 @@ export function useConversationRealtime({
           (payload) => {
             if (payload.new.receiver_id === userId) {
               console.log(`Processing outgoing message from ${currentUserId} to ${userId}`);
-              onMessageReceived(payload.new);
+              // Cast the payload to Message type since we know it has the right structure
+              onMessageReceived(payload.new as Message);
             }
           }
         )
