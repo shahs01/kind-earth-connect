@@ -92,6 +92,8 @@ export function useMessagesList() {
 
   const addMessageToState = useCallback((newMessage: Message) => {
     console.log("Adding message to state:", newMessage?.id || 'No ID');
+    
+    // Use functional update to prevent race conditions
     setMessages(prev => {
       // Check if message already exists to avoid duplicates
       const exists = prev.some(msg => msg.id === newMessage.id);
@@ -99,6 +101,7 @@ export function useMessagesList() {
         console.log("Message already exists in state, not adding duplicate");
         return prev;
       }
+      
       console.log("Adding new message to state, current count:", prev.length);
       return [...prev, newMessage];
     });

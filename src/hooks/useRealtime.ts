@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -35,7 +34,6 @@ export function useRealtime({
       if (channelRef.current) {
         console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify channelRef.current
       }
       
       // Create channel name based on user IDs
@@ -75,7 +73,6 @@ export function useRealtime({
           if (status === "SUBSCRIBED") {
             console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
-            // Return the channel instead of directly modifying the ref
           } else if (status === "CHANNEL_ERROR") {
             console.error("Error subscribing to realtime updates");
             setConnectionError(true);
@@ -87,7 +84,6 @@ export function useRealtime({
           }
         });
       
-      // Return the channel so the component can store it in the ref
       return channel;
     } catch (err) {
       console.error("Error setting up realtime:", err);
@@ -123,7 +119,6 @@ export function useGlobalMessageNotifications(
       // Clean up any existing channel first
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify channelRef.current
       }
       
       const newChannel = supabase.channel(`private:user:${user.id}`, {
@@ -175,7 +170,6 @@ export function useGlobalMessageNotifications(
       if (channelRef.current) {
         console.log("Removing channel on useGlobalMessageNotifications unmount");
         supabase.removeChannel(channelRef.current);
-        // Don't directly modify channelRef.current
       }
     };
   }, []);

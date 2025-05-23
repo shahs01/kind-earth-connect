@@ -19,25 +19,28 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   
   // Use layout effect to scroll to bottom immediately without visual jump
   useLayoutEffect(() => {
-    if (messages.length > 0 && messages.length !== prevMessagesLengthRef.current) {
-      console.log(`MessageList updating: messages changed from ${prevMessagesLengthRef.current} to ${messages.length}`);
+    if (messages.length > 0 && messagesEndRef.current) {
+      console.log(`MessageList updating: scrolling to bottom, messages count: ${messages.length}`);
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages]);
+
+  // Additional effect to handle scrolling on messages length change
+  useEffect(() => {
+    if (messages.length !== prevMessagesLengthRef.current) {
+      console.log(`MessageList: messages count changed from ${prevMessagesLengthRef.current} to ${messages.length}`);
       
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-        console.log("Scrolled to bottom of message container immediately");
-      }
+      // Use requestAnimationFrame for smooth scrolling after render
+      requestAnimationFrame(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+          console.log("Scrolled to bottom in animation frame");
+        }
+      });
       
       prevMessagesLengthRef.current = messages.length;
     }
   }, [messages.length]);
-
-  // Log when messages array changes
-  useEffect(() => {
-    console.log("MessageList: messages updated, count:", messages.length);
-    return () => {
-      console.log("MessageList: component cleanup");
-    };
-  }, [messages]);
 
   if (loading && messages.length === 0) {
     return (

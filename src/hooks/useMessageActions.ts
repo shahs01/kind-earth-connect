@@ -65,7 +65,10 @@ export function useMessageActions() {
       console.error("Error sending message:", error);
       throw error;
     } finally {
-      setSending(false);
+      // Add a small delay to avoid UI jitter
+      setTimeout(() => {
+        setSending(false);
+      }, 300);
     }
   }, []);
   
