@@ -31,51 +31,11 @@ export function useMessagesList() {
       
       console.log(`useMessagesList: Current user: ${user.id}, Other user: ${userId}`);
       
-      // First check if a conversation exists between the two users or create one if needed
-      let conversationId;
-      
-      // Try to find existing conversation
-      const { data: existingConversation, error: convError } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.id})`)
-        .maybeSingle();
-
-      if (convError) {
-        console.error("useMessagesList: Error checking for existing conversation:", convError);
-        // Continue without throwing - we'll create a new conversation if needed
-      }
-      
-      if (existingConversation) {
-        conversationId = existingConversation.id;
-        console.log(`useMessagesList: Found existing conversation: ${conversationId}`);
-      } else {
-        console.log("useMessagesList: No existing conversation found, creating new one");
-        // Create a new conversation
-        const { data: newConversation, error: createError } = await supabase
-          .from('conversations')
-          .insert({
-            user1_id: user.id,
-            user2_id: userId
-          })
-          .select('id')
-          .single();
-        
-        if (createError) {
-          console.error("useMessagesList: Error creating new conversation:", createError);
-          setConnectionError(true);
-          throw createError;
-        }
-        
-        conversationId = newConversation.id;
-        console.log(`useMessagesList: Created new conversation: ${conversationId}`);
-      }
-      
-      // Now fetch messages for this conversation
+      // Fetch messages between the two users
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
-        .eq('conversation_id', conversationId)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
       if (messagesError) {

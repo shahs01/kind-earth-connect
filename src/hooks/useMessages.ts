@@ -61,9 +61,9 @@ export function useMessages() {
       const message = await sendMessageAction(receiverId, content);
       
       // Update messages state immediately without refetching
-      if (message) {
+      if (message && message.sender) {
         console.log("Message sent successfully, updating local state");
-        addMessageToState(message);
+        addMessageToState(message as Message);
         setActiveConversationId(receiverId);
         
         // Make sure the message appears in the local state if this is a new conversation

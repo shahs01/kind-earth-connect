@@ -15,7 +15,6 @@ export interface Message {
   id: string;
   sender_id: string;
   receiver_id?: string;
-  conversation_id?: string;
   content: string;
   read: boolean;
   created_at: string;
@@ -48,10 +47,10 @@ export function useConversations() {
         throw new Error("Not authenticated");
       }
       
-      // Get all unique conversation partners from messages
+      // Get all messages involving the current user
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
-        .select('sender_id, receiver_id, conversation_id, created_at, content, read')
+        .select('sender_id, receiver_id, created_at, content, read')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
         
@@ -64,6 +63,11 @@ export function useConversations() {
       console.log(`Found ${messagesData?.length || 0} messages`);
       setConnectionError(false);
       
+      if (!messagesData || messagesData.length === 0) {
+        setConversations([]);
+        return [];
+      }
+      
       // Group messages by conversation partners
       const conversationMap = new Map<string, {
         userId: string;
@@ -72,7 +76,7 @@ export function useConversations() {
         conversationId: string;
       }>();
       
-      for (const message of (messagesData || [])) {
+      for (const message of messagesData) {
         const otherUserId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
         if (!otherUserId) continue;
         
@@ -87,7 +91,7 @@ export function useConversations() {
             userId: otherUserId,
             lastMessage: message as Message,
             unreadCount: shouldIncrement ? unreadCount + 1 : unreadCount,
-            conversationId: message.conversation_id || `${user.id}-${otherUserId}`
+            conversationId: `${user.id}-${otherUserId}`
           });
         } else if (existing && message.sender_id === otherUserId && !message.read) {
           existing.unreadCount += 1;

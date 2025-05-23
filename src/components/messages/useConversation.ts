@@ -72,7 +72,10 @@ const useConversation = (userId?: string) => {
   // Set up reconnection handler with proper type
   const { isReconnecting, handleReconnect } = useConversationReconnect(
     fetchMessages,
-    () => setupRealtimeSubscription().then(channel => channel || null),
+    async () => {
+      const channel = await setupRealtimeSubscription();
+      return channel;
+    },
     userId,
     channelRef,
     setConnectionError

@@ -49,27 +49,8 @@ export function useConversationRealtime({
     console.log(`Setting up realtime subscription for conversation between ${currentUserId} and ${userId}`);
     
     try {
-      // Find conversation ID from existing messages
-      const { data: existingMessages, error: messagesError } = await supabase
-        .from('messages')
-        .select('conversation_id')
-        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
-        .limit(1)
-        .maybeSingle();
-        
-      if (messagesError) {
-        console.error("Error finding conversation for realtime subscription:", messagesError);
-        setConnectionError(true);
-        setIsConnecting(false);
-        return null;
-      }
-      
-      // Create a unique channel name based on user IDs if no conversation found
-      const conversationId = existingMessages?.conversation_id || `${currentUserId}-${userId}`;
-      console.log(`Using conversation ID for realtime: ${conversationId}`);
-      
-      // Create the channel
-      const channelName = `private:conversation:${conversationId}`;
+      // Create a unique channel name based on user IDs
+      const channelName = `private:conversation:${currentUserId}-${userId}`;
       console.log(`Creating channel: ${channelName}`);
       
       const channel = supabase.channel(channelName);
@@ -77,17 +58,28 @@ export function useConversationRealtime({
       // Store in ref for cleanup
       channelRef.current = channel;
       
-      // Listen for new messages in this conversation
+      // Listen for new messages involving both users
       channel
         .on(
           'postgres_changes',
           { 
             event: 'INSERT', 
             schema: 'public', 
-            table: 'messages',
-            filter: `conversation_id=eq.${conversationId}`
+            table: 'messages'
           },
           async (payload) => {
+            const newMessage = payload.new;
+            
+            // Check if this message is part of the current conversation
+            const isRelevant = (
+              (newMessage.sender_id === currentUserId && newMessage.receiver_id === userId) ||
+              (newMessage.sender_id === userId && newMessage.receiver_id === currentUserId)
+            );
+            
+            if (!isRelevant) {
+              return;
+            }
+            
             console.log("Realtime: New message received for conversation", payload);
             
             try {
@@ -95,12 +87,12 @@ export function useConversationRealtime({
               const { data: senderData } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', payload.new.sender_id)
+                .eq('id', newMessage.sender_id)
                 .maybeSingle();
               
               // Construct message with sender data
               const message = {
-                ...payload.new,
+                ...newMessage,
                 sender: senderData ? {
                   id: senderData.id,
                   username: senderData.username || '',
@@ -126,7 +118,7 @@ export function useConversationRealtime({
             } catch (err) {
               console.error("Error processing realtime message:", err);
               // Still add message even without profile data
-              onMessageReceived(payload.new as Message);
+              onMessageReceived(newMessage as Message);
             }
           }
         )
