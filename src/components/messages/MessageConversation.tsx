@@ -116,6 +116,13 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [handleSendMessage, toast, userId]);
   
+  console.log("MessageConversation render with:", {
+    userId,
+    hasOtherUser: !!otherUser,
+    messagesCount: messages.length,
+    loading
+  });
+  
   // Initial loading state with proper animation
   if ((initialLoading && loading) || !userId) {
     return (

@@ -1,8 +1,8 @@
 
 import { Routes, Route } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquareText, Search, X } from "lucide-react";
-import MessageConversation from "@/components/MessageConversation";
+import { Plus, Search, X } from "lucide-react";
+import MessageConversation from "@/components/messages/MessageConversation";
 import EmptyConversation from "@/components/messages/EmptyConversation";
 import ConversationSidebar from "@/components/messages/ConversationSidebar";
 import { Conversation } from "@/hooks/useMessages";
@@ -50,6 +50,14 @@ const MessagesContainer = ({
       setFilteredConversations(filtered);
     }
   }, [searchTerm, conversations]);
+  
+  console.log("MessagesContainer render:", {
+    selectedUserId,
+    conversationsCount: conversations.length,
+    filteredCount: filteredConversations.length,
+    loading,
+    initialLoadComplete
+  });
   
   return (
     <div className="container mx-auto px-0 md:px-4 h-full">
@@ -103,7 +111,7 @@ const MessagesContainer = ({
             <Routes>
               <Route path=":userId" element={
                 <MessageConversation 
-                  key={`conversation-${selectedUserId}`} 
+                  key={selectedUserId} 
                   onViewProfile={onViewProfile} 
                 />
               } />
