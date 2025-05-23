@@ -61,9 +61,9 @@ const MessagesContainer = ({
   return (
     <div className="container mx-auto px-0 md:px-4 h-full">
       <div className="max-w-7xl mx-auto h-full">
-        {/* Grid layout for proper conversation panel display */}
+        {/* Fixed grid layout for proper conversation panel display */}
         <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] bg-white rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
-          {/* Conversation Sidebar - Always visible on desktop */}
+          {/* Conversation Sidebar */}
           <div className="border-r border-gray-200 flex flex-col h-full">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold">Messages</h2>
@@ -106,8 +106,8 @@ const MessagesContainer = ({
             />
           </div>
           
-          {/* Message Content Area - Always visible, shows empty state or conversation */}
-          <div className={`flex flex-col h-full ${selectedUserId ? 'block' : 'hidden md:block'}`}>
+          {/* Message Content Area - Always visible, shows conversation or empty state */}
+          <div className="flex flex-col h-full">
             <Routes>
               <Route path=":userId" element={
                 <MessageConversation 

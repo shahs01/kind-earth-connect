@@ -91,7 +91,7 @@ export function useMessages() {
   const loadConversation = useCallback(async (userId: string) => {
     if (!userId) {
       console.warn("loadConversation: No userId provided");
-      return;
+      return [];
     }
     
     console.log(`Loading conversation with userId: ${userId}`);

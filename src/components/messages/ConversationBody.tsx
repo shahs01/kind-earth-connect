@@ -49,7 +49,7 @@ const ConversationBody = ({
     );
   }
 
-  // Show error state if no other user found
+  // Show error state if no other user found after loading
   if (!loading && !otherUser) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">

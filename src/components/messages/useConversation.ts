@@ -27,37 +27,84 @@ export default function useConversation(userId?: string) {
     setConnectionError: setMessagesConnectionError
   } = useMessages();
 
-  // Load conversation when userId changes
+  // Load conversation when userId changes - this is the key fix
   useEffect(() => {
     if (userId && user) {
       console.log("useConversation: Loading conversation for userId:", userId);
+      setProfileLoading(true);
+      setConnectionError(false);
+      
       loadConversation(userId)
-        .then(() => {
-          console.log("useConversation: Conversation loaded successfully");
+        .then((messages) => {
+          console.log("useConversation: Conversation loaded successfully with", messages.length, "messages");
           setConnectionError(false);
+          setProfileLoading(false);
         })
         .catch((error) => {
           console.error("useConversation: Error loading conversation:", error);
           setConnectionError(true);
+          setProfileLoading(false);
         });
     }
   }, [userId, user, loadConversation]);
 
-  // Find other user from conversations
+  // Find other user from conversations - improved logic
   useEffect(() => {
     if (userId && conversations.length > 0) {
+      console.log("useConversation: Looking for user", userId, "in", conversations.length, "conversations");
       const conversation = conversations.find(conv => conv.user.id === userId);
       if (conversation) {
+        console.log("useConversation: Found user in conversations:", conversation.user.name);
         setOtherUser(conversation.user);
         setProfileLoading(false);
       } else {
-        setProfileLoading(true);
-        // If not found in conversations, we might need to fetch user profile
-        // For now, set loading to false to prevent infinite loading
-        setTimeout(() => setProfileLoading(false), 1000);
+        console.log("useConversation: User not found in conversations, creating placeholder");
+        // Create a basic user object if not found in conversations
+        setOtherUser({
+          id: userId,
+          name: "Loading...",
+          username: "",
+          email: "",
+          avatar: `https://ui-avatars.com/api/?name=User`,
+          bio: "",
+          location: "",
+          trustScore: 0,
+          helpOffered: 0,
+          helpReceived: 0,
+          volunteerHours: 0,
+          createdAt: new Date(),
+          verifiedStatus: false,
+          emailVerified: false,
+          trustBadges: [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        });
+        setProfileLoading(false);
       }
+    } else if (userId && conversations.length === 0 && !loading) {
+      // If we have a userId but no conversations yet, create a placeholder
+      setOtherUser({
+        id: userId,
+        name: "User",
+        username: "",
+        email: "",
+        avatar: `https://ui-avatars.com/api/?name=User`,
+        bio: "",
+        location: "",
+        trustScore: 0,
+        helpOffered: 0,
+        helpReceived: 0,
+        volunteerHours: 0,
+        createdAt: new Date(),
+        verifiedStatus: false,
+        emailVerified: false,
+        trustBadges: [],
+        loginAttempts: 0,
+        lastLoginAttempt: null
+      });
+      setProfileLoading(false);
     }
-  }, [userId, conversations]);
+  }, [userId, conversations, loading]);
 
   const { 
     handleDeleteConversation,
@@ -77,7 +124,9 @@ export default function useConversation(userId?: string) {
     }
 
     try {
+      console.log("useConversation: Sending message to", userId);
       await sendMessage(userId, content);
+      console.log("useConversation: Message sent successfully");
     } catch (error) {
       console.error("useConversation: Error sending message:", error);
       throw error;
@@ -123,7 +172,7 @@ export default function useConversation(userId?: string) {
   return {
     user,
     otherUser,
-    loading,
+    loading: loading || profileLoading,
     profileLoading,
     messages,
     sending,
