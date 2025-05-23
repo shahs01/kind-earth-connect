@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { User as UserIcon, MapPin, Calendar, Star, Check, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EditProfileDialog from "@/components/EditProfileDialog";
+import { format } from "date-fns";
 
 interface ProfileCardProps {
   user: User;
@@ -32,6 +33,38 @@ const ProfileCard = ({
   
   // Only show help metrics if the user has actual activity
   const showHelpMetrics = user.helpOffered > 0 || user.helpReceived > 0;
+  
+  // Helper function to safely format the date
+  const formatMemberSince = (createdAt: any) => {
+    try {
+      if (!createdAt) return 'Unknown';
+      
+      // Handle different date formats
+      let date;
+      if (typeof createdAt === 'string') {
+        date = new Date(createdAt);
+      } else if (createdAt instanceof Date) {
+        date = createdAt;
+      } else if (createdAt.value && createdAt.value.iso) {
+        // Handle the complex object format from console logs
+        date = new Date(createdAt.value.iso);
+      } else if (createdAt.iso) {
+        date = new Date(createdAt.iso);
+      } else {
+        return 'Unknown';
+      }
+      
+      // Validate the date
+      if (isNaN(date.getTime())) {
+        return 'Unknown';
+      }
+      
+      return format(date, 'MMM yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error, createdAt);
+      return 'Unknown';
+    }
+  };
   
   return (
     <Card className={`overflow-hidden shadow-md ${compact ? 'max-w-md mx-auto' : ''}`}>
@@ -78,7 +111,7 @@ const ProfileCard = ({
             
             <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
               <Calendar className="h-4 w-4" />
-              <span>Member since {user.createdAt.toLocaleDateString()}</span>
+              <span>Member since {formatMemberSince(user.createdAt)}</span>
             </div>
             
             <div className="flex items-center justify-center gap-2 mt-3">
