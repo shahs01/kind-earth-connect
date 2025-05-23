@@ -2,17 +2,20 @@
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useMessageActions } from "@/hooks/useMessageActions";
+import { NavigateFunction } from "react-router-dom";
 
 interface UseConversationActionsProps {
   userId?: string;
   currentUserId?: string;
   clearMessages: () => void;
+  navigate: NavigateFunction;
 }
 
 export function useConversationActions({
   userId,
   currentUserId,
-  clearMessages
+  clearMessages,
+  navigate
 }: UseConversationActionsProps) {
   const { toast } = useToast();
   const { deleteConversation } = useMessageActions();
@@ -37,6 +40,9 @@ export function useConversationActions({
         description: "The conversation has been successfully deleted.",
       });
       
+      // Navigate back to messages root after deletion
+      navigate('/messages');
+      
       return true;
     } catch (error) {
       console.error("Failed to delete conversation:", error);
@@ -47,7 +53,7 @@ export function useConversationActions({
       });
       return false;
     }
-  }, [userId, currentUserId, deleteConversation, clearMessages, toast]);
+  }, [userId, currentUserId, deleteConversation, clearMessages, toast, navigate]);
 
   // Handle archiving conversation (for now just hide it from view)
   const handleArchiveConversation = useCallback(() => {
