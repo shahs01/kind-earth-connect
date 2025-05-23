@@ -60,10 +60,9 @@ export function useMessageSync(
       });
       
       clearLocalMessages();
-      setMessages([]);
       
       // Update the reference
       previousUserIdRef.current = userId;
     }
-  }, [userId, setMessages, clearLocalMessages, previousUserIdRef]);
+  }, [userId, clearLocalMessages, previousUserIdRef]);
 }

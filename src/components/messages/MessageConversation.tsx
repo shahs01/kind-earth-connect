@@ -59,9 +59,12 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     // Hide initial loading after a timeout to prevent long blank screens
     const timer = setTimeout(() => {
       setInitialLoading(false);
-    }, 1000); // Reduced to make the UI more responsive
+    }, 800);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      console.log("MessageConversation unmounted");
+    };
   }, [userId, setFetchError]);
   
   // Show notification if we're coming from a post
@@ -88,7 +91,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [otherUser, onViewProfile, setIsProfileOpen]);
   
-  // Memoized message sending function
+  // Memoized message sending function with optimistic update
   const onSendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
     
@@ -113,25 +116,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     }
   }, [handleSendMessage, toast, userId]);
   
-  console.log("MessageConversation render state:", { 
-    hasUserId: !!userId, 
-    hasUser: !!user, 
-    hasOtherUser: !!otherUser,
-    messagesCount: messages.length,
-    connectionError,
-    fetchError,
-    loading,
-    initialLoading,
-    messages: messages.map(m => ({
-      id: m.id?.substring(0, 8),
-      content: m.content?.substring(0, 20),
-      sender_id: m.sender_id?.substring(0, 8),
-      receiver_id: m.receiver_id?.substring(0, 8)
-    }))
-  });
-  
-  // Initial loading state
-  if (initialLoading && loading) {
+  // Initial loading state with proper animation
+  if ((initialLoading && loading) || !userId) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
@@ -162,18 +148,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         handleReconnect={handleReconnect}
         handleRetry={handleRetry}
       />
-    );
-  }
-  
-  // No conversation selected
-  if (!userId) {
-    return (
-      <div className="flex flex-col justify-center items-center h-full p-6">
-        <h3 className="text-xl font-medium mb-2 text-gray-700">Select a conversation</h3>
-        <p className="text-gray-500 text-center mb-4">
-          Choose a conversation from the sidebar or start a new one
-        </p>
-      </div>
     );
   }
   

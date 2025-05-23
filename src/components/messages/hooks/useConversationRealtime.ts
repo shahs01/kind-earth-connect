@@ -1,5 +1,5 @@
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Message } from "@/hooks/useMessages";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,12 +18,31 @@ export function useConversationRealtime({
   setConnectionError
 }: UseConversationRealtimeProps) {
   const [isConnecting, setIsConnecting] = useState(false);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  
+  // Clean up previous channel when component unmounts
+  useEffect(() => {
+    return () => {
+      if (channelRef.current) {
+        console.log("Removing existing channel on unmount");
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, []);
   
   // Set up realtime subscription to listen for new messages
   const setupRealtimeSubscription = useCallback(() => {
     if (!userId || !currentUserId) {
       console.error("Cannot set up realtime without userId and currentUserId");
       return null;
+    }
+    
+    // Clean up any existing channel first
+    if (channelRef.current) {
+      console.log("Removing existing channel before creating a new one");
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
     
     setIsConnecting(true);
@@ -38,6 +57,9 @@ export function useConversationRealtime({
       
       // Create the channel
       const channel = supabase.channel(channelName);
+      
+      // Store in ref for cleanup
+      channelRef.current = channel;
       
       // Listen for messages from the other user to current user
       channel
@@ -59,7 +81,7 @@ export function useConversationRealtime({
                   .from('profiles')
                   .select('*')
                   .eq('id', payload.new.sender_id)
-                  .single();
+                  .maybeSingle();
                 
                 // Construct message with sender data
                 const message = {
@@ -112,7 +134,7 @@ export function useConversationRealtime({
                   .from('profiles')
                   .select('*')
                   .eq('id', payload.new.sender_id)
-                  .single();
+                  .maybeSingle();
                 
                 // Construct message with sender data
                 const message = {
@@ -171,6 +193,7 @@ export function useConversationRealtime({
   
   return {
     setupRealtimeSubscription,
-    isConnecting
+    isConnecting,
+    channelRef
   };
 }

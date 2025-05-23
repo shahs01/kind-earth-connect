@@ -20,7 +20,7 @@ import MessagesDialogs from "@/components/messages/MessagesDialogs";
 import { Loader2 } from "lucide-react";
 
 const MessagesLayout = () => {
-  const { loading, conversations, fetchConversations, connectionError, setConnectionError, loadConversation } = useMessages();
+  const { loading, conversations, fetchConversations, connectionError, setConnectionError, loadConversation, clearLocalMessages } = useMessages();
   const navigate = useNavigate();
   const params = useParams();
   const userId = params.userId;
@@ -36,6 +36,7 @@ const MessagesLayout = () => {
   const [showLoader, setShowLoader] = useState(true);
   const timerRef = useRef<number | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const previousPathRef = useRef<string>(location.pathname);
   
   // Use a timer to prevent the loading spinner from showing indefinitely
   useEffect(() => {
@@ -51,7 +52,7 @@ const MessagesLayout = () => {
       timerRef.current = window.setTimeout(() => {
         setShowLoader(false);
         setInitialLoadComplete(true);
-      }, 5000); // 5 seconds maximum loading time
+      }, 3000); // 3 seconds maximum loading time
     } else {
       setShowLoader(false);
       setInitialLoadComplete(true);
@@ -69,6 +70,16 @@ const MessagesLayout = () => {
       }
     };
   }, [loading]);
+  
+  // Detect path changes to reset state when switching conversations
+  useEffect(() => {
+    if (previousPathRef.current !== location.pathname) {
+      console.log("Path changed from", previousPathRef.current, "to", location.pathname);
+      // Clear local messages when path changes
+      clearLocalMessages();
+      previousPathRef.current = location.pathname;
+    }
+  }, [location.pathname, clearLocalMessages]);
   
   // Check if we're coming from a post with the direct message intent
   useEffect(() => {

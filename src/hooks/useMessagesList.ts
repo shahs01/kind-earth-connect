@@ -31,7 +31,7 @@ export function useMessagesList() {
       
       console.log(`Current user: ${user.id}, Other user: ${userId}`);
       
-      // Get messages between current user and the selected user - FIXED QUERY
+      // Get messages between current user and the selected user using a simpler, more reliable query
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -44,41 +44,21 @@ export function useMessagesList() {
         throw error;
       }
       
-      // Updated FIXED query that doesn't use string interpolation
-      const { data: fixedData, error: fixedError } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .order('created_at', { ascending: true });
-      
-      if (fixedError) {
-        console.error("Error with fixed query:", fixedError);
-        setConnectionError(true);
-        throw fixedError;
-      }
-      
-      // Filter the results to only include messages between these two users
-      const filteredMessages = fixedData ? fixedData.filter(msg => 
-        (msg.sender_id === user.id && msg.receiver_id === userId) || 
-        (msg.sender_id === userId && msg.receiver_id === user.id)
-      ) : [];
-      
-      console.log(`Retrieved ${filteredMessages.length} messages for conversation with user: ${userId}`);
+      console.log(`Retrieved ${data?.length || 0} messages for conversation with user: ${userId}`);
       
       setConnectionError(false);
       
       // Process messages to add sender and receiver profiles
       const processedMessages: Message[] = [];
       
-      for (const message of filteredMessages) {
+      for (const message of data || []) {
         try {
           // Get sender profile
           const { data: senderData, error: senderError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', message.sender_id)
-            .single();
+            .maybeSingle();
             
           if (senderError) {
             console.error(`Error fetching sender profile for message ${message.id}:`, senderError);
@@ -89,7 +69,7 @@ export function useMessagesList() {
             .from('profiles')
             .select('*')
             .eq('id', message.receiver_id)
-            .single();
+            .maybeSingle();
             
           if (receiverError) {
             console.error(`Error fetching receiver profile for message ${message.id}:`, receiverError);
@@ -146,7 +126,7 @@ export function useMessagesList() {
         }
       }
       
-      // Sort messages by timestamp just to be safe
+      // Sort messages by timestamp to ensure correct order
       processedMessages.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );

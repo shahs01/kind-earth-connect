@@ -39,28 +39,10 @@ export function useMessages() {
     return () => {
       setActiveConversationId(null);
       previousUserIdRef.current = undefined;
+      // Clear messages when the hook is unmounted
+      setMessages([]);
     };
-  }, []);
-  
-  // Set up event listener for user reporting
-  useEffect(() => {
-    const handleReportUser = (event: any) => {
-      const { userId } = event.detail;
-      
-      if (userId) {
-        toast({
-          title: "Report submitted",
-          description: "We've received your report. Our team will review it shortly.",
-        });
-      }
-    };
-    
-    window.addEventListener('report-user', handleReportUser as EventListener);
-    
-    return () => {
-      window.removeEventListener('report-user', handleReportUser as EventListener);
-    };
-  }, [toast]);
+  }, [setMessages]);
 
   // Handle message sending with local state update
   const sendMessage = useCallback(async (receiverId: string, content: string) => {

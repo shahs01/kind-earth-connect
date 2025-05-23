@@ -11,7 +11,6 @@ import { useLocalMessages } from "./hooks/useLocalMessages";
 import { useConversationRealtime } from "./hooks/useConversationRealtime";
 import { useMessageSending } from "./hooks/useMessageSending";
 import { useConversationActions } from "./hooks/useConversationActions";
-import { useConversationLifecycle } from "./hooks/useConversationLifecycle";
 import { useMessageSync } from "./hooks/useMessageSync";
 
 const useConversation = (userId?: string) => {
@@ -20,6 +19,7 @@ const useConversation = (userId?: string) => {
   const previousUserIdRef = useRef<string | undefined>(undefined);
   const channelRef = useRef<any>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Get local messages state management
   const {
@@ -53,13 +53,21 @@ const useConversation = (userId?: string) => {
   // Set up realtime subscription
   const {
     setupRealtimeSubscription,
-    isConnecting
+    isConnecting,
+    channelRef: realtimeChannelRef
   } = useConversationRealtime({
     userId,
     currentUserId: user?.id,
     onMessageReceived: handleMessageReceived,
     setConnectionError
   });
+
+  // Update the ref when channelRef changes
+  useEffect(() => {
+    if (realtimeChannelRef.current) {
+      channelRef.current = realtimeChannelRef.current;
+    }
+  }, [realtimeChannelRef]);
 
   // Set up reconnection handler
   const { isReconnecting, handleReconnect } = useConversationReconnect(
@@ -71,11 +79,35 @@ const useConversation = (userId?: string) => {
   );
 
   // Set up message sending handler
-  const { handleSendMessage } = useMessageSending({
+  const { handleSendMessage: sendMessageHandler, isSending } = useMessageSending({
     sendMessage,
     setLocalMessages,
     userId
   });
+
+  // Enhanced message sending function with better error handling
+  const handleSendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || !userId) {
+      toast({
+        title: "Error",
+        description: !content.trim() ? "Cannot send empty message" : "No receiver selected",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const result = await sendMessageHandler(content);
+      return result;
+    } catch (error) {
+      console.error("Error in handleSendMessage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [sendMessageHandler, userId, toast]);
 
   // Clear messages for both local and server state
   const clearAllMessages = useCallback(() => {
@@ -87,20 +119,60 @@ const useConversation = (userId?: string) => {
   const { handleDeleteConversation, handleArchiveConversation } = useConversationActions({
     userId,
     currentUserId: user?.id,
-    clearMessages: clearAllMessages
+    clearMessages: clearAllMessages,
+    navigate
   });
   
-  // Handle conversation lifecycle (loading, cleanup)
-  useConversationLifecycle(
-    userId,
-    user,
-    fetchMessages,
-    fetchOtherUser,
-    markMessagesAsRead,
-    setupRealtimeSubscription,
-    channelRef,
-    setConnectionError
-  );
+  // Load conversation and set up realtime when userId changes
+  useEffect(() => {
+    if (!userId || !user?.id) return;
+    
+    console.log(`Setting up conversation with userId: ${userId}`);
+    let isMounted = true;
+    
+    const loadConversationData = async () => {
+      try {
+        // First fetch other user profile
+        await fetchOtherUser(userId);
+        
+        // Then fetch messages
+        if (isMounted) {
+          const fetchedMessages = await fetchMessages(userId);
+          console.log(`Loaded ${fetchedMessages.length} messages`);
+          
+          // Set up realtime only after messages are loaded
+          if (isMounted) {
+            setupRealtimeSubscription();
+          }
+          
+          // Mark messages as read
+          await markMessagesAsRead(userId);
+        }
+      } catch (error) {
+        console.error("Error loading conversation data:", error);
+        if (isMounted) {
+          setConnectionError(true);
+          toast({
+            title: "Error",
+            description: "Failed to load conversation. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }
+    };
+    
+    loadConversationData();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (channelRef.current) {
+        console.log("Removing channel on conversation cleanup");
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [userId, user?.id, fetchOtherUser, fetchMessages, setupRealtimeSubscription, markMessagesAsRead, setConnectionError, toast]);
   
   // Handle message sync between local and server state
   useMessageSync(
@@ -121,7 +193,7 @@ const useConversation = (userId?: string) => {
     loading,
     profileLoading,
     messages: messages.length > 0 ? messages : localMessages,
-    sending,
+    sending: sending || isSending,
     isProfileOpen,
     setIsProfileOpen,
     connectionError,
