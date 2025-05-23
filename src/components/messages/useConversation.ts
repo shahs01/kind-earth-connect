@@ -69,10 +69,10 @@ const useConversation = (userId?: string) => {
     }
   }, [realtimeChannelRef]);
 
-  // Set up reconnection handler
+  // Set up reconnection handler with proper type
   const { isReconnecting, handleReconnect } = useConversationReconnect(
     fetchMessages,
-    setupRealtimeSubscription,
+    () => setupRealtimeSubscription().then(channel => channel || null),
     userId,
     channelRef,
     setConnectionError
@@ -150,7 +150,10 @@ const useConversation = (userId?: string) => {
           // Set up realtime only after messages are loaded
           if (isMounted) {
             console.log("useConversation: Setting up realtime subscription");
-            setupRealtimeSubscription();
+            const channel = await setupRealtimeSubscription();
+            if (channel) {
+              channelRef.current = channel;
+            }
           }
           
           // Mark messages as read

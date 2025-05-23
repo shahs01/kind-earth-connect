@@ -32,7 +32,7 @@ export function useConversationRealtime({
   }, []);
   
   // Set up realtime subscription to listen for new messages
-  const setupRealtimeSubscription = useCallback(async () => {
+  const setupRealtimeSubscription = useCallback(async (): Promise<RealtimeChannel | null> => {
     if (!userId || !currentUserId) {
       console.error("Cannot set up realtime without userId and currentUserId");
       return null;
@@ -49,35 +49,29 @@ export function useConversationRealtime({
     console.log(`Setting up realtime subscription for conversation between ${currentUserId} and ${userId}`);
     
     try {
-      // First, find the conversation ID between these users
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${currentUserId})`)
+      // Find conversation ID from existing messages
+      const { data: existingMessages, error: messagesError } = await supabase
+        .from('messages')
+        .select('conversation_id')
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+        .limit(1)
         .maybeSingle();
         
-      if (convError) {
-        console.error("Error finding conversation for realtime subscription:", convError);
+      if (messagesError) {
+        console.error("Error finding conversation for realtime subscription:", messagesError);
         setConnectionError(true);
         setIsConnecting(false);
         return null;
       }
       
-      if (!conversation) {
-        console.log("No conversation found for realtime subscription");
-        setIsConnecting(false);
-        return null;
-      }
-      
-      const conversationId = conversation.id;
-      console.log(`Found conversation ID for realtime: ${conversationId}`);
-      
-      // Create a unique channel name based on conversation ID
-      const channelName = `private:conversation:${conversationId}`;
-      
-      console.log(`Creating channel: ${channelName}`);
+      // Create a unique channel name based on user IDs if no conversation found
+      const conversationId = existingMessages?.conversation_id || `${currentUserId}-${userId}`;
+      console.log(`Using conversation ID for realtime: ${conversationId}`);
       
       // Create the channel
+      const channelName = `private:conversation:${conversationId}`;
+      console.log(`Creating channel: ${channelName}`);
+      
       const channel = supabase.channel(channelName);
       
       // Store in ref for cleanup

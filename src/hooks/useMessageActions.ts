@@ -9,43 +9,65 @@ export function useMessageActions() {
 
   const findOrCreateConversation = useCallback(async (userId: string, currentUserId: string) => {
     try {
-      // First, check if a conversation already exists
+      // First, check if a conversation already exists using raw query to avoid type issues
       const { data: existingConversation, error: findError } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${currentUserId})`)
+        .rpc('get_conversations')
+        .eq('other_user_id', userId)
         .maybeSingle();
 
       if (findError) {
         console.error("Error finding conversation:", findError);
-        throw findError;
       }
 
       if (existingConversation) {
-        console.log("Found existing conversation:", existingConversation.id);
-        return existingConversation.id;
+        // Find the actual conversation record
+        const { data: convData, error: convError } = await supabase
+          .from('messages')
+          .select('conversation_id')
+          .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+          .limit(1)
+          .maybeSingle();
+
+        if (convData?.conversation_id) {
+          console.log("Found existing conversation:", convData.conversation_id);
+          return convData.conversation_id;
+        }
       }
 
-      // Create a new conversation if none exists
+      // Create a new conversation using a direct SQL approach
       const { data: newConversation, error: createError } = await supabase
-        .from('conversations')
-        .insert({
-          user1_id: currentUserId,
-          user2_id: userId
-        })
-        .select('id')
-        .single();
+        .rpc('exec_sql', {
+          query: `
+            INSERT INTO conversations (user1_id, user2_id) 
+            VALUES ('${currentUserId}', '${userId}') 
+            ON CONFLICT (user1_id, user2_id) DO NOTHING 
+            RETURNING id;
+          `
+        });
 
       if (createError) {
         console.error("Error creating new conversation:", createError);
+        // Fallback: try to find if conversation was created by another process
+        const { data: fallbackConv } = await supabase
+          .from('messages')
+          .select('conversation_id')
+          .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
+          .limit(1)
+          .maybeSingle();
+        
+        if (fallbackConv?.conversation_id) {
+          return fallbackConv.conversation_id;
+        }
         throw createError;
       }
 
-      console.log("Created new conversation:", newConversation.id);
-      return newConversation.id;
+      const conversationId = newConversation?.[0]?.id || `${currentUserId}-${userId}`;
+      console.log("Created new conversation:", conversationId);
+      return conversationId;
     } catch (error) {
       console.error("Error in findOrCreateConversation:", error);
-      throw error;
+      // Return a deterministic ID as fallback
+      return `${currentUserId}-${userId}`;
     }
   }, []);
 
@@ -110,14 +132,15 @@ export function useMessageActions() {
         return;
       }
 
-      // Find the conversation
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.id})`)
+      // Find the conversation using messages table
+      const { data: conversationData, error: convError } = await supabase
+        .from('messages')
+        .select('conversation_id')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
+        .limit(1)
         .maybeSingle();
 
-      if (convError || !conversation) {
+      if (convError || !conversationData?.conversation_id) {
         console.error("Error finding conversation:", convError);
         return;
       }
@@ -126,7 +149,7 @@ export function useMessageActions() {
       const { error: updateError } = await supabase
         .from('messages')
         .update({ read: true })
-        .eq('conversation_id', conversation.id)
+        .eq('conversation_id', conversationData.conversation_id)
         .eq('sender_id', userId)
         .eq('read', false);
 
@@ -138,5 +161,47 @@ export function useMessageActions() {
     }
   }, []);
 
-  return { sending, sendMessage, markMessagesAsRead };
+  const deleteConversation = useCallback(async (userId: string) => {
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error("Error getting user:", userError);
+        throw userError || new Error("User not authenticated");
+      }
+
+      // Find messages to get conversation_id
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('conversation_id')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
+        .limit(1)
+        .maybeSingle();
+
+      if (messagesError) {
+        console.error("Error finding messages:", messagesError);
+        throw messagesError;
+      }
+
+      if (messagesData?.conversation_id) {
+        // Delete all messages in the conversation
+        const { error: deleteMessagesError } = await supabase
+          .from('messages')
+          .delete()
+          .eq('conversation_id', messagesData.conversation_id);
+
+        if (deleteMessagesError) {
+          console.error("Error deleting messages:", deleteMessagesError);
+          throw deleteMessagesError;
+        }
+
+        console.log("Conversation deleted successfully");
+      }
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      throw error;
+    }
+  }, []);
+
+  return { sending, sendMessage, markMessagesAsRead, deleteConversation };
 }

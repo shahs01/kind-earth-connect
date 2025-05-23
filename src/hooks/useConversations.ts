@@ -8,14 +8,14 @@ export interface Conversation {
   user: User;
   lastMessage: Message;
   unreadCount: number;
-  conversationId: string; // Added to track the conversation ID
+  conversationId: string;
 }
 
 export interface Message {
   id: string;
   sender_id: string;
-  receiver_id?: string; // Made optional since we'll use conversation_id 
-  conversation_id?: string; // Added to support new schema
+  receiver_id?: string;
+  conversation_id?: string;
   content: string;
   read: boolean;
   created_at: string;
@@ -48,112 +48,106 @@ export function useConversations() {
         throw new Error("Not authenticated");
       }
       
-      // Get all conversations the current user is part of
-      const { data: conversationsData, error: conversationsError } = await supabase
-        .from('conversations')
-        .select('*')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      // Get all unique conversation partners from messages
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('sender_id, receiver_id, conversation_id, created_at, content, read')
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
         
-      if (conversationsError) {
-        console.error("Error fetching conversations:", conversationsError);
+      if (messagesError) {
+        console.error("Error fetching messages:", messagesError);
         setConnectionError(true);
-        throw conversationsError;
+        throw messagesError;
       }
       
-      console.log(`Found ${conversationsData?.length || 0} conversations`);
+      console.log(`Found ${messagesData?.length || 0} messages`);
       setConnectionError(false);
       
-      // Format conversations and fetch user details
+      // Group messages by conversation partners
+      const conversationMap = new Map<string, {
+        userId: string;
+        lastMessage: Message;
+        unreadCount: number;
+        conversationId: string;
+      }>();
+      
+      for (const message of (messagesData || [])) {
+        const otherUserId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
+        if (!otherUserId) continue;
+        
+        const key = otherUserId;
+        const existing = conversationMap.get(key);
+        
+        if (!existing || new Date(message.created_at) > new Date(existing.lastMessage.created_at)) {
+          const unreadCount = existing?.unreadCount || 0;
+          const shouldIncrement = message.sender_id === otherUserId && !message.read;
+          
+          conversationMap.set(key, {
+            userId: otherUserId,
+            lastMessage: message as Message,
+            unreadCount: shouldIncrement ? unreadCount + 1 : unreadCount,
+            conversationId: message.conversation_id || `${user.id}-${otherUserId}`
+          });
+        } else if (existing && message.sender_id === otherUserId && !message.read) {
+          existing.unreadCount += 1;
+        }
+      }
+      
+      // Fetch user profiles for all conversation partners
+      const userIds = Array.from(conversationMap.keys());
+      if (userIds.length === 0) {
+        setConversations([]);
+        return [];
+      }
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        // Continue without profiles
+      }
+      
+      // Create conversations array
       const formattedConversations: Conversation[] = [];
       
-      // Process each conversation
-      for (const conversation of (conversationsData || [])) {
-        try {
-          // Determine the other user in the conversation
-          const otherUserId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
-          
-          // Get other user profile
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', otherUserId)
-            .maybeSingle();
-          
-          if (userError) {
-            console.error("Error fetching user:", userError);
-            continue;
-          }
-          
-          if (!userData) {
-            console.error("No user found with ID:", otherUserId);
-            continue;
-          }
-          
-          // Count unread messages
-          const { count, error: countError } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conversation.id)
-            .eq('sender_id', otherUserId)
-            .eq('read', false);
-          
-          if (countError) {
-            console.error("Error counting unread messages:", countError);
-            continue;
-          }
-          
-          // Get the last message
-          const { data: lastMessageData, error: msgError } = await supabase
-            .from('messages')
-            .select('*')
-            .eq('conversation_id', conversation.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          
-          if (msgError) {
-            console.error("Error fetching last message:", msgError);
-            continue;
-          }
-          
-          // Skip conversation if no messages (empty conversation)
-          if (!lastMessageData) {
-            console.log("No messages found for conversation with", otherUserId);
-            continue;
-          }
-          
-          // Create user object from profile
-          const otherUser: User = {
-            id: userData.id,
-            username: userData.username || '',
-            email: userData.email || '',
-            name: userData.name || '',
-            avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || '')}`,
-            bio: userData.bio || '',
-            location: userData.location || '',
-            trustScore: userData.trust_score || 0,
-            helpOffered: userData.help_offered || 0,
-            helpReceived: userData.help_received || 0,
-            volunteerHours: userData.volunteer_hours || 0,
-            createdAt: new Date(userData.created_at || Date.now()),
-            verifiedStatus: userData.verified_status || false,
-            emailVerified: true,
-            trustBadges: userData.trust_badges || [],
-            loginAttempts: 0,
-            lastLoginAttempt: null
-          };
-          
-          formattedConversations.push({
-            user: otherUser,
-            lastMessage: lastMessageData as Message,
-            unreadCount: count || 0,
-            conversationId: conversation.id // Store the conversation ID
-          });
-        } catch (err) {
-          console.error("Error processing conversation:", err);
+      for (const [userId, convData] of conversationMap.entries()) {
+        const profile = profilesData?.find(p => p.id === userId);
+        
+        if (!profile) {
+          console.warn("No profile found for user:", userId);
           continue;
         }
+        
+        const otherUser: User = {
+          id: profile.id,
+          username: profile.username || '',
+          email: profile.email || '',
+          name: profile.name || '',
+          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
+          bio: profile.bio || '',
+          location: profile.location || '',
+          trustScore: profile.trust_score || 0,
+          helpOffered: profile.help_offered || 0,
+          helpReceived: profile.help_received || 0,
+          volunteerHours: profile.volunteer_hours || 0,
+          createdAt: new Date(profile.created_at || Date.now()),
+          verifiedStatus: profile.verified_status || false,
+          emailVerified: true,
+          trustBadges: profile.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        };
+        
+        formattedConversations.push({
+          user: otherUser,
+          lastMessage: convData.lastMessage,
+          unreadCount: convData.unreadCount,
+          conversationId: convData.conversationId
+        });
       }
       
       // Sort by most recent message
