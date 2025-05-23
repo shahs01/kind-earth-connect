@@ -8,12 +8,14 @@ export interface Conversation {
   user: User;
   lastMessage: Message;
   unreadCount: number;
+  conversationId: string; // Added to track the conversation ID
 }
 
 export interface Message {
   id: string;
   sender_id: string;
-  receiver_id: string;
+  receiver_id?: string; // Made optional since we'll use conversation_id 
+  conversation_id?: string; // Added to support new schema
   content: string;
   read: boolean;
   created_at: string;
@@ -46,42 +48,31 @@ export function useConversations() {
         throw new Error("Not authenticated");
       }
       
-      // Get all users the current user has sent messages to or received messages from
-      const { data: sentToUsers, error: sentError } = await supabase
-        .from('messages')
-        .select('receiver_id')
-        .eq('sender_id', user.id)
+      // Get all conversations the current user is part of
+      const { data: conversationsData, error: conversationsError } = await supabase
+        .from('conversations')
+        .select('*')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
         
-      const { data: receivedFromUsers, error: receivedError } = await supabase
-        .from('messages')
-        .select('sender_id')
-        .eq('receiver_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (sentError || receivedError) {
-        console.error("Error fetching conversation users:", sentError || receivedError);
+      if (conversationsError) {
+        console.error("Error fetching conversations:", conversationsError);
         setConnectionError(true);
-        throw sentError || receivedError;
+        throw conversationsError;
       }
       
-      // Extract unique user IDs
-      const userIdSet = new Set<string>();
-      
-      sentToUsers?.forEach(msg => userIdSet.add(msg.receiver_id));
-      receivedFromUsers?.forEach(msg => userIdSet.add(msg.sender_id));
-      
-      const uniqueUserIds = Array.from(userIdSet);
-      
-      console.log("Found conversations with users:", uniqueUserIds);
+      console.log(`Found ${conversationsData?.length || 0} conversations`);
       setConnectionError(false);
       
       // Format conversations and fetch user details
       const formattedConversations: Conversation[] = [];
       
-      // Process each conversation with other user details
-      for (const otherUserId of uniqueUserIds) {
+      // Process each conversation
+      for (const conversation of (conversationsData || [])) {
         try {
+          // Determine the other user in the conversation
+          const otherUserId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
+          
           // Get other user profile
           const { data: userData, error: userError } = await supabase
             .from('profiles')
@@ -103,8 +94,8 @@ export function useConversations() {
           const { count, error: countError } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conversation.id)
             .eq('sender_id', otherUserId)
-            .eq('receiver_id', user.id)
             .eq('read', false);
           
           if (countError) {
@@ -116,7 +107,7 @@ export function useConversations() {
           const { data: lastMessageData, error: msgError } = await supabase
             .from('messages')
             .select('*')
-            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+            .eq('conversation_id', conversation.id)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -126,8 +117,9 @@ export function useConversations() {
             continue;
           }
           
+          // Skip conversation if no messages (empty conversation)
           if (!lastMessageData) {
-            console.error("No last message found for conversation with", otherUserId);
+            console.log("No messages found for conversation with", otherUserId);
             continue;
           }
           
@@ -155,7 +147,8 @@ export function useConversations() {
           formattedConversations.push({
             user: otherUser,
             lastMessage: lastMessageData as Message,
-            unreadCount: count || 0
+            unreadCount: count || 0,
+            conversationId: conversation.id // Store the conversation ID
           });
         } catch (err) {
           console.error("Error processing conversation:", err);
@@ -201,26 +194,11 @@ export function useConversations() {
             {
               event: 'INSERT',
               schema: 'public',
-              table: 'messages',
-              filter: `receiver_id=eq.${user.id}`
+              table: 'messages'
             },
             (payload) => {
               console.log("Received new message notification:", payload);
               // Refresh conversations to update last message and unread count
-              fetchConversations();
-            }
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'messages',
-              filter: `sender_id=eq.${user.id}`
-            },
-            (payload) => {
-              console.log("New message sent notification:", payload);
-              // Refresh conversations to update last message
               fetchConversations();
             }
           )

@@ -32,7 +32,7 @@ export function useConversationRealtime({
   }, []);
   
   // Set up realtime subscription to listen for new messages
-  const setupRealtimeSubscription = useCallback(() => {
+  const setupRealtimeSubscription = useCallback(async () => {
     if (!userId || !currentUserId) {
       console.error("Cannot set up realtime without userId and currentUserId");
       return null;
@@ -49,9 +49,31 @@ export function useConversationRealtime({
     console.log(`Setting up realtime subscription for conversation between ${currentUserId} and ${userId}`);
     
     try {
-      // Create a unique channel name based on user IDs - ensures unique channel
-      const userIds = [currentUserId, userId].sort();
-      const channelName = `private:messages:${userIds[0]}:${userIds[1]}`;
+      // First, find the conversation ID between these users
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${currentUserId})`)
+        .maybeSingle();
+        
+      if (convError) {
+        console.error("Error finding conversation for realtime subscription:", convError);
+        setConnectionError(true);
+        setIsConnecting(false);
+        return null;
+      }
+      
+      if (!conversation) {
+        console.log("No conversation found for realtime subscription");
+        setIsConnecting(false);
+        return null;
+      }
+      
+      const conversationId = conversation.id;
+      console.log(`Found conversation ID for realtime: ${conversationId}`);
+      
+      // Create a unique channel name based on conversation ID
+      const channelName = `private:conversation:${conversationId}`;
       
       console.log(`Creating channel: ${channelName}`);
       
@@ -61,7 +83,7 @@ export function useConversationRealtime({
       // Store in ref for cleanup
       channelRef.current = channel;
       
-      // Listen for messages from the other user to current user
+      // Listen for new messages in this conversation
       channel
         .on(
           'postgres_changes',
@@ -69,103 +91,48 @@ export function useConversationRealtime({
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `sender_id=eq.${userId}` 
+            filter: `conversation_id=eq.${conversationId}`
           },
           async (payload) => {
-            console.log("Realtime: New message received from other user", payload);
-            // Check if message is meant for current user
-            if (payload.new && payload.new.receiver_id === currentUserId) {
-              try {
-                // Fetch the sender profile
-                const { data: senderData } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', payload.new.sender_id)
-                  .maybeSingle();
-                
-                // Construct message with sender data
-                const message = {
-                  ...payload.new,
-                  sender: senderData ? {
-                    id: senderData.id,
-                    username: senderData.username || '',
-                    email: senderData.email || '',
-                    name: senderData.name || '',
-                    avatar: senderData.avatar || '',
-                    bio: senderData.bio || '',
-                    location: senderData.location || '',
-                    trustScore: senderData.trust_score || 0,
-                    helpOffered: senderData.help_offered || 0,
-                    helpReceived: senderData.help_received || 0,
-                    volunteerHours: senderData.volunteer_hours || 0,
-                    createdAt: new Date(),
-                    verifiedStatus: false,
-                    emailVerified: true,
-                    trustBadges: [],
-                    loginAttempts: 0,
-                    lastLoginAttempt: null
-                  } : undefined
-                };
-                
-                onMessageReceived(message as Message);
-              } catch (err) {
-                console.error("Error processing realtime message:", err);
-                // Still add message even without profile data
-                onMessageReceived(payload.new as Message);
-              }
-            }
-          }
-        )
-        // Also listen for messages from current user to the other user (for multi-device sync)
-        .on(
-          'postgres_changes',
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `sender_id=eq.${currentUserId}` 
-          },
-          async (payload) => {
-            console.log("Realtime: New message sent by current user", payload);
-            if (payload.new && payload.new.receiver_id === userId) {
-              try {
-                // Fetch the sender profile (current user)
-                const { data: senderData } = await supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('id', payload.new.sender_id)
-                  .maybeSingle();
-                
-                // Construct message with sender data
-                const message = {
-                  ...payload.new,
-                  sender: senderData ? {
-                    id: senderData.id,
-                    username: senderData.username || '',
-                    email: senderData.email || '',
-                    name: senderData.name || '',
-                    avatar: senderData.avatar || '',
-                    bio: senderData.bio || '',
-                    location: senderData.location || '',
-                    trustScore: senderData.trust_score || 0,
-                    helpOffered: senderData.help_offered || 0,
-                    helpReceived: senderData.help_received || 0,
-                    volunteerHours: senderData.volunteer_hours || 0,
-                    createdAt: new Date(),
-                    verifiedStatus: false,
-                    emailVerified: true,
-                    trustBadges: [],
-                    loginAttempts: 0,
-                    lastLoginAttempt: null
-                  } : undefined
-                };
-                
-                onMessageReceived(message as Message);
-              } catch (err) {
-                console.error("Error processing realtime message:", err);
-                // Still add message even without profile data
-                onMessageReceived(payload.new as Message);
-              }
+            console.log("Realtime: New message received for conversation", payload);
+            
+            try {
+              // Fetch the sender profile
+              const { data: senderData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', payload.new.sender_id)
+                .maybeSingle();
+              
+              // Construct message with sender data
+              const message = {
+                ...payload.new,
+                sender: senderData ? {
+                  id: senderData.id,
+                  username: senderData.username || '',
+                  email: senderData.email || '',
+                  name: senderData.name || '',
+                  avatar: senderData.avatar || '',
+                  bio: senderData.bio || '',
+                  location: senderData.location || '',
+                  trustScore: senderData.trust_score || 0,
+                  helpOffered: senderData.help_offered || 0,
+                  helpReceived: senderData.help_received || 0,
+                  volunteerHours: senderData.volunteer_hours || 0,
+                  createdAt: new Date(),
+                  verifiedStatus: false,
+                  emailVerified: true,
+                  trustBadges: [],
+                  loginAttempts: 0,
+                  lastLoginAttempt: null
+                } : undefined
+              };
+              
+              onMessageReceived(message as Message);
+            } catch (err) {
+              console.error("Error processing realtime message:", err);
+              // Still add message even without profile data
+              onMessageReceived(payload.new as Message);
             }
           }
         )

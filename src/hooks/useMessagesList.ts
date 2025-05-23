@@ -31,11 +31,51 @@ export function useMessagesList() {
       
       console.log(`useMessagesList: Current user: ${user.id}, Other user: ${userId}`);
       
-      // Get messages between current user and the selected user
+      // First check if a conversation exists between the two users or create one if needed
+      let conversationId;
+      
+      // Try to find existing conversation
+      const { data: existingConversation, error: convError } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (convError) {
+        console.error("useMessagesList: Error checking for existing conversation:", convError);
+        // Continue without throwing - we'll create a new conversation if needed
+      }
+      
+      if (existingConversation) {
+        conversationId = existingConversation.id;
+        console.log(`useMessagesList: Found existing conversation: ${conversationId}`);
+      } else {
+        console.log("useMessagesList: No existing conversation found, creating new one");
+        // Create a new conversation
+        const { data: newConversation, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            user1_id: user.id,
+            user2_id: userId
+          })
+          .select('id')
+          .single();
+        
+        if (createError) {
+          console.error("useMessagesList: Error creating new conversation:", createError);
+          setConnectionError(true);
+          throw createError;
+        }
+        
+        conversationId = newConversation.id;
+        console.log(`useMessagesList: Created new conversation: ${conversationId}`);
+      }
+      
+      // Now fetch messages for this conversation
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
+        .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       
       if (messagesError) {
@@ -44,12 +84,13 @@ export function useMessagesList() {
         throw messagesError;
       }
       
-      console.log(`useMessagesList: Retrieved ${messagesData?.length || 0} messages for conversation with user: ${userId}`);
+      console.log(`useMessagesList: Retrieved ${messagesData?.length || 0} messages for conversation`);
       
       // Get unique user IDs from messages
       const userIds = Array.from(new Set([
         ...(messagesData || []).map(msg => msg.sender_id),
-        ...(messagesData || []).map(msg => msg.receiver_id)
+        // Include both users to ensure we have their profiles
+        user.id, userId
       ]));
       
       // Fetch user profiles for all users involved in the conversation
@@ -74,7 +115,7 @@ export function useMessagesList() {
       // Process messages with profile data
       const processedMessages: Message[] = (messagesData || []).map(message => {
         const senderProfile = profilesMap.get(message.sender_id);
-        const receiverProfile = profilesMap.get(message.receiver_id);
+        const receiverProfile = profilesMap.get(message.sender_id === user.id ? userId : user.id);
         
         return {
           ...message,
