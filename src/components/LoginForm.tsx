@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +38,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Get the page they were trying to visit before being redirected
-  const from = location.state?.from?.pathname || "/profile";
+  const from = location.state?.from?.pathname || "/";
   
   // Initialize form
   const form = useForm<FormData>({
@@ -60,6 +59,7 @@ const LoginForm = () => {
       navigate(from, { replace: true });
     } catch (error) {
       // Error is already handled in the auth context
+    } finally {
       setIsLoading(false);
     }
   };

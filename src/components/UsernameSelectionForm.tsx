@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +20,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define username form schema with Zod
 const formSchema = z.object({
   username: z.string()
     .min(3, { message: "Username must be at least 3 characters long" })
@@ -60,7 +58,6 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
   // Watch username for availability check
   const username = form.watch("username");
   
-  // Check username availability with debounce
   useEffect(() => {
     if (!username || username.length < 3 || !/^[a-zA-Z0-9_-]+$/.test(username)) {
       setUsernameAvailable(null);

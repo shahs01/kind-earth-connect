@@ -31,20 +31,41 @@ export function useMessageSending({
     
     setIsSending(true);
     
+    // Create optimistic message for instant display
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: content.trim(),
+      sender_id: userId, // This will be updated when the real message comes back
+      receiver_id: userId,
+      created_at: new Date().toISOString(),
+      read: false
+    };
+    
+    // Add optimistic message immediately
+    setLocalMessages(prev => {
+      const updatedMessages = [...prev, optimisticMessage].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      return updatedMessages;
+    });
+    
     try {
       console.log(`useMessageSending: Sending message to ${userId}: ${content.substring(0, 20)}${content.length > 20 ? '...' : ''}`);
       
       const sentMessage = await sendMessage(userId, content.trim());
       
-      // Add sent message to local messages state immediately
+      // Replace optimistic message with real message
       if (sentMessage) {
-        console.log("useMessageSending: Message sent successfully, updating local state");
+        console.log("useMessageSending: Message sent successfully, replacing optimistic message");
         setLocalMessages(prev => {
-          // Check if message already exists to avoid duplicates
-          const exists = prev.some(msg => msg.id === sentMessage.id);
-          if (exists) return prev;
+          // Remove the optimistic message and add the real one
+          const withoutOptimistic = prev.filter(msg => msg.id !== optimisticMessage.id);
           
-          const updatedMessages = [...prev, sentMessage].sort((a, b) => 
+          // Check if real message already exists to avoid duplicates
+          const exists = withoutOptimistic.some(msg => msg.id === sentMessage.id);
+          if (exists) return withoutOptimistic;
+          
+          const updatedMessages = [...withoutOptimistic, sentMessage].sort((a, b) => 
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
           
@@ -55,6 +76,10 @@ export function useMessageSending({
       return sentMessage;
     } catch (error) {
       console.error("useMessageSending: Failed to send message", error);
+      
+      // Remove the optimistic message on error
+      setLocalMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",

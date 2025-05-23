@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpData, PasswordResetData, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 /**
  * Hook for handling authentication operations
@@ -10,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 export const useAuthOperations = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   /**
    * Logs a user in
@@ -32,7 +30,7 @@ export const useAuthOperations = () => {
         description: "Welcome back to Thryvance."
       });
       
-      navigate('/profile');
+      // Don't navigate here - let the auth context handle it
     } catch (error: any) {
       let message = "Failed to log in";
       if (error instanceof Error) {
@@ -114,14 +112,13 @@ export const useAuthOperations = () => {
       
       if (error) throw error;
       
-      // Since email verification is off, we can immediately log in and redirect
+      // Since email verification is off, we can immediately show success
       toast({
         title: "Account created!",
         description: "Your account has been created successfully."
       });
       
-      // Redirect to profile page since we're not requiring verification
-      navigate('/profile');
+      // Don't navigate here - let the auth context handle it
     } catch (error: any) {
       let message = "Failed to create account";
       if (error instanceof Error) {
