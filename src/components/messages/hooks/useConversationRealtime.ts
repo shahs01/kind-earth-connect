@@ -2,7 +2,7 @@
 import { useCallback, useRef } from "react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { Message } from "@/hooks/useMessages";
-import { useRealtime } from "@/hooks/useRealtime";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UseConversationRealtimeProps {
   userId?: string;
@@ -41,9 +41,6 @@ export function useConversationRealtime({
       const channelName = `private:messages:${userIds[0]}:${userIds[1]}`;
       
       console.log(`Setting up realtime subscription on channel: ${channelName}`);
-      
-      // Import supabase here to avoid circular dependency issues
-      const { supabase } = require('@/integrations/supabase/client');
       
       // Create the channel
       const channel = supabase.channel(channelName);
