@@ -18,9 +18,10 @@ interface ProfileDialogProps {
   user: User | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onViewFullProfile?: () => void;
 }
 
-const ProfileDialog = ({ user, open, onOpenChange }: ProfileDialogProps) => {
+const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile }: ProfileDialogProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,8 +39,11 @@ const ProfileDialog = ({ user, open, onOpenChange }: ProfileDialogProps) => {
   };
 
   const handleViewFullProfile = () => {
-    if (user) {
-      // Navigate to the full profile page
+    if (onViewFullProfile) {
+      // Use the provided handler which will close the parent dialog too
+      onViewFullProfile();
+    } else if (user) {
+      // Fallback to direct navigation
       navigate(`/profile/${user.id}`);
       onOpenChange(false);
     }

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -90,6 +91,15 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
         variant: "destructive"
       });
     }
+  };
+
+  const handleViewFullProfile = () => {
+    // Close the post detail dialog first
+    onOpenChange(false);
+    // Close the profile dialog if it's open
+    setProfileDialogOpen(false);
+    // Then navigate to the profile page
+    navigate(`/profile/${post.user_id}`);
   };
 
   const handleMessageClick = async () => {
@@ -357,6 +367,7 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
         user={profileUser}
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
+        onViewFullProfile={handleViewFullProfile}
       />
     </>
   );
