@@ -12,6 +12,13 @@ const MessagesContainer = () => {
   const { user } = useAuth();
   const { loading, conversations, fetchConversations } = useMessages();
 
+  // Fetch conversations when component mounts
+  React.useEffect(() => {
+    if (user) {
+      fetchConversations();
+    }
+  }, [user, fetchConversations]);
+
   if (!user) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -39,8 +46,9 @@ const MessagesContainer = () => {
                 conversations={conversations}
                 selectedUserId={userId}
                 onSelectConversation={(userId) => {
-                  // Navigation will be handled by the parent route
-                  window.location.href = `/messages/${userId}`;
+                  // Use React Router navigation instead of window.location
+                  window.history.pushState({}, '', `/messages/${userId}`);
+                  window.dispatchEvent(new PopStateEvent('popstate'));
                 }}
               />
             )}
