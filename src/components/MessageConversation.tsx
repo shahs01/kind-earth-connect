@@ -1,6 +1,7 @@
 
 import React, { useEffect, useCallback, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Loader2 } from "lucide-react"; // Added the missing import
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
 import { useToast } from "@/hooks/use-toast";
