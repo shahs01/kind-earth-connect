@@ -79,6 +79,15 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   const onSendMessage = useCallback(async (content: string) => {
     try {
       console.log("MessageConversation: Sending message:", content.substring(0, 20) + (content.length > 20 ? '...' : ''));
+      if (!userId) {
+        console.error("Cannot send message: missing userId");
+        toast({
+          title: "Error",
+          description: "Cannot send message: conversation not found",
+          variant: "destructive"
+        });
+        return;
+      }
       await handleSendMessage(content);
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -88,7 +97,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
         variant: "destructive"
       });
     }
-  }, [handleSendMessage, toast]);
+  }, [handleSendMessage, toast, userId]);
   
   // Handle delete conversation
   const onDeleteConversation = useCallback(async () => {
@@ -111,6 +120,14 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       });
     }
   }, [userId, handleDeleteConversation, navigate, toast]);
+  
+  // Log lifecycle for debugging
+  useEffect(() => {
+    console.log("MessageConversation mounted with userId:", userId);
+    return () => {
+      console.log("MessageConversation unmounting, userId was:", userId);
+    };
+  }, [userId]);
   
   // Redirect if user is not authenticated
   if (!user) {
@@ -141,6 +158,13 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       </div>
     );
   }
+  
+  console.log("MessageConversation rendering with:", {
+    messageCount: messages.length,
+    otherUser: otherUser?.name || "unknown",
+    loading,
+    sending
+  });
   
   return (
     <>

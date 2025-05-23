@@ -16,26 +16,25 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   
   // Focus input when component mounts or conversation changes
   useEffect(() => {
-    if (!loading && inputRef.current) {
-      const focusInput = () => {
+    // Immediate focus attempt
+    if (inputRef.current) {
+      inputRef.current.focus();
+      console.log("Immediate focus attempt on message input");
+    }
+    
+    // Backup focus with timeouts to ensure focus works after rendering
+    const timers = [100, 300, 500, 1000].map(delay => 
+      setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          console.log("Message input focused");
+          console.log(`Focus attempt after ${delay}ms on message input`);
         }
-      };
-      
-      // Immediate focus
-      setTimeout(focusInput, 100);
-      
-      // Backup focus attempts
-      const timer1 = setTimeout(focusInput, 500);
-      const timer2 = setTimeout(focusInput, 1000);
-      
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-      };
-    }
+      }, delay)
+    );
+    
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
   }, [loading]);
 
   const handleSendMessage = useCallback(() => {
@@ -55,6 +54,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
+          console.log("Re-focusing input after sending");
         }
       }, 100);
     }
@@ -66,6 +66,11 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       handleSendMessage();
     }
   };
+
+  // Log whenever props change to help with debugging
+  useEffect(() => {
+    console.log("MessageInput props updated:", { sending, loading });
+  }, [sending, loading]);
 
   return (
     <div className="p-4 border-t border-gray-200">
@@ -82,7 +87,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          disabled={sending || loading}
+          disabled={false} // Remove the disabled condition to ensure input is always enabled
           className="flex-1"
           autoComplete="off"
           aria-label="Message input"
@@ -90,7 +95,7 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
         />
         <Button 
           type="submit" 
-          disabled={sending || !newMessage.trim() || loading}
+          disabled={sending || !newMessage.trim()}
           data-testid="send-button"
         >
           {sending ? (

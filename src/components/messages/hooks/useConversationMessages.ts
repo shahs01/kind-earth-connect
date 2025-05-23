@@ -19,10 +19,9 @@ export function useConversationMessages(
     }
     
     setIsSending(true);
+    console.log(`Attempting to send message to user ${userId}: ${message.substring(0, 20)}${message.length > 20 ? '...' : ''}`);
     
     try {
-      console.log(`Sending message to user ${userId}: ${message.substring(0, 20)}${message.length > 20 ? '...' : ''}`);
-      
       // Clear any previous connection error state
       setConnectionError(false);
       
@@ -61,6 +60,7 @@ export function useConversationMessages(
       
       // If successful, refresh the conversation to ensure we have the latest messages
       if (sentMessage && userId) {
+        console.log("Message sent, refreshing conversation");
         setTimeout(() => {
           refreshConversation(userId).catch(err => 
             console.error("Error refreshing conversation after send:", err)
@@ -82,6 +82,7 @@ export function useConversationMessages(
       // Ensure isSending is always reset
       setTimeout(() => {
         setIsSending(false);
+        console.log("Reset sending state");
       }, 300);
     }
   }, [sendMessage, setConnectionError, toast]);
@@ -93,8 +94,8 @@ export function useConversationMessages(
       return [];
     }
     
+    console.log(`Refreshing messages for conversation with user: ${userId}`);
     try {
-      console.log(`Refreshing messages for conversation with user: ${userId}`);
       const messages = await fetchMessages(userId);
       console.log(`Fetched ${messages.length} messages for conversation`);
       return messages;
