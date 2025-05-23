@@ -14,19 +14,23 @@ const Messages = () => {
     // Update document title
     document.title = "Messages - Thryvance";
     
-    // Log page view
-    console.log("Messages page mounted");
+    // Log page view and location state
+    const state = location.state as { action?: string; receiverId?: string } | null;
+    console.log("Messages page mounted", {
+      locationState: state,
+      pathName: location.pathname
+    });
     
     return () => {
       console.log("Messages page unmounted");
     };
-  }, []);
+  }, [location]);
   
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow bg-gray-50 py-4 md:py-8">
-        <MessagesLayout key={location.pathname} />
+        <MessagesLayout key={location.key} />
       </main>
       <Footer />
     </div>

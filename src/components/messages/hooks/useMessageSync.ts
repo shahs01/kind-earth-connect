@@ -12,6 +12,14 @@ export function useMessageSync(
 ) {
   // Merge messages from server and local state
   useEffect(() => {
+    if (!userId) return;
+    
+    console.log("useMessageSync: Merging messages", {
+      serverMessages: messages.length,
+      localMessages: localMessages.length,
+      userId
+    });
+    
     if (messages.length > 0 || localMessages.length > 0) {
       // Create a combined message array with no duplicates
       const existingIds = new Set(messages.map(msg => msg.id));
@@ -21,6 +29,7 @@ export function useMessageSync(
       localMessages.forEach(localMsg => {
         if (!existingIds.has(localMsg.id)) {
           combinedMessages.push(localMsg);
+          console.log("useMessageSync: Adding local message to merged state", localMsg.id);
         }
       });
       
@@ -29,17 +38,27 @@ export function useMessageSync(
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
       
-      // Only update if there's a difference to avoid unnecessary rerenders
-      if (combinedMessages.length !== messages.length) {
+      // Check if there's a significant difference to avoid unnecessary rerenders
+      const hasChanges = 
+        combinedMessages.length !== messages.length || 
+        JSON.stringify(combinedMessages.map(m => m.id)) !== JSON.stringify(messages.map(m => m.id));
+      
+      if (hasChanges) {
+        console.log("useMessageSync: Updating messages state with merged messages");
         // Update server messages state with combined messages
         setMessages(combinedMessages);
       }
     }
-  }, [messages, localMessages, setMessages]);
+  }, [messages, localMessages, setMessages, userId]);
 
   // Clear messages when switching conversations
   useEffect(() => {
     if (previousUserIdRef.current !== userId) {
+      console.log("useMessageSync: Conversation change detected", {
+        from: previousUserIdRef.current,
+        to: userId
+      });
+      
       clearLocalMessages();
       setMessages([]);
       

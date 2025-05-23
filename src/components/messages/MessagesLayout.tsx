@@ -20,7 +20,7 @@ import MessagesDialogs from "@/components/messages/MessagesDialogs";
 import { Loader2 } from "lucide-react";
 
 const MessagesLayout = () => {
-  const { loading, conversations, fetchConversations, connectionError, setConnectionError } = useMessages();
+  const { loading, conversations, fetchConversations, connectionError, setConnectionError, loadConversation } = useMessages();
   const navigate = useNavigate();
   const params = useParams();
   const userId = params.userId;
@@ -33,6 +33,23 @@ const MessagesLayout = () => {
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const globalChannelRef = useRef<RealtimeChannel | null>(null);
+  
+  // Check if we're coming from a post with the direct message intent
+  useEffect(() => {
+    const state = location.state as { action?: string; receiverId?: string } | null;
+    
+    if (state?.action === 'newMessage' && state?.receiverId) {
+      console.log("Direct message intent detected for user:", state.receiverId);
+      
+      // Ensure we have a conversation loaded for this user
+      if (user) {
+        loadConversation(state.receiverId);
+      }
+      
+      // Clear the state to prevent reloading on subsequent navigations
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate, user, loadConversation]);
   
   // Force refresh conversations on component mount and when location changes
   useEffect(() => {
@@ -93,6 +110,14 @@ const MessagesLayout = () => {
       }
     };
   }, [user, fetchConversations, setupGlobalNotifications, setConnectionError]);
+  
+  // Load specific conversation if userId is provided
+  useEffect(() => {
+    if (userId && user) {
+      console.log("Loading specific conversation for:", userId);
+      loadConversation(userId);
+    }
+  }, [userId, user, loadConversation]);
   
   const handleSelectConversation = useCallback((userId: string) => {
     console.log("Selecting conversation with user:", userId);

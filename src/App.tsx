@@ -21,6 +21,7 @@ import AuthCallback from "./pages/AuthCallback";
 import OfferHelp from "./pages/OfferHelp";
 import RequestHelp from "./pages/RequestHelp";
 import NonprofitDirectory from "./pages/NonprofitDirectory";
+import ListNonprofit from "./pages/ListNonprofit";
 import Profile from "./pages/Profile";
 import Donate from "./pages/Donate";
 import Favorites from "./pages/Favorites";
@@ -75,6 +76,7 @@ function App() {
         <Route path="/offer-help" element={<OfferHelp />} />
         <Route path="/request-help" element={<RequestHelp />} />
         <Route path="/nonprofit-directory" element={<NonprofitDirectory />} />
+        <Route path="/list-nonprofit" element={<ListNonprofit />} />
         {/* Redirect from search-help to community page */}
         <Route path="/search-help" element={<Navigate to="/community" replace />} />
         <Route path="/donate" element={<Donate />} />
@@ -92,7 +94,8 @@ function App() {
           <Route path="/profile" element={<ProfileRedirect />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route path="/favorites" element={<Favorites />} />
-          <Route path="/messages/*" element={<Messages />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:userId" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/edit-post/:postId" element={<EditPosting />} />

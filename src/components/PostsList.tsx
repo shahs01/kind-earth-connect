@@ -11,6 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PostActionMenu from "@/components/PostActionMenu";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface Post {
   id: string;
@@ -30,6 +31,8 @@ interface Post {
     avatar: string;
     username?: string;
   }
+  isFavorited?: boolean;
+  favoriteId?: string | null;
 }
 
 interface PostsListProps {
@@ -54,9 +57,33 @@ const PostsList = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [favoritingPost, setFavoritingPost] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isFavorited, getFavoriteId, addFavorite, removeFavorite } = useFavorites();
+  
+  const checkFavoriteStatus = async (post: Post) => {
+    if (!user) return post;
+    
+    try {
+      const favorited = await isFavorited(post.id);
+      let favoriteId = null;
+      
+      if (favorited) {
+        favoriteId = await getFavoriteId(post.id);
+      }
+      
+      return {
+        ...post,
+        isFavorited: favorited,
+        favoriteId: favoriteId
+      };
+    } catch (err) {
+      console.error("Error checking favorite status:", err);
+      return post;
+    }
+  };
   
   useEffect(() => {
     const fetchPosts = async () => {
@@ -137,7 +164,9 @@ const PostsList = ({
                 }
               };
               
-              return typedPost;
+              // Check favorite status
+              const postWithFavoriteStatus = await checkFavoriteStatus(typedPost);
+              return postWithFavoriteStatus;
             } catch (err) {
               console.error("Error fetching user data for post:", err);
               // Still return a post with default user data if we can't get the real user
@@ -172,7 +201,7 @@ const PostsList = ({
     };
 
     fetchPosts();
-  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast]);
+  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, isFavorited, getFavoriteId]);
 
   const handleMessageClick = (postUserId: string) => {
     if (!isAuthenticated) {
@@ -184,8 +213,64 @@ const PostsList = ({
       return;
     }
 
-    // Navigate to messages with the post creator
-    navigate(`/messages/${postUserId}`);
+    // Navigate directly to the conversation with the post creator
+    navigate(`/messages/${postUserId}`, { 
+      state: { 
+        action: 'newMessage',
+        receiverId: postUserId
+      } 
+    });
+  };
+  
+  const handleToggleFavorite = async (post: Post) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required", 
+        description: "Please log in to favorite posts"
+      });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    
+    setFavoritingPost(post.id);
+    
+    try {
+      if (post.isFavorited && post.favoriteId) {
+        // Remove from favorites
+        await removeFavorite(post.favoriteId);
+        
+        // Update local state
+        setPosts(prevPosts => prevPosts.map(p => 
+          p.id === post.id ? { ...p, isFavorited: false, favoriteId: null } : p
+        ));
+        
+        toast({ title: "Removed from favorites" });
+      } else {
+        // Add to favorites
+        const success = await addFavorite(post.id);
+        
+        if (success) {
+          // Get the new favorite ID
+          const favoriteId = await getFavoriteId(post.id);
+          
+          // Update local state
+          setPosts(prevPosts => prevPosts.map(p => 
+            p.id === post.id ? { ...p, isFavorited: true, favoriteId } : p
+          ));
+          
+          toast({ title: "Added to favorites" });
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast({ 
+        title: "Error", 
+        description: "Failed to update favorites", 
+        variant: "destructive" 
+      });
+    } finally {
+      setFavoritingPost(null);
+    }
   };
 
   if (loading) {
@@ -327,10 +412,16 @@ const PostsList = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="flex items-center text-gray-500"
+                  className={`flex items-center ${post.isFavorited ? 'text-rose-500' : 'text-gray-500'}`}
+                  onClick={() => handleToggleFavorite(post)}
+                  disabled={favoritingPost === post.id}
                 >
-                  <Heart className="mr-1 h-4 w-4" />
-                  <span>Like</span>
+                  {favoritingPost === post.id ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Heart className={`mr-1 h-4 w-4 ${post.isFavorited ? 'fill-current' : ''}`} />
+                  )}
+                  <span>{post.isFavorited ? 'Favorited' : 'Favorite'}</span>
                 </Button>
                 <Button 
                   variant="ghost" 

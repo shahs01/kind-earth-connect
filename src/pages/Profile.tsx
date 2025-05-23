@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ProfileCard from "@/components/ProfileCard";
 import Footer from "@/components/Footer";
@@ -12,9 +12,10 @@ import AccountSettings from "@/components/AccountSettings";
 import Reviews from "@/components/Reviews";
 import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import UserPosts from "@/components/UserPosts";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
+import { Button } from "@/components/ui/button";
 
 const EmptyState = ({ message }: { message: string }) => (
   <div className="text-center py-12 px-6">
@@ -31,6 +32,15 @@ const Profile = () => {
   const [profileUser, setProfileUser] = useState(user);
   const [currentTab, setCurrentTab] = useState("activity");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Check if we have a defaultTab in the location state
+    const state = location.state as { defaultTab?: string } | null;
+    if (state?.defaultTab) {
+      setCurrentTab(state.defaultTab);
+    }
+  }, [location.state]);
   
   useEffect(() => {
     const loadProfileData = async () => {
@@ -128,6 +138,17 @@ const Profile = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
               <ProfileCard user={profileUser} isOwnProfile={isOwnProfile} />
+              
+              {!isOwnProfile && (
+                <div className="mt-4">
+                  <Button 
+                    onClick={() => setIsRateDialogOpen(true)} 
+                    className="w-full flex items-center justify-center gap-2 bg-thryvance-blue hover:bg-thryvance-blue-dark"
+                  >
+                    <Star className="h-4 w-4" /> Rate This User
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="md:col-span-2">

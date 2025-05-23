@@ -19,7 +19,8 @@ import {
   Settings, 
   Bell, 
   ChevronDown,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react";
 import NotificationIndicator from "../NotificationIndicator";
 
@@ -46,6 +47,10 @@ const UserMenu = () => {
 
   const goToNotifications = () => {
     navigate("/notifications");
+  };
+
+  const goToUserPosts = () => {
+    navigate(`/profile/${user?.id}`, { state: { defaultTab: 'posts' } });
   };
 
   if (!user) return null;
@@ -82,6 +87,10 @@ const UserMenu = () => {
           <DropdownMenuItem onClick={goToFavorites}>
             <Heart className="mr-2 h-4 w-4" />
             <span>Favorites</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={goToUserPosts}>
+            <FileText className="mr-2 h-4 w-4" />
+            <span>My Posts</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={goToNotifications}>
             <Bell className="mr-2 h-4 w-4" />
