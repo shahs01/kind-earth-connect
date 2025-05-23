@@ -4,39 +4,31 @@ import { useNavigate } from "react-router-dom";
 import { useMessages, Message } from "@/hooks/useMessages";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationProfile } from "./hooks/useConversationProfile";
-import { useRealtime } from "@/hooks/useRealtime";
-import { useConversationMessages } from "./hooks/useConversationMessages";
 import { useConversationReconnect } from "./hooks/useConversationReconnect";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { RealtimeChannel } from "@supabase/supabase-js";
-import { useMessageActions } from "@/hooks/useMessageActions";
+import { useLocalMessages } from "./hooks/useLocalMessages";
+import { useConversationRealtime } from "./hooks/useConversationRealtime";
+import { useMessageSending } from "./hooks/useMessageSending";
+import { useConversationActions } from "./hooks/useConversationActions";
 
 const useConversation = (userId?: string) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [connectionError, setConnectionError] = useState(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
   const previousUserIdRef = useRef<string | undefined>(undefined);
   const loadingRef = useRef<boolean>(false);
   const isMountedRef = useRef<boolean>(true);
-  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   
-  // Access message actions directly for delete functionality
-  const { deleteConversation: deleteConversationAction } = useMessageActions();
+  // Get local messages state management
+  const {
+    localMessages,
+    setLocalMessages,
+    handleMessageReceived,
+    clearLocalMessages
+  } = useLocalMessages();
   
-  // Log when conversation is accessed
-  useEffect(() => {
-    console.log("useConversation hook initialized with userId:", userId);
-    isMountedRef.current = true;
-    
-    return () => {
-      console.log("useConversation hook cleanup for userId:", userId);
-      isMountedRef.current = false;
-    };
-  }, [userId]);
-  
+  // Set up profile related functionality
   const {
     otherUser,
     profileLoading,
@@ -46,6 +38,7 @@ const useConversation = (userId?: string) => {
     handleReportUser
   } = useConversationProfile();
 
+  // Get message-related functionality from useMessages
   const { 
     loading: messagesLoading,
     messages,
@@ -56,38 +49,46 @@ const useConversation = (userId?: string) => {
     setMessages
   } = useMessages();
 
-  // When a new message is received via realtime, add it to the messages list
-  const handleMessageReceived = useCallback((newMessage: any) => {
-    console.log(`Message received in conversation with ${userId}:`, newMessage);
-    
-    if (!isMountedRef.current) {
-      console.log("Component unmounted, not updating state");
-      return;
-    }
-    
-    // Add message to state to display immediately
-    setLocalMessages(prev => {
-      // Check if message already exists to avoid duplicates
-      const exists = prev.some(msg => msg.id === newMessage.id);
-      if (exists) {
-        console.log("Message already in local state, not adding duplicate");
-        return prev;
-      }
-      
-      const updatedMessages = [...prev, newMessage].sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      
-      console.log(`Updated local messages state, now contains ${updatedMessages.length} messages`);
-      return updatedMessages;
-    });
-    
-    // Mark as read since we just received and displayed it
-    if (user?.id && newMessage.sender_id !== user.id) {
-      console.log("Marking received message as read");
-      markMessagesAsRead(newMessage.sender_id);
-    }
-  }, [userId, user?.id, markMessagesAsRead]);
+  // Set up realtime subscription
+  const {
+    channelRef,
+    setupRealtimeSubscription,
+    isConnecting
+  } = useConversationRealtime({
+    userId,
+    currentUserId: user?.id,
+    onMessageReceived: handleMessageReceived,
+    setConnectionError
+  });
+
+  // Set up reconnection handler
+  const { isReconnecting, handleReconnect } = useConversationReconnect(
+    fetchMessages,
+    setupRealtimeSubscription,
+    userId,
+    channelRef,
+    setConnectionError
+  );
+
+  // Set up message sending handler
+  const { handleSendMessage } = useMessageSending({
+    sendMessage,
+    setLocalMessages,
+    userId
+  });
+
+  // Clear messages for both local and server state
+  const clearAllMessages = useCallback(() => {
+    clearLocalMessages();
+    setMessages([]);
+  }, [clearLocalMessages, setMessages]);
+
+  // Set up conversation actions (delete, archive)
+  const { handleDeleteConversation } = useConversationActions({
+    userId,
+    currentUserId: user?.id,
+    clearMessages: clearAllMessages
+  });
 
   // Merge messages from server and local state
   useEffect(() => {
@@ -114,95 +115,6 @@ const useConversation = (userId?: string) => {
     }
   }, [messages, localMessages, setMessages]);
 
-  // Set up realtime subscription to listen for new messages
-  const { setupRealtimeSubscription, isConnecting } = useRealtime({
-    userId,
-    currentUserId: user?.id,
-    onMessageReceived: handleMessageReceived,
-    setConnectionError,
-    channelRef
-  });
-
-  // Set up reconnection handler
-  const { isReconnecting, handleReconnect } = useConversationReconnect(
-    fetchMessages,
-    setupRealtimeSubscription,
-    userId,
-    channelRef,
-    setConnectionError
-  );
-
-  // Set up message sending handler with improved error handling
-  const handleSendMessage = useCallback(async (content: string) => {
-    if (!userId) {
-      console.error("Cannot send message: missing userId");
-      return Promise.reject(new Error("No user ID provided"));
-    }
-    
-    console.log(`Handling send message to userId: ${userId}, content: ${content.substring(0, 20)}${content.length > 20 ? '...' : ''}`);
-    
-    try {
-      const sentMessage = await sendMessage(userId, content);
-      
-      // Add sent message to local messages state immediately
-      if (sentMessage) {
-        console.log("Message sent successfully, updating local state");
-        setLocalMessages(prev => {
-          // Check if message already exists to avoid duplicates
-          const exists = prev.some(msg => msg.id === sentMessage.id);
-          if (exists) return prev;
-          
-          const updatedMessages = [...prev, sentMessage].sort((a, b) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-          
-          return updatedMessages;
-        });
-      }
-      
-      return sentMessage;
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  }, [userId, sendMessage, toast]);
-
-  // Delete conversation handler
-  const handleDeleteConversation = useCallback(async () => {
-    if (!userId || !user?.id) {
-      console.error("Cannot delete conversation: missing userId or not logged in");
-      return Promise.reject(new Error("Missing user information"));
-    }
-    
-    try {
-      console.log("Deleting conversation with user:", userId);
-      await deleteConversationAction(userId);
-      
-      // Clean up state after deletion
-      setLocalMessages([]);
-      setMessages([]);
-      
-      return true;
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      throw error;
-    }
-  }, [userId, user?.id, deleteConversationAction, setMessages]);
-
-  // Clear messages when switching conversations
-  useEffect(() => {
-    if (previousUserIdRef.current !== userId) {
-      console.log("Conversation changed, clearing message state");
-      setLocalMessages([]);
-      setMessages([]);
-    }
-  }, [userId, setMessages]);
-
   // Clean up previous connection when switching conversations
   useEffect(() => {
     // If the userId has changed and there was a previous channel
@@ -213,6 +125,26 @@ const useConversation = (userId?: string) => {
     }
     
     previousUserIdRef.current = userId;
+  }, [userId]);
+
+  // Clear messages when switching conversations
+  useEffect(() => {
+    if (previousUserIdRef.current !== userId) {
+      console.log("Conversation changed, clearing message state");
+      clearLocalMessages();
+      setMessages([]);
+    }
+  }, [userId, setMessages, clearLocalMessages]);
+
+  // Component lifecycle tracking
+  useEffect(() => {
+    console.log("useConversation hook initialized with userId:", userId);
+    isMountedRef.current = true;
+    
+    return () => {
+      console.log("useConversation hook cleanup for userId:", userId);
+      isMountedRef.current = false;
+    };
   }, [userId]);
 
   // Fetch messages and set up realtime when the component mounts or userId changes
