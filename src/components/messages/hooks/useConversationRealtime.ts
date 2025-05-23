@@ -92,6 +92,7 @@ export function useConversationRealtime({
           console.log(`Realtime channel status: ${status}`);
           if (status === "SUBSCRIBED") {
             console.log(`Successfully subscribed to realtime updates on channel ${channelName}`);
+            setConnectionError(false);
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             console.error(`Error subscribing to realtime updates on channel ${channelName}:`, status);
             setConnectionError(true);

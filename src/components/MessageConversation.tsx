@@ -152,7 +152,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   // Show loading state when user profile is loading
   if (profileLoading && !otherUser) {
     return (
-      <div className="flex flex-col h-[70vh] items-center justify-center">
+      <div className="flex flex-col h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
         <p className="text-gray-500">Loading conversation...</p>
       </div>
@@ -168,7 +168,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   return (
     <>
-      <div className="flex flex-col h-[70vh]">
+      <div className="flex flex-col h-full">
         {/* Header */}
         <ConversationHeader
           otherUser={otherUser}

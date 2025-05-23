@@ -23,6 +23,7 @@ const MessagesLayout = () => {
   const navigate = useNavigate();
   const params = useParams();
   const userId = params.userId;
+  const location = useLocation();
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,6 +32,14 @@ const MessagesLayout = () => {
   const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const globalChannelRef = useRef<RealtimeChannel | null>(null);
+  
+  // Force refresh conversations on component mount and when location changes
+  useEffect(() => {
+    if (user) {
+      console.log("MessagesLayout: Location changed, fetching conversations");
+      fetchConversations();
+    }
+  }, [location.pathname, user, fetchConversations]);
   
   const handleNewMessage = () => {
     console.log("New message received, refreshing conversations");
@@ -65,10 +74,8 @@ const MessagesLayout = () => {
       }
     };
     
-    // Add a small timeout to prevent UI from freezing during navigation
-    const timer = setTimeout(() => {
-      loadConversations();
-    }, 100);
+    // Load conversations immediately
+    loadConversations();
     
     // Set up real-time subscription for new messages
     const globalChannel = setupGlobalNotifications();
@@ -77,7 +84,6 @@ const MessagesLayout = () => {
     }
     
     return () => {
-      clearTimeout(timer);
       console.log("Cleaning up Messages component");
       if (globalChannelRef.current) {
         console.log("Removing channel subscription on component unmount");
