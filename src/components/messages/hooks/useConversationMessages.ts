@@ -11,21 +11,18 @@ export function useConversationMessages(
 
   const handleSendMessage = useCallback(async (userId: string, message: string) => {
     if (!message.trim() || !userId) {
-      console.log("Cannot send empty message or missing userId");
       return null;
     }
     
-    console.log("Attempting to send message to userId:", userId, "content:", message.substring(0, 20) + (message.length > 20 ? '...' : ''));
     try {
       // Clear any previous connection error state
       setConnectionError(false);
       
-      // Send the message using the hook
+      // Send the message
       const sentMessage = await sendMessage(userId, message.trim());
-      console.log("Message sent successfully:", sentMessage?.id || 'No ID returned');
       
       return sentMessage;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send message:", error);
       setConnectionError(true);
       toast({

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -26,31 +27,21 @@ export function useRealtime({
     }
     
     try {
-      console.log("Setting up realtime for conversation between:", currentUserId, "and", userId);
       setIsConnecting(true);
       setConnectionError(false);
       
       // Clean up any existing channel first
       if (channelRef.current) {
-        console.log("Removing existing channel before creating a new one");
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
       
-      // Create channel name based on user IDs
-      // Sort IDs to ensure consistent channel names regardless of sender/receiver
+      // Create a unique channel name based on user IDs
       const userIds = [currentUserId, userId].sort();
-      const channelName = `private:${userIds[0]}:${userIds[1]}`;
-      
-      console.log("Creating channel:", channelName);
+      const channelName = `private:messages:${userIds[0]}:${userIds[1]}`;
       
       // Create the channel
-      const channel = supabase.channel(channelName, {
-        config: {
-          presence: {
-            key: currentUserId,
-          },
-        },
-      });
+      const channel = supabase.channel(channelName);
       
       // Subscribe to message inserts
       channel
@@ -60,25 +51,17 @@ export function useRealtime({
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `or(and(sender_id=eq.${currentUserId},receiver_id=eq.${userId}),and(sender_id=eq.${userId},receiver_id=eq.${currentUserId}))` 
+            filter: `or(and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId}))` 
           },
           (payload) => {
-            console.log("Realtime message received:", payload);
             onMessageReceived(payload.new);
           }
         )
         .subscribe((status) => {
-          console.log("Realtime subscription status:", status);
-          
           if (status === "SUBSCRIBED") {
-            console.log("Successfully subscribed to realtime updates for conversation");
             setIsConnecting(false);
-          } else if (status === "CHANNEL_ERROR") {
-            console.error("Error subscribing to realtime updates");
-            setConnectionError(true);
-            setIsConnecting(false);
-          } else if (status === "TIMED_OUT") {
-            console.error("Timed out subscribing to realtime updates");
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.error("Error subscribing to realtime updates:", status);
             setConnectionError(true);
             setIsConnecting(false);
           }
@@ -109,25 +92,17 @@ export function useGlobalMessageNotifications(
   
   const setupGlobalNotifications = useCallback(() => {
     if (!user?.id) {
-      console.log("No user ID available, not setting up global message notifications");
       return null;
     }
-
+    
     try {
-      console.log("Setting up global message notifications for user:", user.id);
-      
       // Clean up any existing channel first
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
       
-      const newChannel = supabase.channel(`private:user:${user.id}`, {
-        config: {
-          presence: {
-            key: user.id,
-          },
-        },
-      });
+      const newChannel = supabase.channel(`private:user:${user.id}`);
       
       newChannel
         .on(
@@ -136,16 +111,14 @@ export function useGlobalMessageNotifications(
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `receiver_id=eq.${user.id}` 
+            filter: `receiver_id.eq.${user.id}` 
           },
-          (payload) => {
-            console.log("New message notification received:", payload);
+          () => {
             onNewMessage();
           }
         )
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
-            console.log("Successfully subscribed to global message notifications");
             setChannel(newChannel);
           }
         });
@@ -157,7 +130,7 @@ export function useGlobalMessageNotifications(
     }
   }, [user?.id, onNewMessage]);
   
-  // Use an effect to safely update the ref when channel changes
+  // Update the ref when channel changes
   useEffect(() => {
     if (channel) {
       channelRef.current = channel;
@@ -168,8 +141,8 @@ export function useGlobalMessageNotifications(
   useEffect(() => {
     return () => {
       if (channelRef.current) {
-        console.log("Removing channel on useGlobalMessageNotifications unmount");
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, []);

@@ -17,13 +17,10 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
   // Focus input when component mounts or conversation changes
   useEffect(() => {
     if (!loading && inputRef.current) {
-      console.log("Attempting to focus input after loading state change");
-      
-      // Use a more reliable focus method with a slight delay
+      // Use a reliable focus method with a delay to ensure DOM is ready
       const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          console.log("Input focused after delay");
         }
       }, 300);
       
@@ -33,10 +30,10 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
 
   const handleSendMessage = useCallback(() => {
     if (newMessage.trim()) {
-      console.log("Sending message:", newMessage.trim());
+      // Store message locally before clearing input
+      const messageToSend = newMessage.trim();
       
       // Clear input first for better UX
-      const messageToSend = newMessage.trim();
       setNewMessage("");
       
       // Then send message
@@ -46,7 +43,6 @@ const MessageInput = ({ sending, loading, onSendMessage }: MessageInputProps) =>
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
-          console.log("Input refocused after sending");
         }
       }, 50);
     }

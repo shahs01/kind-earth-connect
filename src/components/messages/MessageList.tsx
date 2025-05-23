@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useLayoutEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Message } from "@/hooks/useMessages";
@@ -14,33 +14,29 @@ interface MessageListProps {
 
 const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
   
-  // Use layout effect to scroll to bottom immediately without visual jump
-  useLayoutEffect(() => {
+  // Scroll to bottom when messages change
+  useEffect(() => {
     if (messages.length > 0 && messagesEndRef.current) {
-      console.log(`MessageList updating: scrolling to bottom, messages count: ${messages.length}`);
-      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+      // Only auto-scroll if messages count increased (new message)
+      if (messages.length > prevMessagesLengthRef.current) {
+        setTimeout(() => {
+          if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+      }
+      prevMessagesLengthRef.current = messages.length;
     }
   }, [messages]);
 
-  // Additional effect to handle scrolling on messages length change
+  // Initial scroll to bottom when component mounts
   useEffect(() => {
-    if (messages.length !== prevMessagesLengthRef.current) {
-      console.log(`MessageList: messages count changed from ${prevMessagesLengthRef.current} to ${messages.length}`);
-      
-      // Use requestAnimationFrame for smooth scrolling after render
-      requestAnimationFrame(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
-          console.log("Scrolled to bottom in animation frame");
-        }
-      });
-      
-      prevMessagesLengthRef.current = messages.length;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
-  }, [messages.length]);
+  }, []);
 
   if (loading && messages.length === 0) {
     return (
@@ -70,11 +66,7 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
   });
 
   return (
-    <div 
-      className="space-y-4 pb-2" 
-      data-testid="messages-container"
-      ref={containerRef}
-    >
+    <div className="space-y-4 pb-2" data-testid="messages-container">
       {Object.entries(messagesByDate).map(([date, dateMessages]) => (
         <div key={date} className="space-y-4">
           <div className="flex justify-center">
