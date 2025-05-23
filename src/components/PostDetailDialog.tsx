@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useFavorites } from "@/hooks/useFavorites";
 import ProfileDialog from "@/components/ProfileDialog";
 
 interface Post {
@@ -45,9 +45,12 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
   const [messageLoading, setMessageLoading] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(post.isFavorited || false);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addFavorite, removeFavorite, getFavoriteId } = useFavorites();
 
   const handleUserNameClick = async () => {
     try {
@@ -94,12 +97,45 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
   };
 
   const handleViewFullProfile = () => {
-    // Close the post detail dialog first
     onOpenChange(false);
-    // Close the profile dialog if it's open
     setProfileDialogOpen(false);
-    // Then navigate to the profile page
     navigate(`/profile/${post.user_id}`);
+  };
+
+  const handleFavoriteClick = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add favorites",
+      });
+      navigate('/login');
+      return;
+    }
+
+    setFavoriteLoading(true);
+    
+    try {
+      if (isFavorited) {
+        // Remove from favorites
+        const favoriteId = await getFavoriteId(post.id);
+        if (favoriteId) {
+          const success = await removeFavorite(favoriteId);
+          if (success) {
+            setIsFavorited(false);
+          }
+        }
+      } else {
+        // Add to favorites
+        const success = await addFavorite(post.id);
+        if (success) {
+          setIsFavorited(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error handling favorite:", error);
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
   const handleMessageClick = async () => {
@@ -128,7 +164,6 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
         description: "Preparing your conversation...",
       });
       
-      // Check if user exists
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -144,17 +179,14 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
         return;
       }
       
-      // Generate a welcome message
       const welcomeMessage = `Hello! I'm interested in your post: "${post.title}"`;
       
-      // Check if a conversation already exists
       const { data: existingMessages } = await supabase
         .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${post.user_id}),and(sender_id.eq.${post.user_id},receiver_id.eq.${user?.id})`)
         .limit(1);
       
-      // If no conversation exists, create one
       if (!existingMessages || existingMessages.length === 0) {
         const { error: insertError } = await supabase
           .from('messages')
@@ -170,7 +202,6 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
         }
       }
       
-      // Close dialog and navigate
       onOpenChange(false);
       navigate(`/messages/${post.user_id}`, { 
         state: { 
@@ -241,7 +272,6 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
                 </div>
               )}
 
-              {/* Post type badge */}
               <div className="flex items-center gap-2">
                 <Badge 
                   variant={post.type === 'offer' ? 'outline' : 'default'}
@@ -260,7 +290,6 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
 
             {/* Right column - Details and Description */}
             <div className="space-y-6">
-              {/* Description */}
               <div>
                 <h3 className="font-medium mb-2">Description</h3>
                 <p className="text-gray-700 whitespace-pre-line">
@@ -268,7 +297,6 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
                 </p>
               </div>
 
-              {/* Post details */}
               <div className="space-y-3">
                 {post.location && (
                   <div className="flex items-center gap-2">
@@ -296,7 +324,6 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
 
               <Separator />
 
-              {/* User info and actions */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Avatar>
@@ -316,15 +343,20 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
                   </div>
                 </div>
 
-                {/* Action buttons */}
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="flex items-center gap-1"
+                    className={`flex items-center gap-1 ${isFavorited ? 'text-red-500' : ''}`}
+                    onClick={handleFavoriteClick}
+                    disabled={favoriteLoading}
                   >
-                    <Heart className="h-4 w-4" />
-                    Favorite
+                    {favoriteLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+                    )}
+                    {isFavorited ? 'Favorited' : 'Favorite'}
                   </Button>
                   
                   {user?.id !== post.user_id && (
