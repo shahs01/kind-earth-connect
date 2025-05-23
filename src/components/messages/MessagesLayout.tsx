@@ -250,15 +250,7 @@ const MessagesLayout = () => {
   
   return (
     <>
-      <MessagesContainer 
-        loading={showLoader || isConnecting}
-        conversations={conversations}
-        onSelectConversation={handleSelectConversation}
-        onOpenNewMessage={handleOpenNewMessage}
-        onViewProfile={handleViewProfile}
-        selectedUserId={userId}
-        initialLoadComplete={initialLoadComplete}
-      />
+      <MessagesContainer />
       
       <MessagesDialogs 
         isNewMessageOpen={isNewMessageOpen}

@@ -187,7 +187,7 @@ const MessageConversation = ({
                       
                       {isCurrentUser && !isSameSenderAsPrevious && (
                         <Avatar className="h-8 w-8 mb-1 flex-shrink-0">
-                          <AvatarImage src={user?.avatar_url || ''} alt={user?.name || 'You'} />
+                          <AvatarImage src={user?.avatar || ''} alt={user?.name || 'You'} />
                           <AvatarFallback>
                             {(user?.name || 'You').charAt(0) || <User className="h-4 w-4" />}
                           </AvatarFallback>
