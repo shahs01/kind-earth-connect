@@ -42,7 +42,17 @@ const MessageList = ({ messages, loading, currentUserId }: MessageListProps) => 
     return groups;
   }, [messages]);
 
-  console.log("MessageList render with messages:", messages.length, "loading:", loading);
+  console.log("MessageList render with messages:", {
+    count: messages.length, 
+    loading: loading,
+    messagesData: messages.map(m => ({
+      id: m.id,
+      sender: m.sender_id,
+      receiver: m.receiver_id,
+      content: m.content?.substring(0, 20),
+      date: m.created_at
+    }))
+  });
 
   if (loading && messages.length === 0) {
     return (

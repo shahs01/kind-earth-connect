@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import MessageList from "@/components/MessageList";
+import ConversationsList from "@/components/MessageList"; // Updated import name for clarity
 import { Conversation } from "@/hooks/useMessages";
 
 interface ConversationSidebarProps {
@@ -76,7 +76,7 @@ const ConversationSidebar = ({
           </Button>
         </div>
       ) : (
-        <MessageList 
+        <ConversationsList 
           conversations={conversations}
           onSelect={onSelect}
           selectedUserId={selectedUserId}

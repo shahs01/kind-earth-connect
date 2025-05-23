@@ -59,7 +59,7 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     // Hide initial loading after a timeout to prevent long blank screens
     const timer = setTimeout(() => {
       setInitialLoading(false);
-    }, 2000);
+    }, 1000); // Reduced to make the UI more responsive
     
     return () => clearTimeout(timer);
   }, [userId, setFetchError]);
@@ -121,7 +121,13 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     connectionError,
     fetchError,
     loading,
-    initialLoading
+    initialLoading,
+    messages: messages.map(m => ({
+      id: m.id?.substring(0, 8),
+      content: m.content?.substring(0, 20),
+      sender_id: m.sender_id?.substring(0, 8),
+      receiver_id: m.receiver_id?.substring(0, 8)
+    }))
   });
   
   // Initial loading state

@@ -34,6 +34,8 @@ export function useConversationRealtime({
       const userIds = [currentUserId, userId].sort();
       const channelName = `private:messages:${userIds[0]}:${userIds[1]}`;
       
+      console.log(`Creating channel: ${channelName}`);
+      
       // Create the channel
       const channel = supabase.channel(channelName);
       

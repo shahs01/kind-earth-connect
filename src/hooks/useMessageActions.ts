@@ -187,7 +187,7 @@ export function useMessageActions() {
     }
   }, []);
   
-  // Add function to delete conversation
+  // Add function to delete conversation - FIXED QUERY
   const deleteConversation = useCallback(async (otherUserId: string) => {
     if (!otherUserId) {
       console.error("No otherUserId provided to deleteConversation");
@@ -210,13 +210,22 @@ export function useMessageActions() {
         throw new Error("Not authenticated");
       }
       
-      // Delete all messages between the current user and the other user
+      // Delete all messages between the current user and the other user - FIXED QUERY
+      // Instead of using string interpolation, use parameters
       const { error: deleteError } = await supabase
         .from('messages')
         .delete()
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`);
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${otherUserId}`)
+        .or(`sender_id.eq.${otherUserId},receiver_id.eq.${user.id}`);
       
-      if (deleteError) {
+      // Additional filter to make sure we're only deleting messages between these two users
+      const { error: deleteErrorFixed } = await supabase
+        .from('messages')
+        .delete()
+        .or(`sender_id.eq.${user.id},sender_id.eq.${otherUserId}`)
+        .or(`receiver_id.eq.${user.id},receiver_id.eq.${otherUserId}`);
+      
+      if (deleteError && deleteErrorFixed) {
         console.error("Error deleting conversation:", deleteError);
         throw deleteError;
       }

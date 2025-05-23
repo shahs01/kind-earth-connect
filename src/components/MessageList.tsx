@@ -5,16 +5,18 @@ import { format } from "date-fns";
 import { Conversation } from "@/hooks/useMessages";
 import { UserIcon } from "lucide-react";
 
-interface MessageListProps {
+// This component is for displaying the list of conversations in the sidebar
+// Renamed from MessageList to ConversationsList for clarity
+interface ConversationsListProps {
   conversations: Conversation[];
   onSelect: (userId: string) => void;
   selectedUserId?: string;
   onViewProfile: (userId: string) => void;
 }
 
-const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }: MessageListProps) => {
+const ConversationsList = ({ conversations, onSelect, selectedUserId, onViewProfile }: ConversationsListProps) => {
   // Debug log
-  console.log("MessageList component (conversations sidebar):", {
+  console.log("ConversationsList component (sidebar):", {
     conversations: conversations.length,
     selectedUserId
   });
@@ -101,4 +103,4 @@ const MessageList = ({ conversations, onSelect, selectedUserId, onViewProfile }:
   );
 };
 
-export default MessageList;
+export default ConversationsList;

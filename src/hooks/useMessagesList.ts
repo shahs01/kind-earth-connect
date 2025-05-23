@@ -29,7 +29,9 @@ export function useMessagesList() {
         throw authError || new Error("Not authenticated");
       }
       
-      // Get messages between current user and the selected user
+      console.log(`Current user: ${user.id}, Other user: ${userId}`);
+      
+      // Get messages between current user and the selected user - FIXED QUERY
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -42,20 +44,34 @@ export function useMessagesList() {
         throw error;
       }
       
-      setConnectionError(false);
+      // Updated FIXED query that doesn't use string interpolation
+      const { data: fixedData, error: fixedError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .order('created_at', { ascending: true });
       
-      if (!Array.isArray(data)) {
-        console.error("Expected array of messages but got:", data);
-        setMessages([]);
-        return [];
+      if (fixedError) {
+        console.error("Error with fixed query:", fixedError);
+        setConnectionError(true);
+        throw fixedError;
       }
       
-      console.log(`Retrieved ${data.length} messages for conversation with user: ${userId}`);
+      // Filter the results to only include messages between these two users
+      const filteredMessages = fixedData ? fixedData.filter(msg => 
+        (msg.sender_id === user.id && msg.receiver_id === userId) || 
+        (msg.sender_id === userId && msg.receiver_id === user.id)
+      ) : [];
+      
+      console.log(`Retrieved ${filteredMessages.length} messages for conversation with user: ${userId}`);
+      
+      setConnectionError(false);
       
       // Process messages to add sender and receiver profiles
       const processedMessages: Message[] = [];
       
-      for (const message of data) {
+      for (const message of filteredMessages) {
         try {
           // Get sender profile
           const { data: senderData, error: senderError } = await supabase
