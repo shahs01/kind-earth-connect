@@ -35,6 +35,7 @@ const MessagesLayout = () => {
   const globalChannelRef = useRef<RealtimeChannel | null>(null);
   const [showLoader, setShowLoader] = useState(true);
   const timerRef = useRef<number | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Use a timer to prevent the loading spinner from showing indefinitely
   useEffect(() => {
@@ -49,9 +50,11 @@ const MessagesLayout = () => {
       // Set a maximum timeout for the loading state
       timerRef.current = window.setTimeout(() => {
         setShowLoader(false);
+        setInitialLoadComplete(true);
       }, 5000); // 5 seconds maximum loading time
     } else {
       setShowLoader(false);
+      setInitialLoadComplete(true);
       
       if (timerRef.current) {
         window.clearTimeout(timerRef.current);
@@ -76,22 +79,30 @@ const MessagesLayout = () => {
       
       // Ensure we have a conversation loaded for this user
       if (user) {
-        loadConversation(state.receiverId);
-        // Navigate to the messages/{userId} route if not already there
-        if (!params.userId) {
-          navigate(`/messages/${state.receiverId}`, { replace: true });
-        }
+        loadConversation(state.receiverId)
+          .then(() => {
+            console.log("Conversation loaded successfully");
+            // Navigate to the messages/{userId} route if not already there
+            if (!params.userId) {
+              navigate(`/messages/${state.receiverId}`, { replace: true });
+            }
+          })
+          .catch(err => {
+            console.error("Error loading conversation:", err);
+            toast({
+              title: "Error",
+              description: "Failed to load conversation. Please try refreshing the page.",
+              variant: "destructive"
+            });
+          });
       }
-      
-      // Clear the state to prevent reloading on subsequent navigations
-      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigate, user, loadConversation, params]);
+  }, [location, navigate, user, loadConversation, params, toast]);
   
-  const handleNewMessage = () => {
+  const handleNewMessage = useCallback(() => {
     console.log("New message received, refreshing conversations");
     fetchConversations();
-  };
+  }, [fetchConversations]);
 
   const { setupGlobalNotifications, isConnecting, channel } = useGlobalMessageNotifications(
     user, 
@@ -145,7 +156,13 @@ const MessagesLayout = () => {
   useEffect(() => {
     if (userId && user) {
       console.log("Loading specific conversation for:", userId);
-      loadConversation(userId);
+      loadConversation(userId)
+        .then(() => {
+          console.log("Specific conversation loaded for:", userId);
+        })
+        .catch(err => {
+          console.error("Error loading specific conversation:", err);
+        });
     }
   }, [userId, user, loadConversation]);
   
@@ -155,11 +172,11 @@ const MessagesLayout = () => {
     setIsNewMessageOpen(false);
   }, [navigate]);
   
-  const handleOpenNewMessage = () => {
+  const handleOpenNewMessage = useCallback(() => {
     setIsNewMessageOpen(true);
-  };
+  }, []);
   
-  const handleViewProfile = async (userId: string) => {
+  const handleViewProfile = useCallback(async (userId: string) => {
     try {
       console.log("Viewing profile of user:", userId);
       const profileData = await fetchUserProfile(userId);
@@ -173,9 +190,9 @@ const MessagesLayout = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [fetchUserProfile, toast]);
 
-  const handleReconnect = async () => {
+  const handleReconnect = useCallback(async () => {
     setIsReconnecting(true);
     try {
       // Remove existing channel
@@ -209,7 +226,7 @@ const MessagesLayout = () => {
     } finally {
       setIsReconnecting(false);
     }
-  };
+  }, [fetchConversations, setupGlobalNotifications, setConnectionError, toast]);
 
   // Show authentication error or connection error
   if (!user) {
@@ -229,6 +246,7 @@ const MessagesLayout = () => {
         onOpenNewMessage={handleOpenNewMessage}
         onViewProfile={handleViewProfile}
         selectedUserId={userId}
+        initialLoadComplete={initialLoadComplete}
       />
       
       <MessagesDialogs 

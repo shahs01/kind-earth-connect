@@ -56,6 +56,7 @@ const PostsList = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [favoritingPost, setFavoritingPost] = useState<string | null>(null);
+  const [messageLoading, setMessageLoading] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -230,7 +231,7 @@ const PostsList = ({
     fetchPosts();
   }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, checkFavoriteStatus]);
 
-  const handleMessageClick = async (postUserId: string) => {
+  const handleMessageClick = async (postUserId: string, userName?: string) => {
     if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
@@ -247,6 +248,9 @@ const PostsList = ({
       });
       return;
     }
+    
+    // Set loading state for this specific post
+    setMessageLoading(postUserId);
     
     try {
       // Show loading toast
@@ -273,17 +277,12 @@ const PostsList = ({
           description: "This user no longer exists",
           variant: "destructive"
         });
+        setMessageLoading(null);
         return;
       }
       
-      // Initialize conversation with an empty message to ensure the conversation exists
-      // This helps with navigation and prevents blank screens
-      const initialMessage = {
-        receiver_id: postUserId,
-        sender_id: user?.id,
-        content: "", // Empty string that won't be displayed
-        read: true
-      };
+      // Generate a welcome message
+      const welcomeMessage = `Hello! I'm interested in connecting about your post.`;
       
       // Check if a conversation already exists by looking for any messages
       const { data: existingMessages, error: checkError } = await supabase
@@ -291,30 +290,50 @@ const PostsList = ({
         .select('*')
         .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${postUserId}),and(sender_id.eq.${postUserId},receiver_id.eq.${user?.id})`)
         .limit(1);
-        
+      
       if (checkError) {
         console.error("Error checking for existing conversation:", checkError);
       }
       
-      // If no conversation exists, create one with a system message
+      // If no conversation exists, create one with a real welcome message
       if (!existingMessages || existingMessages.length === 0) {
-        const { error: insertError } = await supabase
+        // Create a real initial message
+        const { data: messageData, error: insertError } = await supabase
           .from('messages')
-          .insert([initialMessage]);
+          .insert([{
+            receiver_id: postUserId,
+            sender_id: user?.id,
+            content: welcomeMessage,
+            read: false
+          }])
+          .select();
           
         if (insertError) {
-          console.error("Error creating initial conversation:", insertError);
-          // Continue anyway as this is just a helper, not critical
+          console.error("Error creating initial message:", insertError);
+          throw new Error("Failed to start conversation");
         }
+        
+        console.log("Created new conversation with message:", messageData);
+      } else {
+        console.log("Existing conversation found:", existingMessages);
       }
+      
+      // Give Supabase a moment to process the new message
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Navigate to the conversation with the correct state
       navigate(`/messages/${postUserId}`, { 
         state: { 
           action: 'newMessage',
           receiverId: postUserId,
-          receiverName: profileData.name || "User"
-        } 
+          receiverName: profileData.name || userName || "User"
+        },
+        replace: true
+      });
+      
+      toast({
+        title: "Conversation ready",
+        description: `You can now chat with ${profileData.name || userName || "this user"}`,
       });
     } catch (err) {
       console.error("Error initializing conversation:", err);
@@ -323,6 +342,8 @@ const PostsList = ({
         description: "Failed to start conversation. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setMessageLoading(null);
     }
   };
   
@@ -425,6 +446,7 @@ const PostsList = ({
       {posts.map((post) => (
         <Card key={post.id} className="overflow-hidden shadow-md">
           <div className="p-5">
+            {/* Post header section */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <Avatar>
@@ -459,9 +481,11 @@ const PostsList = ({
               </div>
             </div>
 
+            {/* Post content */}
             <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
             <p className="text-gray-700 mb-4 whitespace-pre-line">{post.description}</p>
 
+            {/* Post photos */}
             {post.photos && post.photos.length > 0 && (
               <div className="mb-4">
                 <div className="flex overflow-x-auto space-x-2 py-2">
@@ -481,6 +505,7 @@ const PostsList = ({
               </div>
             )}
 
+            {/* Post categories */}
             <div className="flex flex-wrap gap-2 mt-4 mb-4">
               {post.category && (
                 <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
@@ -489,6 +514,7 @@ const PostsList = ({
               )}
             </div>
 
+            {/* Post metadata */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
               {post.location && (
                 <div className="flex items-center gap-1">
@@ -510,6 +536,7 @@ const PostsList = ({
               )}
             </div>
 
+            {/* Post actions */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <div className="flex gap-4">
                 <Button 
@@ -530,11 +557,15 @@ const PostsList = ({
                   variant="ghost" 
                   size="sm" 
                   className="flex items-center text-gray-500"
-                  onClick={() => user?.id !== post.user_id && handleMessageClick(post.user_id)}
-                  disabled={user?.id === post.user_id}
+                  onClick={() => user?.id !== post.user_id && handleMessageClick(post.user_id, post.user?.name)}
+                  disabled={user?.id === post.user_id || messageLoading === post.user_id}
                 >
-                  <MessageSquare className="mr-1 h-4 w-4" />
-                  <span>Message</span>
+                  {messageLoading === post.user_id ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <MessageSquare className="mr-1 h-4 w-4" />
+                  )}
+                  <span>{messageLoading === post.user_id ? 'Opening...' : 'Message'}</span>
                 </Button>
               </div>
               <Button 

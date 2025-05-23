@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ interface ConversationSidebarProps {
   onViewProfile: (userId: string) => void;
   onOpenNewMessage: () => void;
   searchTerm: string;
+  initialLoadComplete?: boolean;
 }
 
 const ConversationSidebar = ({ 
@@ -21,7 +23,8 @@ const ConversationSidebar = ({
   selectedUserId, 
   onViewProfile,
   onOpenNewMessage,
-  searchTerm
+  searchTerm,
+  initialLoadComplete = false
 }: ConversationSidebarProps) => {
   // Calculate if we have results to show
   const showNoResults = useMemo(() => {
@@ -30,14 +33,17 @@ const ConversationSidebar = ({
   
   // Calculate if we need to show empty state
   const showEmptyState = useMemo(() => {
-    return !loading && conversations.length === 0 && !searchTerm;
-  }, [loading, conversations.length, searchTerm]);
+    return !loading && conversations.length === 0 && !searchTerm && initialLoadComplete;
+  }, [loading, conversations.length, searchTerm, initialLoadComplete]);
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {loading && conversations.length === 0 ? (
+      {loading && !initialLoadComplete ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-6 w-6 animate-spin text-thryvance-green" />
+          <div className="text-center">
+            <Loader2 className="h-6 w-6 animate-spin text-thryvance-green mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Loading conversations...</p>
+          </div>
         </div>
       ) : showNoResults ? (
         <div className="p-6 text-center">

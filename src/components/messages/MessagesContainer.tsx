@@ -16,6 +16,7 @@ interface MessagesContainerProps {
   onOpenNewMessage: () => void;
   onViewProfile: (userId: string) => void;
   selectedUserId?: string;
+  initialLoadComplete?: boolean;
 }
 
 const MessagesContainer = ({
@@ -24,7 +25,8 @@ const MessagesContainer = ({
   onSelectConversation,
   onOpenNewMessage,
   onViewProfile,
-  selectedUserId
+  selectedUserId,
+  initialLoadComplete = false
 }: MessagesContainerProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredConversations, setFilteredConversations] = useState(conversations);
@@ -35,11 +37,16 @@ const MessagesContainer = ({
       setFilteredConversations(conversations);
     } else {
       const term = searchTerm.toLowerCase();
-      const filtered = conversations.filter(convo => 
-        (convo.user.name && convo.user.name.toLowerCase().includes(term)) || 
-        (convo.user.username && convo.user.username.toLowerCase().includes(term)) ||
-        convo.lastMessage.content.toLowerCase().includes(term)
-      );
+      const filtered = conversations.filter(convo => {
+        // Handle potential undefined values gracefully
+        const userName = convo.user?.name?.toLowerCase() || '';
+        const userUsername = convo.user?.username?.toLowerCase() || '';
+        const lastMessageContent = convo.lastMessage?.content?.toLowerCase() || '';
+        
+        return userName.includes(term) || 
+               userUsername.includes(term) || 
+               lastMessageContent.includes(term);
+      });
       setFilteredConversations(filtered);
     }
   }, [searchTerm, conversations]);
@@ -87,6 +94,7 @@ const MessagesContainer = ({
               onViewProfile={onViewProfile}
               onOpenNewMessage={onOpenNewMessage}
               searchTerm={searchTerm}
+              initialLoadComplete={initialLoadComplete}
             />
           </div>
           
@@ -95,7 +103,7 @@ const MessagesContainer = ({
             <Routes>
               <Route path=":userId" element={
                 <MessageConversation 
-                  key={selectedUserId} 
+                  key={`conversation-${selectedUserId}`} 
                   onViewProfile={onViewProfile} 
                 />
               } />
