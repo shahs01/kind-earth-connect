@@ -28,45 +28,45 @@ const ConversationsList = ({
     <div className="divide-y divide-gray-100">
       {conversations.map((conversation) => (
         <div
-          key={conversation.other_user.id}
-          onClick={() => onSelectConversation(conversation.other_user.id)}
+          key={conversation.user.id}
+          onClick={() => onSelectConversation(conversation.user.id)}
           className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-            selectedUserId === conversation.other_user.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+            selectedUserId === conversation.user.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
           }`}
         >
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
               <AvatarImage 
-                src={conversation.other_user.avatar || ''} 
-                alt={conversation.other_user.name || 'User'} 
+                src={conversation.user.avatar || ''} 
+                alt={conversation.user.name || 'User'} 
               />
               <AvatarFallback>
-                {conversation.other_user.name?.charAt(0) || 'U'}
+                {conversation.user.name?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {conversation.other_user.name || conversation.other_user.username || 'User'}
+                  {conversation.user.name || conversation.user.username || 'User'}
                 </p>
-                {conversation.last_message_at && (
+                {conversation.lastMessage && (
                   <p className="text-xs text-gray-500">
-                    {format(new Date(conversation.last_message_at), 'MMM d')}
+                    {format(new Date(conversation.lastMessage.created_at), 'MMM d')}
                   </p>
                 )}
               </div>
               
-              {conversation.last_message && (
+              {conversation.lastMessage && (
                 <p className="text-sm text-gray-500 truncate mt-1">
-                  {conversation.last_message.content}
+                  {conversation.lastMessage.content}
                 </p>
               )}
               
-              {conversation.unread_count > 0 && (
+              {conversation.unreadCount > 0 && (
                 <div className="mt-1">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {conversation.unread_count} new
+                    {conversation.unreadCount} new
                   </span>
                 </div>
               )}

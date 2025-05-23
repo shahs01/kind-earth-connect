@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Message, User } from "@/hooks/useMessages";
+import { Message } from "@/hooks/useMessages";
+import { User } from "@/types";
 
 const MessageConversation = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -46,14 +47,10 @@ const MessageConversation = () => {
       try {
         console.log("Loading conversation with user:", userId);
         
-        // Fetch messages
+        // Fetch messages without joins first
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
-          .select(`
-            *,
-            sender:profiles!sender_id(*),
-            receiver:profiles!receiver_id(*)
-          `)
+          .select('*')
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
 
@@ -67,20 +64,55 @@ const MessageConversation = () => {
           return;
         }
 
-        console.log("Loaded messages:", messagesData?.length || 0);
-        setMessages(messagesData || []);
-
-        // Fetch other user profile
-        const { data: profileData, error: profileError } = await supabase
+        // Fetch profiles separately
+        const userIds = [user.id, userId];
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userId)
-          .single();
+          .in('id', userIds);
 
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-        } else {
-          setOtherUser(profileData);
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+        }
+
+        // Create a map of profiles
+        const profilesMap = new Map();
+        (profilesData || []).forEach(profile => {
+          profilesMap.set(profile.id, {
+            id: profile.id,
+            username: profile.username || '',
+            email: profile.email || '',
+            name: profile.name || '',
+            avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
+            bio: profile.bio || '',
+            location: profile.location || '',
+            trustScore: profile.trust_score || 0,
+            helpOffered: profile.help_offered || 0,
+            helpReceived: profile.help_received || 0,
+            volunteerHours: profile.volunteer_hours || 0,
+            createdAt: new Date(profile.created_at || Date.now()),
+            verifiedStatus: profile.verified_status || false,
+            emailVerified: true,
+            trustBadges: profile.trust_badges || [],
+            loginAttempts: 0,
+            lastLoginAttempt: null
+          });
+        });
+
+        // Process messages with profile data
+        const processedMessages = (messagesData || []).map(message => ({
+          ...message,
+          sender: profilesMap.get(message.sender_id),
+          receiver: profilesMap.get(message.receiver_id)
+        }));
+
+        console.log("Loaded messages:", processedMessages.length);
+        setMessages(processedMessages);
+
+        // Set other user profile
+        const otherUserProfile = profilesMap.get(userId);
+        if (otherUserProfile) {
+          setOtherUser(otherUserProfile);
         }
 
         // Mark messages as read
@@ -129,28 +161,45 @@ const MessageConversation = () => {
         async (payload) => {
           console.log("New message received:", payload);
           
-          // Fetch the complete message with profile data
-          const { data: newMessage, error } = await supabase
-            .from('messages')
-            .select(`
-              *,
-              sender:profiles!sender_id(*),
-              receiver:profiles!receiver_id(*)
-            `)
-            .eq('id', payload.new.id)
+          // Fetch the sender profile
+          const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', payload.new.sender_id)
             .single();
 
-          if (!error && newMessage) {
-            setMessages(prev => {
-              // Check if message already exists
-              if (prev.some(msg => msg.id === newMessage.id)) {
-                return prev;
-              }
-              return [...prev, newMessage].sort((a, b) => 
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              );
-            });
-          }
+          const newMessage = {
+            ...payload.new,
+            sender: senderProfile ? {
+              id: senderProfile.id,
+              username: senderProfile.username || '',
+              email: senderProfile.email || '',
+              name: senderProfile.name || '',
+              avatar: senderProfile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderProfile.name || '')}`,
+              bio: senderProfile.bio || '',
+              location: senderProfile.location || '',
+              trustScore: senderProfile.trust_score || 0,
+              helpOffered: senderProfile.help_offered || 0,
+              helpReceived: senderProfile.help_received || 0,
+              volunteerHours: senderProfile.volunteer_hours || 0,
+              createdAt: new Date(senderProfile.created_at || Date.now()),
+              verifiedStatus: senderProfile.verified_status || false,
+              emailVerified: true,
+              trustBadges: senderProfile.trust_badges || [],
+              loginAttempts: 0,
+              lastLoginAttempt: null
+            } : undefined
+          };
+
+          setMessages(prev => {
+            // Check if message already exists
+            if (prev.some(msg => msg.id === newMessage.id)) {
+              return prev;
+            }
+            return [...prev, newMessage].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+          });
         }
       )
       .subscribe((status) => {
@@ -181,11 +230,7 @@ const MessageConversation = () => {
           content: messageContent,
           read: false
         })
-        .select(`
-          *,
-          sender:profiles!sender_id(*),
-          receiver:profiles!receiver_id(*)
-        `)
+        .select()
         .single();
 
       if (error) {
@@ -201,8 +246,6 @@ const MessageConversation = () => {
       }
 
       console.log("Message sent successfully:", data);
-      
-      // The real-time subscription will handle adding the message to the UI
       
     } catch (error) {
       console.error("Error sending message:", error);
