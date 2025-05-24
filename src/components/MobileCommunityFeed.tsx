@@ -21,6 +21,7 @@ interface Post {
   description: string | null;
   location: string | null;
   category: string | null;
+  photos?: string[] | null;
   user: {
     name: string;
     avatar: string;
@@ -98,6 +99,7 @@ const MobileCommunityFeed = ({
               description: post.description,
               location: post.location,
               category: post.category,
+              photos: post.photos,
               user: {
                 name: profileData?.name || profileData?.username || "Unknown User",
                 avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
@@ -225,7 +227,31 @@ const MobileCommunityFeed = ({
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <h4 className="text-sm font-medium mb-1 line-clamp-2">{post.title}</h4>
-                <p className="text-xs text-gray-700 mb-2 line-clamp-3">{post.description}</p>
+                <p className="text-xs text-gray-700 mb-2 line-clamp-2">{post.description}</p>
+                
+                {/* Display photos if available */}
+                {post.photos && post.photos.length > 0 && (
+                  <div className="mb-2">
+                    <div className="grid grid-cols-2 gap-1">
+                      {post.photos.slice(0, 4).map((photo, index) => (
+                        <div key={index} className="aspect-square rounded overflow-hidden bg-gray-100">
+                          <img 
+                            src={photo} 
+                            alt={`Photo ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Error';
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    {post.photos.length > 4 && (
+                      <p className="text-xs text-gray-500 mt-1">+{post.photos.length - 4} more photos</p>
+                    )}
+                  </div>
+                )}
+                
                 {post.location && (
                   <div className="text-xs text-gray-500 mb-2 truncate">📍 {post.location}</div>
                 )}
