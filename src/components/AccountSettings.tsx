@@ -282,7 +282,6 @@ const AccountSettings = () => {
                     <div className="relative">
                       <FormControl>
                         <Input 
-                          placeholder="Your username" 
                           {...field} 
                           disabled={isLoading}
                           className={
