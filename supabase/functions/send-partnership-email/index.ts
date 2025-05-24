@@ -35,33 +35,59 @@ const handler = async (req: Request): Promise<Response> => {
       message,
     }: PartnershipRequest = await req.json();
 
+    console.log("Sending partnership email to thryvance.ca@gmail.com");
+
     const emailResponse = await resend.emails.send({
-      from: "Thryvance Partnership <onboarding@resend.dev>",
+      from: "Thryvance Partnership <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
+      reply_to: email,
       subject: `New Partnership Request from ${organizationName}`,
       html: `
-        <h1>New Partnership Request</h1>
-        <h2>Organization Details</h2>
-        <p><strong>Organization Name:</strong> ${organizationName}</p>
-        <p><strong>Organization Type:</strong> ${organizationType}</p>
-        
-        <h2>Contact Information</h2>
-        <p><strong>Contact Name:</strong> ${contactName}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
-        
-        <h2>Partnership Details</h2>
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-        
-        <hr>
-        <p><em>This email was sent from the Thryvance partnership request form.</em></p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+            New Partnership Request
+          </h1>
+          
+          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e40af; margin-top: 0;">Organization Details</h2>
+            <p><strong>Organization Name:</strong> ${organizationName}</p>
+            <p><strong>Organization Type:</strong> ${organizationType}</p>
+          </div>
+          
+          <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e40af; margin-top: 0;">Contact Information</h2>
+            <p><strong>Contact Name:</strong> ${contactName}</p>
+            <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+            <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+          </div>
+          
+          <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e40af; margin-top: 0;">Partnership Details</h2>
+            <p><strong>How they want to partner:</strong></p>
+            <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #10b981;">
+              ${message.replace(/\n/g, '<br>')}
+            </div>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="color: #64748b; font-size: 14px; margin: 0;">
+              This email was sent from the Thryvance partnership request form at ${new Date().toLocaleString()}
+            </p>
+            <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">
+              Reply directly to this email to contact ${contactName}
+            </p>
+          </div>
+        </div>
       `,
     });
 
     console.log("Partnership email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Partnership request sent successfully",
+      emailId: emailResponse.data?.id 
+    }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -71,7 +97,10 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-partnership-email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false 
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
