@@ -147,17 +147,10 @@ const PostsGrid = ({
         setLoading(true);
         console.log("Fetching posts with filters:", { searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit });
 
-        // Optimized query - fetch posts with profiles in a single query using joins
+        // Fetch posts first
         let query = supabase
           .from('posts')
-          .select(`
-            *,
-            profiles!posts_user_id_fkey (
-              name,
-              avatar,
-              username
-            )
-          `)
+          .select('*')
           .eq('status', 'active');
 
         // Apply filters
@@ -202,24 +195,37 @@ const PostsGrid = ({
         console.log("Posts fetched:", postsData?.length);
         
         if (postsData && postsData.length > 0) {
-          const formattedPosts: PostsGridPost[] = postsData.map((post) => ({
-            ...post,
-            type: post.type as "offer" | "request",
-            user: {
-              name: post.profiles?.name || "Unknown User",
-              avatar: post.profiles?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.profiles?.name || 'User')}`,
-              username: post.profiles?.username
-            }
-          }));
+          // Fetch profiles separately for each post
+          const postsWithProfiles = await Promise.all(
+            postsData.map(async (post) => {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('name, avatar, username')
+                .eq('id', post.user_id)
+                .single();
+
+              const formattedPost: PostsGridPost = {
+                ...post,
+                type: post.type as "offer" | "request",
+                user: {
+                  name: profileData?.name || "Unknown User",
+                  avatar: profileData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.name || 'User')}`,
+                  username: profileData?.username
+                }
+              };
+
+              return formattedPost;
+            })
+          );
           
           // Check favorite status for authenticated users
           if (user) {
             const postsWithFavorites = await Promise.all(
-              formattedPosts.map(post => checkFavoriteStatus(post, user.id))
+              postsWithProfiles.map(post => checkFavoriteStatus(post, user.id))
             );
             setPosts(postsWithFavorites);
           } else {
-            setPosts(formattedPosts);
+            setPosts(postsWithProfiles);
           }
         } else {
           setPosts([]);
