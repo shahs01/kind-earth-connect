@@ -1,23 +1,40 @@
 
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
-import SignUpForm from "@/components/SignUpForm";
+import BasicInfoForm from "@/components/BasicInfoForm";
+import UsernameSelectionForm from "@/components/UsernameSelectionForm";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const SignUp = () => {
+  const [currentStep, setCurrentStep] = useState<'basic' | 'username'>('basic');
+  const [basicUserData, setBasicUserData] = useState<{
+    email: string;
+    password: string;
+    name: string;
+    phone: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const handleBasicInfoComplete = (data: {
+    email: string;
+    password: string;
+    name: string;
+    phone: string;
+  }) => {
+    setBasicUserData(data);
+    setCurrentStep('username');
+  };
+
   const handleSignUp = async (data: {
     email: string;
     password: string;
     name: string;
-    location: string;
     phone: string;
     username: string;
   }) => {
@@ -53,7 +70,17 @@ const SignUp = () => {
             <strong>Note:</strong> Email verification is currently disabled. You'll be able to log in immediately after signing up.
           </div>
           
-          <SignUpForm onFirstStepComplete={handleSignUp} />
+          {currentStep === 'basic' && (
+            <BasicInfoForm onNextStep={handleBasicInfoComplete} />
+          )}
+          
+          {currentStep === 'username' && (
+            <UsernameSelectionForm 
+              userData={basicUserData} 
+              onComplete={handleSignUp}
+              isLoading={isLoading}
+            />
+          )}
         </div>
       </main>
       <Footer />

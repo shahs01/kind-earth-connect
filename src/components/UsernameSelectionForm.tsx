@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -18,7 +17,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Loader2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
@@ -35,20 +33,23 @@ interface UsernameSelectionFormProps {
     email: string;
     password: string;
     name: string;
-    location: string;
     phone: string;
   } | null;
+  onComplete: (data: {
+    email: string;
+    password: string;
+    name: string;
+    phone: string;
+    username: string;
+  }) => void;
+  isLoading: boolean;
 }
 
-const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
-  const { signUp } = useAuth();
-  const navigate = useNavigate();
+const UsernameSelectionForm = ({ userData, onComplete, isLoading }: UsernameSelectionFormProps) => {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameChecking, setUsernameChecking] = useState(false);
   
-  // Initialize form
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -57,7 +58,6 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
     mode: "onChange",
   });
   
-  // Watch username for availability check
   const username = form.watch("username");
   
   useEffect(() => {
@@ -103,36 +103,19 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
       return;
     }
     
-    setIsLoading(true);
-    
-    try {
-      const signUpData = {
-        username: data.username,
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        location: userData.location,
-        phone: userData.phone
-      };
-      
-      await signUp(signUpData);
-      
+    if (!usernameAvailable) {
       toast({
-        title: "Account created!",
-        description: "Your account has been created successfully."
-      });
-      
-      navigate('/');
-    } catch (error) {
-      console.error("Signup error:", error);
-      toast({
-        title: "Signup failed",
-        description: error instanceof Error ? error.message : "An error occurred during signup",
+        title: "Username not available",
+        description: "Please choose a different username.",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+    
+    onComplete({
+      ...userData,
+      username: data.username
+    });
   };
   
   return (
@@ -166,7 +149,6 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
                         />
                       </FormControl>
                       
-                      {/* Username availability indicator */}
                       {usernameChecking && (
                         <div className="absolute right-3 top-2.5">
                           <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
