@@ -47,6 +47,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, MapPin, Shield, Lock, AlertCircle, Loader2, Check, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useAuthProfile } from "@/hooks/useAuthProfile";
 
 // Form validation schema for profile
 const profileFormSchema = z.object({
@@ -84,6 +85,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 const AccountSettings = () => {
   const { user, updateProfile, changePassword, deleteAccount, validateField } = useAuth();
+  const { updateProfile: updateAuthProfile } = useAuthProfile();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -173,21 +175,22 @@ const AccountSettings = () => {
         bio: data.bio || "",
         location: data.location,
         notificationPreferences: {
-          emailUpdates: true, // Adding the missing property
+          emailUpdates: true,
           messageNotifications: data.notifyMessages,
           helpRequestAlerts: data.notifyHelp,
           marketingEmails: data.notifyUpdates,
         },
       };
       
-      await updateProfile(updatedUserData);
+      // Use the auth profile hook to update the profile
+      await updateAuthProfile(user, updatedUserData);
       
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
     } catch (error) {
-      // Error is handled in auth context
+      // Error is handled in auth profile hook
     } finally {
       setIsLoading(false);
     }

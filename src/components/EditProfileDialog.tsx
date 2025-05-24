@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User as UserType } from "@/types";
 import AvatarUpload from "@/components/AvatarUpload";
 import { useAuth } from "@/context/AuthContext";
+import { useAuthProfile } from "@/hooks/useAuthProfile";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -25,7 +26,8 @@ interface EditProfileDialogProps {
 }
 
 const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
+  const { updateProfile } = useAuthProfile();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -46,12 +48,7 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
 
   // Handle avatar update
   const handleAvatarUpdate = (avatarUrl: string) => {
-    if (user) {
-      updateProfile({
-        ...user,
-        avatar: avatarUrl
-      });
-    }
+    // Avatar update is handled by the AvatarUpload component itself
   };
 
   // Handle form submission
@@ -62,10 +59,7 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
     try {
       if (!user) return;
       
-      await updateProfile({
-        ...user,
-        ...formData
-      });
+      await updateProfile(user, formData);
       
       toast({
         title: "Profile updated",
