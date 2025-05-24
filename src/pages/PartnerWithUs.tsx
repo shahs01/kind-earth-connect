@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 const PartnerWithUs = () => {
   const { toast } = useToast();
@@ -36,12 +36,19 @@ const PartnerWithUs = () => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-partnership-email', {
+        body: formData
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Partnership request sent!",
         description: "We'll review your information and contact you soon.",
@@ -57,8 +64,16 @@ const PartnerWithUs = () => {
         message: ""
       });
       
+    } catch (error: any) {
+      console.error("Error sending partnership request:", error);
+      toast({
+        title: "Error sending request",
+        description: "Please try again or contact us directly.",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
   
   return (
@@ -111,6 +126,7 @@ const PartnerWithUs = () => {
                     <Select
                       value={formData.organizationType}
                       onValueChange={handleSelectChange}
+                      required
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select organization type" />
@@ -213,7 +229,7 @@ const PartnerWithUs = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-thryvance-green mb-2">Share Resources</h3>
                   <p className="text-gray-600">
-                    Pool resources, knowledge, and expertise to maximize your organization's impact in the community.
+                    Pool resources, knowledge, expertise to maximize your organization's impact in the community.
                   </p>
                 </div>
               </div>

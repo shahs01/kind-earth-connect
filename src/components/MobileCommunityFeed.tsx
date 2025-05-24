@@ -263,13 +263,13 @@ const MobileCommunityFeed = ({
                   {/* Display only the first photo if available */}
                   {post.photos && post.photos.length > 0 && (
                     <div className="mb-2">
-                      <div className="aspect-video rounded overflow-hidden bg-gray-100">
+                      <div className="aspect-[4/3] rounded overflow-hidden bg-gray-100">
                         <img 
                           src={post.photos[0]} 
                           alt="Post preview"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x100?text=Error';
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x150?text=Error';
                           }}
                         />
                       </div>
