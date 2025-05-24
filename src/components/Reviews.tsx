@@ -10,6 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StarIcon } from "lucide-react";
 import { User, Review } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const StarRating = ({ rating }: { rating: number }) => {
   return (
@@ -28,29 +29,37 @@ const StarRating = ({ rating }: { rating: number }) => {
 
 interface ReviewsProps {
   user: User;
+  refreshTrigger?: number;
 }
 
-const Reviews = ({ user }: ReviewsProps) => {
+const Reviews = ({ user, refreshTrigger }: ReviewsProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchReviews = () => {
-      // In a real app, this would be an API call
-      // For now, we'll check localStorage
+    const fetchReviews = async () => {
+      setIsLoading(true);
       try {
-        const reviewsStr = localStorage.getItem('reviews');
-        const allReviews = reviewsStr ? JSON.parse(reviewsStr) : [];
-        
-        // Filter reviews for this user and parse dates
-        const userReviews = allReviews
-          .filter((review: any) => review.toUserId === user.id)
-          .map((review: any) => ({
-            ...review,
-            createdAt: new Date(review.createdAt)
-          }));
-        
-        setReviews(userReviews);
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('*')
+          .eq('to_user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const mappedReviews: Review[] = (data || []).map(review => ({
+          id: review.id,
+          fromUserId: review.from_user_id,
+          fromUserName: review.from_user_name,
+          fromUserAvatar: review.from_user_avatar || 'https://ui-avatars.com/api/?name=User',
+          toUserId: review.to_user_id,
+          rating: review.rating,
+          text: review.text || '',
+          createdAt: new Date(review.created_at || Date.now())
+        }));
+
+        setReviews(mappedReviews);
       } catch (error) {
         console.error("Error loading reviews:", error);
         setReviews([]);
@@ -60,7 +69,7 @@ const Reviews = ({ user }: ReviewsProps) => {
     };
 
     fetchReviews();
-  }, [user]);
+  }, [user.id, refreshTrigger]);
 
   return (
     <Card>
@@ -100,7 +109,7 @@ const Reviews = ({ user }: ReviewsProps) => {
                     <div className="mt-1">
                       <StarRating rating={review.rating} />
                     </div>
-                    <p className="mt-2 text-gray-600">{review.text}</p>
+                    {review.text && <p className="mt-2 text-gray-600">{review.text}</p>}
                   </div>
                 </div>
               </div>

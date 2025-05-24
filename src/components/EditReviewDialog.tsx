@@ -1,28 +1,31 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { User, RateUserFormData } from "@/types";
-import { useAuth } from "@/context/AuthContext";
+import { Review } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface RateUserDialogProps {
-  user: User;
+interface EditReviewDialogProps {
+  review: Review;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onReviewSubmitted?: () => void;
+  onReviewUpdated: () => void;
 }
 
-const RateUserDialog = ({ user, open, onOpenChange, onReviewSubmitted }: RateUserDialogProps) => {
-  const [rating, setRating] = useState(0);
+const EditReviewDialog = ({ review, open, onOpenChange, onReviewUpdated }: EditReviewDialogProps) => {
+  const [rating, setRating] = useState(review.rating);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [review, setReview] = useState("");
+  const [reviewText, setReviewText] = useState(review.text);
   const [isLoading, setIsLoading] = useState(false);
-  const { user: currentUser } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setRating(review.rating);
+    setReviewText(review.text);
+  }, [review]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,51 +37,31 @@ const RateUserDialog = ({ user, open, onOpenChange, onReviewSubmitted }: RateUse
       });
       return;
     }
-
-    if (!currentUser) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to submit a review",
-        variant: "destructive"
-      });
-      return;
-    }
     
     setIsLoading(true);
     
     try {
       const { error } = await supabase
         .from('reviews')
-        .insert({
-          from_user_id: currentUser.id,
-          from_user_name: currentUser.name,
-          from_user_avatar: currentUser.avatar,
-          to_user_id: user.id,
+        .update({
           rating: rating,
-          text: review || null
-        });
+          text: reviewText || null
+        })
+        .eq('id', review.id);
 
       if (error) throw error;
       
       toast({
-        title: "Review submitted",
-        description: `Thank you for rating ${user.name}!`
+        title: "Review updated",
+        description: "Your review has been updated successfully!"
       });
       
-      // Reset form and close dialog
-      setRating(0);
-      setReview("");
-      onOpenChange(false);
-      
-      // Notify parent component that review was submitted
-      if (onReviewSubmitted) {
-        onReviewSubmitted();
-      }
+      onReviewUpdated();
     } catch (error: any) {
-      console.error("Error submitting review:", error);
+      console.error("Error updating review:", error);
       toast({
         title: "Error",
-        description: "Failed to submit review. Please try again.",
+        description: "Failed to update review. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -90,9 +73,9 @@ const RateUserDialog = ({ user, open, onOpenChange, onReviewSubmitted }: RateUse
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Rate {user.name}</DialogTitle>
+          <DialogTitle>Edit Your Review</DialogTitle>
           <DialogDescription>
-            Share your experience working with {user.name}. Your feedback helps build trust in our community.
+            Update your review and rating.
           </DialogDescription>
         </DialogHeader>
         
@@ -128,9 +111,9 @@ const RateUserDialog = ({ user, open, onOpenChange, onReviewSubmitted }: RateUse
               </label>
               <Textarea
                 id="review"
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                placeholder={`Tell us about your experience with ${user.name}...`}
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Tell us about your experience..."
                 className="mt-1"
               />
             </div>
@@ -141,7 +124,7 @@ const RateUserDialog = ({ user, open, onOpenChange, onReviewSubmitted }: RateUse
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Submitting..." : "Submit Review"}
+              {isLoading ? "Updating..." : "Update Review"}
             </Button>
           </DialogFooter>
         </form>
@@ -150,4 +133,4 @@ const RateUserDialog = ({ user, open, onOpenChange, onReviewSubmitted }: RateUse
   );
 };
 
-export default RateUserDialog;
+export default EditReviewDialog;

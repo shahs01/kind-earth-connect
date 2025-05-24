@@ -105,6 +105,11 @@ const ProfileCard = ({
           <div className="text-center mt-3">
             <h2 className="text-xl font-bold">{user.name}</h2>
             
+            {/* Display username */}
+            {user.username && (
+              <p className="text-sm text-gray-600 mt-1">@{user.username}</p>
+            )}
+            
             {user.location && (
               <div className="flex items-center justify-center gap-1 mt-1 text-sm text-gray-600">
                 <MapPin className="h-4 w-4" />

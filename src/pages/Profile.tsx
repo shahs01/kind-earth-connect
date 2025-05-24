@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Navigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -31,6 +32,7 @@ const Profile = () => {
   const [profileUser, setProfileUser] = useState(user);
   const [currentTab, setCurrentTab] = useState("activity");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [reviewsRefreshTrigger, setReviewsRefreshTrigger] = useState(0);
   const location = useLocation();
   
   useEffect(() => {
@@ -74,6 +76,10 @@ const Profile = () => {
       loadProfileData();
     }
   }, [userId, user, fetchUserProfile]);
+
+  const handleReviewSubmitted = () => {
+    setReviewsRefreshTrigger(prev => prev + 1);
+  };
   
   // Ensure we have a user before proceeding
   if (!user) {
@@ -199,12 +205,12 @@ const Profile = () => {
                 )}
                 
                 <TabsContent value="reviews">
-                  <Reviews user={profileUser} />
+                  <Reviews user={profileUser} refreshTrigger={reviewsRefreshTrigger} />
                 </TabsContent>
                 
                 {isOwnProfile && (
                   <TabsContent value="reviewsgiven">
-                    <ReviewsGiven user={profileUser} />
+                    <ReviewsGiven user={profileUser} refreshTrigger={reviewsRefreshTrigger} />
                   </TabsContent>
                 )}
                 
@@ -225,7 +231,8 @@ const Profile = () => {
         <RateUserDialog 
           user={profileUser} 
           open={isRateDialogOpen} 
-          onOpenChange={setIsRateDialogOpen} 
+          onOpenChange={setIsRateDialogOpen}
+          onReviewSubmitted={handleReviewSubmitted}
         />
       )}
     </div>
