@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -23,11 +22,13 @@ interface Post {
   location: string | null;
   category: string | null;
   photos?: string[] | null;
+  user_id: string;
   user: {
     name: string;
     avatar: string;
   };
   createdAt: string;
+  created_at: string;
   likes: number;
   comments: number;
 }
@@ -118,11 +119,13 @@ const MobileCommunityFeed = ({
               location: post.location,
               category: post.category,
               photos: post.photos,
+              user_id: post.user_id,
               user: {
                 name: profileData?.name || profileData?.username || "Unknown User",
                 avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
               createdAt: formatDate(post.created_at),
+              created_at: post.created_at,
               likes: 0,
               comments: 0
             };
@@ -149,6 +152,7 @@ const MobileCommunityFeed = ({
   }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast]);
 
   const handlePostClick = (post: Post) => {
+    console.log("Post clicked:", post);
     setSelectedPost(post);
     setPostDialogOpen(true);
   };
@@ -312,8 +316,8 @@ const MobileCommunityFeed = ({
             type: selectedPost.type as "offer" | "request",
             category: selectedPost.category,
             location: selectedPost.location,
-            created_at: selectedPost.createdAt,
-            user_id: "", // This will be handled by the dialog
+            created_at: selectedPost.created_at,
+            user_id: selectedPost.user_id,
             photos: selectedPost.photos,
             user: selectedPost.user
           }}
