@@ -56,8 +56,7 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      // Use the production URL for redirects
-      const redirectTo = 'https://thryvance.ca/auth-callback';
+      const redirectTo = window.location.origin + '/auth-callback';
       
       console.log("Starting OAuth flow with redirect:", redirectTo);
       
@@ -75,7 +74,6 @@ export const useAuthOperations = () => {
       if (error) throw error;
       
       console.log("OAuth initialization successful");
-      // The user will be redirected to the provider's auth page
     } catch (error: any) {
       let message = "Failed to sign in with provider";
       if (error instanceof Error) {
@@ -101,7 +99,6 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      // Sign up the user with Supabase - we're no longer requiring email verification
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -111,19 +108,17 @@ export const useAuthOperations = () => {
             name: userData.name,
             phone: userData.phone
           },
-          emailRedirectTo: `${window.location.origin}/auth-callback` // Security fix: Add proper redirect URL
+          emailRedirectTo: `${window.location.origin}/auth-callback`
         }
       });
       
       if (error) throw error;
       
-      // Since email verification is off, we can immediately show success
       toast({
         title: "Account created!",
         description: "Your account has been created successfully."
       });
       
-      // Don't navigate here - let the auth context handle it
     } catch (error: any) {
       let message = "Failed to create account";
       if (error instanceof Error) {
@@ -156,7 +151,7 @@ export const useAuthOperations = () => {
         description: "You have been logged out of your account.",
       });
       
-      navigate('/login');
+      navigate('/');
     } catch (error: any) {
       toast({
         title: "Logout error",
@@ -184,7 +179,7 @@ export const useAuthOperations = () => {
         type: 'signup',
         email: user.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth-callback` // Security fix: Add proper redirect URL
+          emailRedirectTo: `${window.location.origin}/auth-callback`
         }
       });
       
@@ -207,8 +202,6 @@ export const useAuthOperations = () => {
    * Verifies an email
    */
   const verifyEmail = async (token: string): Promise<boolean> => {
-    // For Supabase, email verification is handled by their email flow
-    // This method is kept for compatibility with the existing interfaces
     return true;
   };
 
@@ -219,19 +212,16 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      // Security fix: Validate password complexity before submitting
       if (newPassword.length < 8) {
         throw new Error("Password must be at least 8 characters long");
       }
       
-      // Verify current password by trying to sign in
       const { data: { user }, error: signInError } = await supabase.auth.getUser();
       
       if (!user || signInError) {
         throw new Error("Current password is incorrect or session expired");
       }
       
-      // Update password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -268,7 +258,7 @@ export const useAuthOperations = () => {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password` // Security fix: Add proper redirect URL
+        redirectTo: `${window.location.origin}/reset-password`
       });
       
       if (error) throw error;
@@ -301,7 +291,6 @@ export const useAuthOperations = () => {
         throw new Error("New password is required");
       }
       
-      // Security fix: Validate password complexity
       if (newPassword.length < 8) {
         throw new Error("Password must be at least 8 characters long");
       }

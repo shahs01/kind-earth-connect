@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthContextType, AuthProviderProps } from "./AuthTypes";
 import { User, SignUpData } from "@/types";
@@ -33,107 +34,109 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { validateField } = useAuthValidation(user);
 
   useEffect(() => {
-    console.log("AuthContext: Setting up auth state listener");
+    let mounted = true;
     
-    // Set up auth state listener FIRST to avoid missing auth events
+    console.log("AuthContext: Initializing authentication");
+    
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting initial session:", error);
+          if (mounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (session && mounted) {
+          console.log("Initial session found for:", session.user.email);
+          setSession(session);
+          await handleSessionUser(session.user.id);
+        } else {
+          console.log("No initial session found");
+          if (mounted) {
+            setIsLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error("Error in getInitialSession:", error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log("Auth state changed:", event, session?.user?.email || 'no user');
+        
+        setSession(session);
         
         if (event === 'SIGNED_IN' && session) {
           console.log("User signed in, fetching profile");
-          setSession(session);
-          // Don't automatically fetch profile here for OAuth users - let AuthCallback handle it
-          if (!window.location.pathname.includes('/auth-callback')) {
-            await handleSessionChange(session.user.id);
-          }
+          await handleSessionUser(session.user.id);
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out, clearing state");
           setUser(null);
-          setSession(null);
           setEmailVerified(false);
-          // Clear any stored session debug info
-          localStorage.removeItem('supabase_session_debug');
+          setIsLoading(false);
         } else if (event === 'TOKEN_REFRESHED' && session) {
-          console.log("Token refreshed, updating session");
-          setSession(session);
+          console.log("Token refreshed");
+          // Don't refetch profile on token refresh, just update session
+          setIsLoading(false);
         } else if (session) {
-          setSession(session);
-          if (!window.location.pathname.includes('/auth-callback')) {
-            await handleSessionChange(session.user.id);
-          }
+          await handleSessionUser(session.user.id);
         } else {
           setUser(null);
-          setSession(null);
           setEmailVerified(false);
+          setIsLoading(false);
         }
       }
     );
 
-    // THEN check for existing session
-    const initializeAuth = async () => {
-      try {
-        console.log("AuthContext: Checking for existing session");
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error getting session:", error);
-        } else if (session?.user) {
-          console.log("Found existing session for:", session.user.email);
-          setSession(session);
-          if (!window.location.pathname.includes('/auth-callback')) {
-            await handleSessionChange(session.user.id);
-          }
-        } else {
-          console.log("No existing session found");
-        }
-      } catch (error) {
-        console.error("Error checking auth session:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
+    // Initialize session
+    getInitialSession();
 
     return () => {
-      console.log("AuthContext: Cleaning up auth listener");
+      mounted = false;
       subscription?.unsubscribe();
     };
   }, []);
 
-  const handleSessionChange = async (userId: string) => {
+  const handleSessionUser = async (userId: string) => {
     try {
-      const profile = await fetchUserProfile(userId);
-      if (profile) {
-        setUser(profile);
-        // For both email/password and OAuth logins, we set emailVerified to true
-        // For OAuth providers like Google, email is already verified by the provider
-        setEmailVerified(true);
-      } else {
-        // If no profile found but we have a session, create a profile
-        console.log("No profile found for user, attempting to create one");
-        toast({
-          title: "Profile not found",
-          description: "We're setting up your profile now",
-        });
-        // The profile will be created via database trigger when authentication happens
-        // Re-fetch the profile after a short delay
-        setTimeout(async () => {
-          const retryProfile = await fetchUserProfile(userId);
-          if (retryProfile) {
-            setUser(retryProfile);
-            setEmailVerified(true);
-          } else {
-            console.error("Failed to create or fetch user profile");
-            logout();
-          }
-        }, 1000);
+      // Only fetch profile if we don't have user data or user ID changed
+      if (!user || user.id !== userId) {
+        const profile = await fetchUserProfile(userId);
+        if (profile) {
+          setUser(profile);
+          setEmailVerified(true);
+        } else {
+          console.log("No profile found, creating one");
+          // Wait a moment for profile creation trigger
+          setTimeout(async () => {
+            const retryProfile = await fetchUserProfile(userId);
+            if (retryProfile) {
+              setUser(retryProfile);
+              setEmailVerified(true);
+            } else {
+              console.error("Failed to create or fetch user profile");
+              logout();
+            }
+          }, 1500);
+        }
       }
     } catch (error) {
-      console.error("Error handling session change:", error);
-      // If there's an error fetching the profile, we'll sign the user out
+      console.error("Error handling session user:", error);
       logout();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -142,38 +145,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const handleLogin = async (email: string, password: string, rememberMe = false) => {
-    setIsLoading(true);
-    try {
-      await login(email, password, rememberMe);
-    } finally {
-      setIsLoading(false);
-    }
+    await login(email, password, rememberMe);
   };
 
   const handleSignInWithProvider = async (provider: 'google') => {
-    setIsLoading(true);
-    try {
-      await signInWithProvider(provider);
-    } finally {
-      setIsLoading(false);
-    }
+    await signInWithProvider(provider);
   };
 
   const handleSignUp = async (userData: SignUpData) => {
-    setIsLoading(true);
-    try {
-      // Check username uniqueness
-      const usernameError = await validateField("username", userData.username);
-      if (usernameError) {
-        throw new Error(usernameError);
-      }
-      
-      await signUp(userData);
-      // Since email verification is disabled, we can set this to true
-      setEmailVerified(true);
-    } finally {
-      setIsLoading(false);
+    // Check username uniqueness
+    const usernameError = await validateField("username", userData.username);
+    if (usernameError) {
+      throw new Error(usernameError);
     }
+    
+    await signUp(userData);
+    setEmailVerified(true);
   };
 
   const handleChangePassword = async (currentPassword: string, newPassword: string) => {
