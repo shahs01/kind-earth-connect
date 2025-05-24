@@ -1,15 +1,16 @@
 
-import { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, MessageSquare, Share2, MapPin, Calendar, User, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Heart, MessageSquare, Share2, MapPin, Calendar, ChevronLeft, ChevronRight, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import ProfileDialog from "@/components/ProfileDialog";
+import { useAuthProfile } from "@/hooks/useAuthProfile";
 
 interface Post {
   id: string;
@@ -21,7 +22,7 @@ interface Post {
   created_at: string;
   user_id: string;
   photos?: string[] | null;
-  user?: {
+  user: {
     name: string;
     avatar: string;
   };
@@ -34,329 +35,243 @@ interface PostDetailDialogProps {
 }
 
 const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [messageLoading, setMessageLoading] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { fetchUserProfile } = useAuthProfile();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  const handlePreviousImage = () => {
-    if (post.photos && post.photos.length > 1) {
-      setCurrentImageIndex((prev) => 
-        prev === 0 ? post.photos!.length - 1 : prev - 1
-      );
-    }
-  };
-
-  const handleNextImage = () => {
-    if (post.photos && post.photos.length > 1) {
-      setCurrentImageIndex((prev) => 
-        prev === post.photos!.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
-
-  const handleFavorite = async () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to favorite posts",
-      });
-      navigate('/login');
+  const handleUserClick = async () => {
+    if (post.user_id === user?.id) {
+      // If it's the current user's post, navigate to their own profile
+      navigate(`/profile/${user.id}`);
+      onOpenChange(false);
       return;
     }
 
-    setFavoriteLoading(true);
     try {
-      if (isFavorited) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('post_id', post.id)
-          .eq('user_id', user?.id);
-
-        if (error) throw error;
-        setIsFavorited(false);
-        toast({ title: "Removed from favorites" });
-      } else {
-        // Add to favorites
-        const { error } = await supabase
-          .from('favorites')
-          .insert({
-            post_id: post.id,
-            user_id: user?.id
-          });
-
-        if (error) throw error;
-        setIsFavorited(true);
-        toast({ title: "Added to favorites" });
-      }
+      setProfileLoading(true);
+      const userData = await fetchUserProfile(post.user_id);
+      setProfileUser(userData);
+      setIsProfileDialogOpen(true);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      console.error("Error fetching user profile:", error);
       toast({
         title: "Error",
-        description: "Failed to update favorites",
+        description: "Could not load user profile. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setFavoriteLoading(false);
+      setProfileLoading(false);
     }
   };
 
-  const handleMessage = async () => {
-    if (!isAuthenticated) {
+  const handleMessageUser = () => {
+    if (!user) {
       toast({
-        title: "Authentication Required",
+        title: "Authentication required",
         description: "Please log in to send messages",
-      });
-      navigate('/login');
-      return;
-    }
-
-    if (user?.id === post.user_id) {
-      toast({
-        title: "Cannot message yourself",
-        description: "You cannot send messages to yourself",
-      });
-      return;
-    }
-
-    setMessageLoading(true);
-    try {
-      // Check if user exists
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', post.user_id)
-        .single();
-
-      if (profileError || !profileData) {
-        toast({
-          title: "User not found",
-          description: "This user no longer exists",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Navigate to conversation
-      navigate(`/messages/${post.user_id}`, {
-        state: {
-          action: 'newMessage',
-          receiverId: post.user_id,
-          receiverName: post.user?.name || profileData.name || "User"
-        }
-      });
-
-      toast({
-        title: "Opening conversation",
-        description: `Starting conversation with ${post.user?.name || "this user"}`,
-      });
-    } catch (error) {
-      console.error("Error starting conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to start conversation",
         variant: "destructive"
       });
-    } finally {
-      setMessageLoading(false);
+      navigate("/login");
+      return;
     }
+
+    navigate(`/messages/${post.user_id}`);
+    onOpenChange(false);
+    
+    toast({
+      title: "Conversation opened",
+      description: `You can now message ${post.user.name}`
+    });
   };
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: post.title,
-        text: post.description || "",
-        url: window.location.href
-      });
-    } else {
+    navigator.share?.({
+      title: post.title,
+      text: post.description || "",
+      url: window.location.href
+    }).catch(() => {
       navigator.clipboard.writeText(window.location.href);
-      toast({ title: "Link copied to clipboard" });
+      toast({
+        title: "Link copied",
+        description: "Post link copied to clipboard"
+      });
+    });
+  };
+
+  const nextImage = () => {
+    if (post.photos && post.photos.length > 0) {
+      setCurrentImageIndex((prev) => (prev + 1) % post.photos.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (post.photos && post.photos.length > 0) {
+      setCurrentImageIndex((prev) => (prev - 1 + post.photos.length) % post.photos.length);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "PPP 'at' p");
+    } catch {
+      return "Unknown date";
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-        <div className="flex flex-col md:flex-row h-full">
-          {/* Image Section */}
-          <div className="md:w-1/2 relative bg-black">
-            {post.photos && post.photos.length > 0 ? (
-              <>
-                <div className="aspect-square relative">
-                  <img
-                    src={post.photos[currentImageIndex]}
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-left">Post Details</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* User Info - Clickable */}
+            <div 
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={handleUserClick}
+              disabled={profileLoading}
+            >
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={post.user.avatar} alt={post.user.name} />
+                <AvatarFallback>
+                  <UserIcon className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold text-lg hover:text-thryvance-blue transition-colors">
+                  {post.user.name}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {formatDate(post.created_at)}
+                </p>
+              </div>
+              {profileLoading && (
+                <div className="ml-auto">
+                  <div className="animate-spin h-4 w-4 border-2 border-thryvance-green border-t-transparent rounded-full"></div>
+                </div>
+              )}
+            </div>
+
+            {/* Post Type Badge */}
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="outline" 
+                className={`${
+                  post.type === 'offer' 
+                    ? 'bg-thryvance-green text-white border-thryvance-green' 
+                    : 'bg-thryvance-blue text-white border-thryvance-blue'
+                }`}
+              >
+                {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
+              </Badge>
+              {post.category && (
+                <Badge variant="secondary">{post.category}</Badge>
+              )}
+            </div>
+
+            {/* Title and Description */}
+            <div>
+              <h2 className="text-xl font-bold mb-2">{post.title}</h2>
+              {post.description && (
+                <p className="text-gray-700 leading-relaxed">{post.description}</p>
+              )}
+            </div>
+
+            {/* Location */}
+            {post.location && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <MapPin className="h-4 w-4" />
+                <span>{post.location}</span>
+              </div>
+            )}
+
+            {/* Images */}
+            {post.photos && post.photos.length > 0 && (
+              <div className="relative">
+                <div className="aspect-video rounded-lg overflow-hidden bg-gray-100">
+                  <img 
+                    src={post.photos[currentImageIndex]} 
                     alt={`${post.title} - Image ${currentImageIndex + 1}`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Image+Not+Available';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/600x400?text=Image+Not+Found';
                     }}
                   />
-                  
-                  {/* Navigation arrows */}
-                  {post.photos.length > 1 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
-                        onClick={handlePreviousImage}
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
-                        onClick={handleNextImage}
-                      >
-                        <ChevronRight className="h-6 w-6" />
-                      </Button>
-                    </>
-                  )}
                 </div>
                 
-                {/* Image indicators */}
                 {post.photos.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                    {post.photos.map((_, index) => (
-                      <button
-                        key={index}
-                        className={`w-2 h-2 rounded-full ${
-                          index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                        }`}
-                        onClick={() => setCurrentImageIndex(index)}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                      {currentImageIndex + 1} / {post.photos.length}
+                    </div>
+                  </>
                 )}
-              </>
-            ) : (
-              <div className="aspect-square flex items-center justify-center bg-gray-100">
-                <div className="text-gray-400 text-center">
-                  <User className="h-16 w-16 mx-auto mb-4" />
-                  <span>No Image Available</span>
-                </div>
               </div>
             )}
-          </div>
 
-          {/* Content Section */}
-          <div className="md:w-1/2 flex flex-col">
-            <DialogHeader className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant={post.type === 'offer' ? 'outline' : 'default'}
-                  className={post.type === 'offer' 
-                    ? 'border-thryvance-green text-thryvance-green' 
-                    : 'bg-thryvance-blue text-white'
-                  }
-                >
-                  {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
-                </Badge>
-                <DialogTitle className="text-xl font-semibold flex-1 text-center">
-                  {post.title}
-                </DialogTitle>
-              </div>
-            </DialogHeader>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* User Info */}
-              <div className="flex items-center gap-3 mb-4">
-                <Avatar>
-                  <AvatarImage src={post.user?.avatar} alt={post.user?.name} />
-                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium">{post.user?.name || "Unknown User"}</h3>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(post.created_at), 'MMM d, yyyy')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-2">Description</h4>
-                <p className="text-gray-700 whitespace-pre-line">
-                  {post.description || "No description provided"}
-                </p>
-              </div>
-
-              {/* Details */}
-              <div className="space-y-2 mb-6">
-                {post.location && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span>{post.location}</span>
-                  </div>
-                )}
-                
-                {post.category && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{post.category}</Badge>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>Posted {format(new Date(post.created_at), 'MMM d, yyyy')}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="border-t p-6">
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={handleFavorite}
-                  disabled={favoriteLoading}
-                >
-                  {favoriteLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Heart className={`mr-2 h-4 w-4 ${isFavorited ? 'fill-current text-rose-500' : ''}`} />
-                  )}
-                  {isFavorited ? 'Favorited' : 'Favorite'}
-                </Button>
-                
-                {user?.id !== post.user_id && (
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-thryvance-blue hover:bg-thryvance-blue-dark"
-                    onClick={handleMessage}
-                    disabled={messageLoading}
-                  >
-                    {messageLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                    )}
-                    Message
-                  </Button>
-                )}
-                
-                <Button
-                  variant="outline"
-                  size="sm"
+            {/* Action Buttons */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="flex gap-4">
+                <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors">
+                  <Heart className="h-5 w-5" />
+                  <span className="text-sm">Like</span>
+                </button>
+                <button 
                   onClick={handleShare}
+                  className="flex items-center gap-2 text-gray-600 hover:text-thryvance-blue transition-colors"
                 >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                  <Share2 className="h-5 w-5" />
+                  <span className="text-sm">Share</span>
+                </button>
               </div>
+              
+              {post.user_id !== user?.id && (
+                <Button 
+                  onClick={handleMessageUser}
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Message {post.user.name.split(" ")[0]}
+                </Button>
+              )}
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Dialog */}
+      {profileUser && (
+        <ProfileDialog
+          user={profileUser}
+          open={isProfileDialogOpen}
+          onOpenChange={setIsProfileDialogOpen}
+          onViewFullProfile={() => {
+            navigate(`/profile/${profileUser.id}`);
+            setIsProfileDialogOpen(false);
+            onOpenChange(false);
+          }}
+        />
+      )}
+    </>
   );
 };
 

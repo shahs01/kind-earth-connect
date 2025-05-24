@@ -170,6 +170,10 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
           user={otherUser}
           open={isProfileOpen}
           onOpenChange={setIsProfileOpen}
+          onViewFullProfile={() => {
+            navigate(`/profile/${otherUser.id}`);
+            setIsProfileOpen(false);
+          }}
         />
       )}
     </div>

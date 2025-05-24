@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +7,8 @@ import { Heart, MessageSquare, Share2, AlertCircle, Loader2 } from "lucide-react
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PostDetailDialog from "@/components/PostDetailDialog";
+import ProfileDialog from "@/components/ProfileDialog";
+import { useAuthProfile } from "@/hooks/useAuthProfile";
 
 interface ProfileData {
   name?: string | null;
@@ -67,8 +68,13 @@ const CommunityFeed = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [postDialogOpen, setPostDialogOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [selectedProfileUser, setSelectedProfileUser] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { fetchUserProfile } = useAuthProfile();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -157,6 +163,32 @@ const CommunityFeed = ({
     console.log("Post clicked:", post);
     setSelectedPost(post);
     setPostDialogOpen(true);
+  };
+
+  const handleUserClick = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening post dialog
+    
+    if (userId === user?.id) {
+      // If it's the current user, navigate to their profile
+      navigate(`/profile/${user.id}`);
+      return;
+    }
+
+    try {
+      setProfileLoading(true);
+      const userData = await fetchUserProfile(userId);
+      setSelectedProfileUser(userData);
+      setProfileDialogOpen(true);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      toast({
+        title: "Error",
+        description: "Could not load user profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
   if (loading) {
@@ -299,16 +331,23 @@ const CommunityFeed = ({
                     </p>
                   )}
                   
-                  {/* User Info */}
+                  {/* User Info - Clickable */}
                   <div className="flex items-center gap-2 mt-2">
                     <img
                       src={post.user.avatar}
                       alt={post.user.name}
-                      className="h-6 w-6 rounded-full"
+                      className="h-6 w-6 rounded-full cursor-pointer hover:ring-2 hover:ring-thryvance-blue transition-all"
+                      onClick={(e) => handleUserClick(post.user_id, e)}
                     />
-                    <span className="text-xs text-gray-600 truncate">
+                    <span 
+                      className="text-xs text-gray-600 truncate cursor-pointer hover:text-thryvance-blue transition-colors"
+                      onClick={(e) => handleUserClick(post.user_id, e)}
+                    >
                       {post.user.name}
                     </span>
+                    {profileLoading && (
+                      <div className="animate-spin h-3 w-3 border-2 border-thryvance-green border-t-transparent rounded-full"></div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -333,6 +372,19 @@ const CommunityFeed = ({
           }}
           open={postDialogOpen}
           onOpenChange={setPostDialogOpen}
+        />
+      )}
+
+      {/* Profile Dialog */}
+      {selectedProfileUser && (
+        <ProfileDialog
+          user={selectedProfileUser}
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          onViewFullProfile={() => {
+            navigate(`/profile/${selectedProfileUser.id}`);
+            setProfileDialogOpen(false);
+          }}
         />
       )}
     </>
