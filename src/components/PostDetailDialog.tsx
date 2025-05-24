@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageSquare, Share2, MapPin, Calendar, ChevronLeft, ChevronRight, User as UserIcon } from "lucide-react";
+import { Heart, MessageSquare, Share2, MapPin, Calendar, ChevronLeft, ChevronRight, User as UserIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import ProfileDialog from "@/components/ProfileDialog";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface Post {
   id: string;
@@ -38,11 +40,74 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
   const navigate = useNavigate();
   const { toast } = useToast();
   const { fetchUserProfile } = useAuthProfile();
+  const { isFavorited, addFavorite, removeFavorite, getFavoriteId } = useFavorites();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isFullScreenProfile, setIsFullScreenProfile] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [postIsFavorited, setPostIsFavorited] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
+  const [favoritingInProgress, setFavoritingInProgress] = useState(false);
+
+  // Check if post is favorited when dialog opens
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (user && open) {
+        const favorited = await isFavorited(post.id);
+        setPostIsFavorited(favorited);
+        if (favorited) {
+          const id = await getFavoriteId(post.id);
+          setFavoriteId(id);
+        }
+      }
+    };
+    
+    checkFavoriteStatus();
+  }, [user, open, post.id, isFavorited, getFavoriteId]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required", 
+        description: "Please log in to favorite posts"
+      });
+      navigate('/login');
+      return;
+    }
+    
+    setFavoritingInProgress(true);
+    
+    try {
+      if (postIsFavorited && favoriteId) {
+        // Remove from favorites
+        const success = await removeFavorite(favoriteId);
+        if (success) {
+          setPostIsFavorited(false);
+          setFavoriteId(null);
+          toast({ title: "Removed from favorites" });
+        }
+      } else {
+        // Add to favorites
+        const success = await addFavorite(post.id);
+        if (success) {
+          setPostIsFavorited(true);
+          const id = await getFavoriteId(post.id);
+          setFavoriteId(id);
+          toast({ title: "Added to favorites" });
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast({ 
+        title: "Error", 
+        description: "Failed to update favorites", 
+        variant: "destructive" 
+      });
+    } finally {
+      setFavoritingInProgress(false);
+    }
+  };
 
   const handleUserClick = async () => {
     if (post.user_id === user?.id) {
@@ -240,9 +305,17 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
             {/* Action Buttons */}
             <div className="flex justify-between items-center pt-4 border-t">
               <div className="flex gap-4">
-                <button className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors">
-                  <Heart className="h-5 w-5" />
-                  <span className="text-sm">Like</span>
+                <button 
+                  onClick={handleToggleFavorite}
+                  className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors"
+                  disabled={favoritingInProgress}
+                >
+                  {favoritingInProgress ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Heart className={`h-5 w-5 ${postIsFavorited ? 'fill-red-500 text-red-500' : ''}`} />
+                  )}
+                  <span className="text-sm">{postIsFavorited ? 'Liked' : 'Like'}</span>
                 </button>
                 <button 
                   onClick={handleShare}
