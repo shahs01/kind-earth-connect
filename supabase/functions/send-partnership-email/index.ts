@@ -37,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "Thryvance Partnership <onboarding@resend.dev>",
-      to: ["partnerships@thryvance.ca"], // Replace with your actual email
+      to: ["thryvance.ca@gmail.com"],
       subject: `New Partnership Request from ${organizationName}`,
       html: `
         <h1>New Partnership Request</h1>
