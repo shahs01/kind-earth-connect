@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
@@ -13,6 +12,7 @@ export interface Post {
   status?: string;
   created_at?: string;
   user_id: string;
+  photos?: string[] | null;
   isFavorited?: boolean;
 }
 
@@ -48,7 +48,8 @@ export function useFavorites() {
             location,
             status,
             created_at,
-            user_id
+            user_id,
+            photos
           )
         `)
         .order('created_at', { ascending: false });
