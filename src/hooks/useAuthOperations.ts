@@ -107,7 +107,7 @@ export const useAuthOperations = () => {
           data: {
             username: userData.username,
             name: userData.name,
-            location: userData.location
+            phone: userData.phone
           },
           emailRedirectTo: `${window.location.origin}/auth-callback` // Security fix: Add proper redirect URL
         }

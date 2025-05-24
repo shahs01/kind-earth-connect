@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string; // Added username field
@@ -82,13 +83,13 @@ export interface AuthValidationErrors {
   general?: string;
 }
 
-// Updated interface for signup data
+// Updated interface for signup data - removed location requirement
 export interface SignUpData {
   username: string;
   name: string;
   email: string;
   password: string;
-  location: string;
+  phone: string;
 }
 
 // Added for password reset
