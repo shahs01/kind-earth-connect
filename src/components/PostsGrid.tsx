@@ -147,9 +147,17 @@ const PostsGrid = ({
         setLoading(true);
         console.log("Fetching posts with filters:", { searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit });
 
+        // Optimized query - fetch posts with profiles in a single query using joins
         let query = supabase
           .from('posts')
-          .select('*')
+          .select(`
+            *,
+            profiles!posts_user_id_fkey (
+              name,
+              avatar,
+              username
+            )
+          `)
           .eq('status', 'active');
 
         // Apply filters
@@ -193,37 +201,26 @@ const PostsGrid = ({
 
         console.log("Posts fetched:", postsData?.length);
         
-        // Fetch user information separately for each post
         if (postsData && postsData.length > 0) {
-          const formattedPostsPromises = postsData.map(async (post) => {
-            // Get user data
-            const { data: userData } = await supabase
-              .from('profiles')
-              .select('name, avatar, username')
-              .eq('id', post.user_id)
-              .maybeSingle();
-            
-            const typedPost: PostsGridPost = {
-              ...post,
-              type: post.type as "offer" | "request",
-              user: {
-                name: userData?.name || "Unknown User",
-                avatar: userData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || 'User')}`,
-                username: userData?.username
-              }
-            };
-            
-            // Check if user is logged in to get favorite status
-            if (user) {
-              return await checkFavoriteStatus(typedPost, user.id);
+          const formattedPosts: PostsGridPost[] = postsData.map((post) => ({
+            ...post,
+            type: post.type as "offer" | "request",
+            user: {
+              name: post.profiles?.name || "Unknown User",
+              avatar: post.profiles?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.profiles?.name || 'User')}`,
+              username: post.profiles?.username
             }
-            
-            return typedPost;
-          });
+          }));
           
-          const formattedPosts = await Promise.all(formattedPostsPromises);
-          console.log("Formatted posts with favorite info:", formattedPosts.length);
-          setPosts(formattedPosts);
+          // Check favorite status for authenticated users
+          if (user) {
+            const postsWithFavorites = await Promise.all(
+              formattedPosts.map(post => checkFavoriteStatus(post, user.id))
+            );
+            setPosts(postsWithFavorites);
+          } else {
+            setPosts(formattedPosts);
+          }
         } else {
           setPosts([]);
         }

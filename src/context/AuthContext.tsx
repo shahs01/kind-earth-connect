@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthContextType, AuthProviderProps } from "./AuthTypes";
 import { User, SignUpData } from "@/types";
@@ -44,7 +43,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (event === 'SIGNED_IN' && session) {
           console.log("User signed in, fetching profile");
           setSession(session);
-          await handleSessionChange(session.user.id);
+          // Don't automatically fetch profile here for OAuth users - let AuthCallback handle it
+          if (!window.location.pathname.includes('/auth-callback')) {
+            await handleSessionChange(session.user.id);
+          }
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out, clearing state");
           setUser(null);
@@ -57,7 +59,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setSession(session);
         } else if (session) {
           setSession(session);
-          await handleSessionChange(session.user.id);
+          if (!window.location.pathname.includes('/auth-callback')) {
+            await handleSessionChange(session.user.id);
+          }
         } else {
           setUser(null);
           setSession(null);
@@ -77,7 +81,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else if (session?.user) {
           console.log("Found existing session for:", session.user.email);
           setSession(session);
-          await handleSessionChange(session.user.id);
+          if (!window.location.pathname.includes('/auth-callback')) {
+            await handleSessionChange(session.user.id);
+          }
         } else {
           console.log("No existing session found");
         }
