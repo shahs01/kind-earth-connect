@@ -1,8 +1,7 @@
 
 import React, { useEffect, useCallback, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import ProfileDialog from "@/components/ProfileDialog";
 import useConversation from "@/components/messages/useConversation";
 import { useToast } from "@/hooks/use-toast";
@@ -67,11 +66,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
       }
     }
   }, [otherUser, onViewProfile, setIsProfileOpen]);
-  
-  // Handle back navigation for mobile
-  const handleBackToConversations = useCallback(() => {
-    navigate('/messages');
-  }, [navigate]);
   
   // Memoize message sending function
   const onSendMessage = useCallback(async (content: string) => {
@@ -158,30 +152,6 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
   
   return (
     <div className="flex flex-col h-full">
-      {/* Mobile back button */}
-      <div className="md:hidden flex items-center p-3 border-b border-gray-200 bg-white">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBackToConversations}
-          className="mr-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2">
-          {otherUser && (
-            <>
-              <img
-                src={otherUser.avatar}
-                alt={otherUser.name}
-                className="h-8 w-8 rounded-full"
-              />
-              <span className="font-medium text-gray-900">{otherUser.name}</span>
-            </>
-          )}
-        </div>
-      </div>
-
       <ConversationBody
         otherUser={otherUser}
         loading={loading}

@@ -3,27 +3,45 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import SignUpForm from "@/components/SignUpForm";
 import Footer from "@/components/Footer";
-import UsernameSelectionForm from "@/components/UsernameSelectionForm";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const SignUp = () => {
-  const [step, setStep] = useState(1);
-  const [userData, setUserData] = useState<{
-    email: string;
-    password: string;
-    name: string;
-    location: string;
-    phone: string;
-  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleFirstStepComplete = (data: {
+  const handleSignUp = async (data: {
     email: string;
     password: string;
     name: string;
     location: string;
     phone: string;
+    username: string;
   }) => {
-    setUserData(data);
-    setStep(2);
+    setIsLoading(true);
+    
+    try {
+      await signUp(data);
+      
+      toast({
+        title: "Account created!",
+        description: "Your account has been created successfully."
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup failed",
+        description: error instanceof Error ? error.message : "An error occurred during signup",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -35,11 +53,7 @@ const SignUp = () => {
             <strong>Note:</strong> Email verification is currently disabled. You'll be able to log in immediately after signing up.
           </div>
           
-          {step === 1 ? (
-            <SignUpForm onFirstStepComplete={handleFirstStepComplete} />
-          ) : (
-            <UsernameSelectionForm userData={userData} />
-          )}
+          <SignUpForm onFirstStepComplete={handleSignUp} />
         </div>
       </main>
       <Footer />

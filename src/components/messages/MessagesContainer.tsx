@@ -5,7 +5,8 @@ import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import ConversationsList from "./ConversationsList";
 import MessageConversation from "./MessageConversation";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const MessagesContainer = () => {
   const { userId } = useParams();
@@ -26,6 +27,11 @@ const MessagesContainer = () => {
       </div>
     );
   }
+
+  const handleBackToConversations = () => {
+    window.history.pushState({}, '', '/messages');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
@@ -56,7 +62,25 @@ const MessagesContainer = () => {
               </div>
             </>
           ) : (
-            <MessageConversation />
+            <div className="flex flex-col h-full">
+              {/* Mobile conversation header with back button */}
+              <div className="flex items-center p-3 border-b border-gray-200 bg-white">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackToConversations}
+                  className="mr-3 p-2"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h3 className="text-lg font-semibold text-gray-900">Conversation</h3>
+              </div>
+              
+              {/* Conversation content */}
+              <div className="flex-1">
+                <MessageConversation />
+              </div>
+            </div>
           )}
         </div>
 

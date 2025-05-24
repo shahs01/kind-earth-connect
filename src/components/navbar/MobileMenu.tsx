@@ -62,67 +62,8 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
   };
 
   return (
-    <div className="md:hidden bg-white border-t border-gray-100 p-4">
+    <div className="md:hidden bg-white border-t border-gray-100 p-4 max-h-[70vh] overflow-y-auto">
       <nav className="flex flex-col space-y-3">
-        {/* User Account Section - Only show if authenticated */}
-        {isAuthenticated && user && (
-          <div className="border-b border-gray-100 pb-4 mb-4">
-            <div className="flex items-center gap-3 mb-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={user.avatar || ""} />
-                <AvatarFallback className="bg-thryvance-blue text-white">
-                  {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium text-sm">{user.name || user.email?.split("@")[0] || "User"}</p>
-                <p className="text-xs text-gray-500">My Account</p>
-              </div>
-            </div>
-            <div className="flex flex-col space-y-2">
-              <Link
-                to={`/profile/${user.id}`}
-                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                onClick={toggleMenu}
-              >
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
-              <Link
-                to="/messages"
-                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                onClick={toggleMenu}
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Messages
-              </Link>
-              <Link
-                to="/favorites"
-                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                onClick={toggleMenu}
-              >
-                <Heart className="mr-2 h-4 w-4" />
-                Favorites
-              </Link>
-              <Link
-                to="/notifications"
-                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                onClick={toggleMenu}
-              >
-                <Bell className="mr-2 h-4 w-4" />
-                Notifications
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50 w-full text-left"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </button>
-            </div>
-          </div>
-        )}
-
         <Link
           to="/"
           className={`px-3 py-2 rounded-md ${
@@ -149,9 +90,77 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
         </Button>
         
         <Accordion type="single" collapsible className="border-none shadow-none w-full">
+          {/* User Account Section - Only show if authenticated */}
+          {isAuthenticated && user && (
+            <AccordionItem value="my-account" className="border-none">
+              <AccordionTrigger className="px-3 rounded-md text-gray-700 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar || ""} />
+                    <AvatarFallback className="bg-thryvance-blue text-white text-xs">
+                      {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>My Account</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-col space-y-2 pl-4 mt-2">
+                  <Link
+                    to={`/profile/${user.id}`}
+                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                    onClick={toggleMenu}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                  <Link
+                    to="/messages"
+                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                    onClick={toggleMenu}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Messages
+                  </Link>
+                  <Link
+                    to="/favorites"
+                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                    onClick={toggleMenu}
+                  >
+                    <Heart className="mr-2 h-4 w-4" />
+                    Favorites
+                  </Link>
+                  <Link
+                    to="/notifications"
+                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                    onClick={toggleMenu}
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    Notifications
+                  </Link>
+                  <Link
+                    to={`/profile/${user.id}`}
+                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                    onClick={toggleMenu}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50 w-full text-left"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
           {/* About Us dropdown */}
           <AccordionItem value="about-us" className="border-none">
-            <AccordionTrigger className="px-3 rounded-md text-gray-700">
+            <AccordionTrigger className="px-3 rounded-md text-gray-700 hover:no-underline">
               About Us
             </AccordionTrigger>
             <AccordionContent>
@@ -175,7 +184,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
 
           {/* Get Involved dropdown */}
           <AccordionItem value="get-involved" className="border-none">
-            <AccordionTrigger className="px-3 rounded-md text-gray-700">
+            <AccordionTrigger className="px-3 rounded-md text-gray-700 hover:no-underline">
               Get Involved
             </AccordionTrigger>
             <AccordionContent>
