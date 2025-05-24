@@ -1,11 +1,8 @@
-
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
 const TermsOfService = () => {
-  return (
-    <div className="flex flex-col min-h-screen">
+  return <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
@@ -84,15 +81,14 @@ const TermsOfService = () => {
               If you have any questions about these Terms of Service, please contact us:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-gray-700">
-              <li>By email: terms@thryvance.com</li>
-              <li>By mail: Thryvance Legal Team, 123 Community Ave, Suite 100, Anytown, ST 12345</li>
+              <li>By email: support@thryvance.com
+By phone : 778-385-9811</li>
+              
             </ul>
           </div>
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default TermsOfService;
