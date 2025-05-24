@@ -1,12 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { 
-  Dialog, 
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { User } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { X, Flag, MapPin, Calendar, Star, Check, MessageSquare, StarIcon } from "lucide-react";
@@ -20,7 +13,6 @@ import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import RateUserDialog from "@/components/RateUserDialog";
-
 interface Review {
   id: string;
   fromUserId: string;
@@ -30,7 +22,6 @@ interface Review {
   text: string;
   createdAt: Date;
 }
-
 interface ProfileDialogProps {
   user: User | null;
   open: boolean;
@@ -38,11 +29,20 @@ interface ProfileDialogProps {
   onViewFullProfile?: () => void;
   isFullScreen?: boolean;
 }
-
-const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScreen = false }: ProfileDialogProps) => {
+const ProfileDialog = ({
+  user,
+  open,
+  onOpenChange,
+  onViewFullProfile,
+  isFullScreen = false
+}: ProfileDialogProps) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    user: currentUser
+  } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showRateDialog, setShowRateDialog] = useState(false);
@@ -52,17 +52,15 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
   useEffect(() => {
     const fetchReviews = async () => {
       if (!user || !open) return;
-      
       setLoadingReviews(true);
       try {
-        const { data, error } = await supabase
-          .from('reviews')
-          .select('*')
-          .eq('to_user_id', user.id)
-          .order('created_at', { ascending: false });
-
+        const {
+          data,
+          error
+        } = await supabase.from('reviews').select('*').eq('to_user_id', user.id).order('created_at', {
+          ascending: false
+        });
         if (error) throw error;
-
         const mappedReviews: Review[] = (data || []).map(review => ({
           id: review.id,
           fromUserId: review.from_user_id,
@@ -72,7 +70,6 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
           text: review.text || '',
           createdAt: new Date(review.created_at || Date.now())
         }));
-
         setReviews(mappedReviews);
       } catch (error) {
         console.error("Error loading reviews:", error);
@@ -81,28 +78,23 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
         setLoadingReviews(false);
       }
     };
-
     fetchReviews();
   }, [user, open, refreshTrigger]);
-
   const handleConnectClick = () => {
     if (user) {
       navigate(`/messages/${user.id}`);
       onOpenChange(false);
-      
       toast({
         title: "Conversation opened",
         description: `You can now message ${user.name || user.username}`
       });
     }
   };
-
   const handleViewFullProfile = () => {
     if (onViewFullProfile) {
       onViewFullProfile();
     }
   };
-
   const handleReportUser = () => {
     if (user) {
       toast({
@@ -112,17 +104,13 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
       onOpenChange(false);
     }
   };
-
   const handleRateUser = () => {
     setShowRateDialog(true);
   };
-
   const formatMemberSince = (createdAt: any) => {
     try {
       if (!createdAt) return 'Unknown';
-      
       let date;
-      
       if (createdAt.value?.iso) {
         date = new Date(createdAt.value.iso);
       } else if (createdAt.iso) {
@@ -137,46 +125,34 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
         console.log('Unhandled date format:', createdAt);
         return 'Unknown';
       }
-      
       if (isNaN(date.getTime())) {
         console.log('Invalid date created from:', createdAt);
         return 'Unknown';
       }
-      
       return format(date, 'MMM yyyy');
     } catch (error) {
       console.error('Error formatting date:', error, createdAt);
       return 'Unknown';
     }
   };
-
   const calculateAverageRating = () => {
     if (reviews.length === 0) return 0;
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
     return sum / reviews.length;
   };
-
-  const StarRating = ({ rating }: { rating: number }) => {
-    return (
-      <div className="flex">
-        {[...Array(5)].map((_, i) => (
-          <StarIcon
-            key={i}
-            className={`h-4 w-4 ${
-              i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-            }`}
-          />
-        ))}
-      </div>
-    );
+  const StarRating = ({
+    rating
+  }: {
+    rating: number;
+  }) => {
+    return <div className="flex">
+        {[...Array(5)].map((_, i) => <StarIcon key={i} className={`h-4 w-4 ${i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} />)}
+      </div>;
   };
-
   if (!user) {
     return null;
   }
-
-  return (
-    <>
+  return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className={isFullScreen ? "max-w-4xl max-h-[95vh] overflow-y-auto" : "max-w-md max-h-[80vh] overflow-y-auto"}>
           <DialogHeader>
@@ -206,15 +182,11 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                       <h3 className={`${isFullScreen ? 'text-2xl' : 'text-xl'} font-semibold`}>
                         {user.name || user.username}
                       </h3>
-                      {user.username && (
-                        <p className="text-sm text-gray-500">@{user.username}</p>
-                      )}
-                      {user.location && (
-                        <div className={`flex items-center ${isFullScreen ? 'justify-start' : 'justify-center'} gap-1 mt-1 text-sm text-gray-600`}>
+                      {user.username && <p className="text-sm text-gray-500">@{user.username}</p>}
+                      {user.location && <div className={`flex items-center ${isFullScreen ? 'justify-start' : 'justify-center'} gap-1 mt-1 text-sm text-gray-600`}>
                           <MapPin className="h-4 w-4" />
                           <span>{user.location}</span>
-                        </div>
-                      )}
+                        </div>}
                       <div className={`flex items-center ${isFullScreen ? 'justify-start' : 'justify-center'} gap-1 mt-1 text-sm text-gray-600`}>
                         <Calendar className="h-4 w-4" />
                         <span>Member since {formatMemberSince(user.createdAt)}</span>
@@ -223,35 +195,28 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                   </div>
 
                   {/* Bio */}
-                  {user.bio && (
-                    <p className={`text-gray-600 text-sm ${isFullScreen ? 'text-left' : 'text-center px-2'}`}>
+                  {user.bio && <p className={`text-gray-600 text-sm ${isFullScreen ? 'text-left' : 'text-center px-2'}`}>
                       {user.bio}
-                    </p>
-                  )}
+                    </p>}
 
                   {/* Trust Score and Status */}
                   <div className={`flex items-center ${isFullScreen ? 'justify-start' : 'justify-center'} gap-2 flex-wrap`}>
-                    {user.verifiedStatus && (
-                      <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-green/10 text-thryvance-green-dark border-thryvance-green/20">
+                    {user.verifiedStatus && <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-green/10 text-thryvance-green-dark border-thryvance-green/20">
                         <Check className="h-3 w-3" />
                         Verified
-                      </Badge>
-                    )}
+                      </Badge>}
                     
-                    {user.trustScore !== 5.0 && (
-                      <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-blue/10 text-thryvance-blue-dark border-thryvance-blue/20">
+                    {user.trustScore !== 5.0 && <Badge variant="outline" className="flex items-center gap-1 bg-thryvance-blue/10 text-thryvance-blue-dark border-thryvance-blue/20">
                         <Star className="h-3 w-3" />
                         {user.trustScore} Trust Score
-                      </Badge>
-                    )}
+                      </Badge>}
                   </div>
                 </div>
 
                 {/* Right side content for full screen */}
                 <div className={`${isFullScreen ? 'flex-1' : 'w-full'} space-y-4`}>
                   {/* Help Stats */}
-                  {(user.helpOffered > 0 || user.helpReceived > 0) && (
-                    <>
+                  {(user.helpOffered > 0 || user.helpReceived > 0) && <>
                       <Separator />
                       <div>
                         <h4 className="font-semibold mb-3">Impact</h4>
@@ -266,8 +231,7 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                             <p className="text-xs text-gray-600">Help Received</p>
                           </div>
 
-                          {isFullScreen && (
-                            <>
+                          {isFullScreen && <>
                               <div className="bg-purple-100 p-3 rounded-lg text-center">
                                 <p className="text-lg font-bold text-purple-600">{user.volunteerHours || 0}</p>
                                 <p className="text-xs text-gray-600">Volunteer Hours</p>
@@ -277,36 +241,26 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                                 <p className="text-lg font-bold text-orange-600">{reviews.length}</p>
                                 <p className="text-xs text-gray-600">Total Reviews</p>
                               </div>
-                            </>
-                          )}
+                            </>}
                         </div>
                       </div>
-                    </>
-                  )}
+                    </>}
 
                   {/* Reviews Section */}
                   <Separator />
                   <div className="w-full">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-semibold">Reviews</h4>
-                      {reviews.length > 0 && (
-                        <div className="flex items-center gap-1">
+                      {reviews.length > 0 && <div className="flex items-center gap-1">
                           <StarRating rating={Math.round(calculateAverageRating())} />
                           <span className="text-sm text-gray-600">
                             ({calculateAverageRating().toFixed(1)} • {reviews.length})
                           </span>
-                        </div>
-                      )}
+                        </div>}
                     </div>
                     
-                    {loadingReviews ? (
-                      <p className="text-sm text-gray-500">Loading reviews...</p>
-                    ) : reviews.length === 0 ? (
-                      <p className="text-sm text-gray-500">No reviews yet</p>
-                    ) : (
-                      <div className={`space-y-3 ${isFullScreen ? 'max-h-60' : 'max-h-40'} overflow-y-auto`}>
-                        {reviews.slice(0, isFullScreen ? 10 : 3).map((review) => (
-                          <div key={review.id} className="text-left p-3 bg-gray-50 rounded-lg">
+                    {loadingReviews ? <p className="text-sm text-gray-500">Loading reviews...</p> : reviews.length === 0 ? <p className="text-sm text-gray-500">No reviews yet</p> : <div className={`space-y-3 ${isFullScreen ? 'max-h-60' : 'max-h-40'} overflow-y-auto`}>
+                        {reviews.slice(0, isFullScreen ? 10 : 3).map(review => <div key={review.id} className="text-left p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                               <Avatar className="h-6 w-6">
                                 <AvatarImage src={review.fromUserAvatar} alt={review.fromUserName} />
@@ -318,58 +272,30 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                                 {format(review.createdAt, 'MMM d, yyyy')}
                               </span>
                             </div>
-                            {review.text && (
-                              <p className="text-sm text-gray-600">{review.text}</p>
-                            )}
-                          </div>
-                        ))}
-                        {!isFullScreen && reviews.length > 3 && (
-                          <p className="text-xs text-center text-gray-500">
+                            {review.text && <p className="text-sm text-gray-600">{review.text}</p>}
+                          </div>)}
+                        {!isFullScreen && reviews.length > 3 && <p className="text-xs text-center text-gray-500">
                             +{reviews.length - 3} more reviews
-                          </p>
-                        )}
-                      </div>
-                    )}
+                          </p>}
+                      </div>}
                   </div>
 
                   {/* Action Buttons */}
                   <div className="w-full space-y-3">
-                    <Button 
-                      className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
-                      onClick={handleConnectClick}
-                    >
+                    <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark" onClick={handleConnectClick}>
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Message {user.name?.split(" ")[0] || user.username}
                     </Button>
                     
-                    {currentUser && currentUser.id !== user.id && (
-                      <Button 
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleRateUser}
-                      >
+                    {currentUser && currentUser.id !== user.id && <Button variant="outline" className="w-full" onClick={handleRateUser}>
                         <Star className="h-4 w-4 mr-2" />
                         Rate & Review
-                      </Button>
-                    )}
+                      </Button>}
                     
                     <div className="flex gap-2">
-                      {!isFullScreen && (
-                        <Button 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={handleViewFullProfile}
-                        >
-                          View Full Profile
-                        </Button>
-                      )}
+                      {!isFullScreen}
                       
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className={`text-red-600 border-red-200 hover:bg-red-50 ${isFullScreen ? 'flex-1' : ''}`}
-                        onClick={handleReportUser}
-                      >
+                      <Button variant="outline" size="sm" className={`text-red-600 border-red-200 hover:bg-red-50 ${isFullScreen ? 'flex-1' : ''}`} onClick={handleReportUser}>
                         <Flag className="h-4 w-4" />
                         {isFullScreen && <span className="ml-2">Report User</span>}
                       </Button>
@@ -383,22 +309,13 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
       </Dialog>
 
       {/* Rate User Dialog */}
-      {user && showRateDialog && (
-        <RateUserDialog
-          user={user}
-          open={showRateDialog}
-          onOpenChange={setShowRateDialog}
-          onReviewSubmitted={() => {
-            setRefreshTrigger(prev => prev + 1);
-            toast({
-              title: "Review submitted",
-              description: `Thank you for rating ${user.name || user.username}!`
-            });
-          }}
-        />
-      )}
-    </>
-  );
+      {user && showRateDialog && <RateUserDialog user={user} open={showRateDialog} onOpenChange={setShowRateDialog} onReviewSubmitted={() => {
+      setRefreshTrigger(prev => prev + 1);
+      toast({
+        title: "Review submitted",
+        description: `Thank you for rating ${user.name || user.username}!`
+      });
+    }} />}
+    </>;
 };
-
 export default ProfileDialog;
