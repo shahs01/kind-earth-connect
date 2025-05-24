@@ -12,6 +12,7 @@ const SignUp = () => {
     password: string;
     name: string;
     location: string;
+    phone: string;
   } | null>(null);
 
   const handleFirstStepComplete = (data: {
@@ -19,6 +20,7 @@ const SignUp = () => {
     password: string;
     name: string;
     location: string;
+    phone: string;
   }) => {
     setUserData(data);
     setStep(2);

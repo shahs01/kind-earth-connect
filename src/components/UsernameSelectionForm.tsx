@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +36,7 @@ interface UsernameSelectionFormProps {
     password: string;
     name: string;
     location: string;
+    phone: string;
   } | null;
 }
 
@@ -68,7 +70,6 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
     
     const timer = setTimeout(async () => {
       try {
-        // Direct check against database instead of using validateField
         const { data: usernameData, error: usernameError } = await supabase
           .from('profiles')
           .select('id')
@@ -79,7 +80,6 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
           console.error("Error checking username:", usernameError);
           setUsernameAvailable(false);
         } else {
-          // If no data found, username is available
           setUsernameAvailable(!usernameData);
         }
       } catch (err) {
@@ -106,13 +106,13 @@ const UsernameSelectionForm = ({ userData }: UsernameSelectionFormProps) => {
     setIsLoading(true);
     
     try {
-      // Create signup data with all required fields
       const signUpData = {
         username: data.username,
         name: userData.name,
         email: userData.email,
         password: userData.password,
-        location: userData.location
+        location: userData.location,
+        phone: userData.phone
       };
       
       await signUp(signUpData);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +5,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -26,6 +26,7 @@ import { validateEmail, validatePassword } from "@/utils/validation";
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
+  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
   password: z.string()
     .min(8, { message: "Password must be at least 8 characters long" })
     .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
@@ -34,6 +35,7 @@ const formSchema = z.object({
     .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
   confirmPassword: z.string().min(1, { message: "Please confirm your password" }),
   location: z.string().min(2, { message: "Location must be at least 2 characters" }),
+  acceptTerms: z.boolean().refine(val => val === true, { message: "You must accept the terms of service" }),
 })
 .refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -48,6 +50,7 @@ interface SignUpFormProps {
     password: string;
     name: string;
     location: string;
+    phone: string;
   }) => void;
 }
 
@@ -64,9 +67,11 @@ const SignUpForm = ({ onFirstStepComplete }: SignUpFormProps) => {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
       location: "",
+      acceptTerms: false,
     },
     mode: "onChange",
   });
@@ -111,7 +116,8 @@ const SignUpForm = ({ onFirstStepComplete }: SignUpFormProps) => {
       email: data.email,
       password: data.password,
       name: data.name,
-      location: data.location
+      location: data.location,
+      phone: data.phone
     });
   };
   
@@ -237,6 +243,25 @@ const SignUpForm = ({ onFirstStepComplete }: SignUpFormProps) => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="tel"
+                          placeholder="Enter your phone number" 
+                          {...field} 
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
@@ -310,6 +335,35 @@ const SignUpForm = ({ onFirstStepComplete }: SignUpFormProps) => {
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="acceptTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm">
+                          I agree to the{" "}
+                          <Link to="/terms-of-service" className="text-thryvance-blue hover:underline">
+                            Terms of Service
+                          </Link>{" "}
+                          and{" "}
+                          <Link to="/privacy-policy" className="text-thryvance-blue hover:underline">
+                            Privacy Policy
+                          </Link>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
                     </FormItem>
                   )}
                 />

@@ -18,9 +18,14 @@ import {
   File,
   ChevronDown,
   Search,
-  Plus
+  Plus,
+  User,
+  MessageSquare,
+  Settings,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MobileMenuProps {
   isActive: (path: string) => boolean;
@@ -29,7 +34,7 @@ interface MobileMenuProps {
 }
 
 const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   
   if (!isMenuOpen) return null;
 
@@ -51,9 +56,73 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
     { label: "Donate", path: "/donate", icon: <Heart className="h-4 w-4" /> },
   ];
 
+  const handleSignOut = async () => {
+    await logout();
+    toggleMenu();
+  };
+
   return (
     <div className="md:hidden bg-white border-t border-gray-100 p-4">
       <nav className="flex flex-col space-y-3">
+        {/* User Account Section - Only show if authenticated */}
+        {isAuthenticated && user && (
+          <div className="border-b border-gray-100 pb-4 mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.avatar || ""} />
+                <AvatarFallback className="bg-thryvance-blue text-white">
+                  {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium text-sm">{user.name || user.email?.split("@")[0] || "User"}</p>
+                <p className="text-xs text-gray-500">My Account</p>
+              </div>
+            </div>
+            <div className="flex flex-col space-y-2">
+              <Link
+                to={`/profile/${user.id}`}
+                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                onClick={toggleMenu}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
+              <Link
+                to="/messages"
+                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                onClick={toggleMenu}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Messages
+              </Link>
+              <Link
+                to="/favorites"
+                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                onClick={toggleMenu}
+              >
+                <Heart className="mr-2 h-4 w-4" />
+                Favorites
+              </Link>
+              <Link
+                to="/notifications"
+                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
+                onClick={toggleMenu}
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Notifications
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50 w-full text-left"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
+
         <Link
           to="/"
           className={`px-3 py-2 rounded-md ${
