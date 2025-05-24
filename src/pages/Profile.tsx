@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Navigate, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -12,6 +11,7 @@ import AccountSettings from "@/components/AccountSettings";
 import Reviews from "@/components/Reviews";
 import ReviewsGiven from "@/components/ReviewsGiven";
 import RateUserDialog from "@/components/RateUserDialog";
+import FavoritesTab from "@/components/FavoritesTab";
 import { Loader2, Star } from "lucide-react";
 import UserPosts from "@/components/UserPosts";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
@@ -161,6 +161,7 @@ const Profile = () => {
                 <TabsList className="mb-6">
                   <TabsTrigger value="activity">Activity</TabsTrigger>
                   {isOwnProfile && <TabsTrigger value="posts">My Posts</TabsTrigger>}
+                  {isOwnProfile && <TabsTrigger value="favorites">Favorites</TabsTrigger>}
                   <TabsTrigger value="reviews">Reviews</TabsTrigger>
                   {isOwnProfile && <TabsTrigger value="reviewsgiven">Reviews Given</TabsTrigger>}
                   {isOwnProfile && <TabsTrigger value="settings">Settings</TabsTrigger>}
@@ -201,6 +202,12 @@ const Profile = () => {
                 {isOwnProfile && (
                   <TabsContent value="posts">
                     <UserPosts userId={userId} />
+                  </TabsContent>
+                )}
+                
+                {isOwnProfile && (
+                  <TabsContent value="favorites">
+                    <FavoritesTab userId={userId} isOwnProfile={isOwnProfile} />
                   </TabsContent>
                 )}
                 
