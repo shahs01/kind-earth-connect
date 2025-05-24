@@ -50,7 +50,7 @@ const ConversationHeader = ({
 
   return (
     <div className="border-b border-gray-200 p-3 flex items-center justify-between">
-      <div className="flex items-center" onClick={onViewProfile} role="button">
+      <div className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg p-2 -ml-2" onClick={onViewProfile}>
         <Avatar className="h-10 w-10">
           <AvatarImage src={otherUser.avatar} alt={otherUser.name || 'User'} />
           <AvatarFallback>
@@ -58,7 +58,7 @@ const ConversationHeader = ({
           </AvatarFallback>
         </Avatar>
         <div className="ml-3">
-          <h3 className="font-semibold">
+          <h3 className="font-semibold hover:text-thryvance-blue transition-colors">
             {otherUser.name || otherUser.username || 'Unknown User'}
           </h3>
           {otherUser.status && (

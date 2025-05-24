@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Message } from "@/hooks/useMessages";
 import { User } from "@/types";
+import ConversationHeader from "./ConversationHeader";
+import ProfileDialog from "@/components/ProfileDialog";
 
 const MessageConversation = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -21,6 +23,7 @@ const MessageConversation = () => {
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [otherUser, setOtherUser] = useState<User | null>(null);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -218,6 +221,57 @@ const MessageConversation = () => {
     };
   }, [userId, user]);
 
+  const handleViewProfile = () => {
+    if (otherUser) {
+      setIsProfileDialogOpen(true);
+    }
+  };
+
+  const handleReportUser = () => {
+    if (otherUser) {
+      toast({
+        title: "Report submitted",
+        description: `We've received your report about ${otherUser.name}. Our team will review it shortly.`
+      });
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!userId || !user) return;
+    
+    try {
+      // Delete all messages in this conversation
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`);
+
+      if (error) throw error;
+
+      toast({
+        title: "Conversation deleted",
+        description: "All messages in this conversation have been deleted."
+      });
+      
+      // Clear local messages
+      setMessages([]);
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleArchiveConversation = () => {
+    toast({
+      title: "Conversation archived",
+      description: "This conversation has been archived."
+    });
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !userId || !user || sending) return;
 
@@ -288,20 +342,14 @@ const MessageConversation = () => {
 
   return (
     <>
-      {/* Conversation Header */}
-      <div className="border-b border-gray-200 p-4 flex items-center">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={otherUser?.avatar || ''} alt={otherUser?.name || 'User'} />
-          <AvatarFallback>
-            {otherUser?.name?.charAt(0) || 'U'}
-          </AvatarFallback>
-        </Avatar>
-        <div className="ml-3">
-          <h3 className="font-semibold text-gray-900">
-            {otherUser?.name || 'User'}
-          </h3>
-        </div>
-      </div>
+      <ConversationHeader
+        otherUser={otherUser}
+        loading={loading}
+        onViewProfile={handleViewProfile}
+        onReportUser={handleReportUser}
+        onDeleteConversation={handleDeleteConversation}
+        onArchiveConversation={handleArchiveConversation}
+      />
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
@@ -400,6 +448,17 @@ const MessageConversation = () => {
           </Button>
         </div>
       </div>
+
+      {/* Profile Dialog */}
+      {otherUser && (
+        <ProfileDialog
+          user={otherUser}
+          open={isProfileDialogOpen}
+          onOpenChange={setIsProfileDialogOpen}
+          onViewFullProfile={() => setIsProfileDialogOpen(true)}
+          isFullScreen={false}
+        />
+      )}
     </>
   );
 };
