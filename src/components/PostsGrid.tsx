@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import PostDetailDialog from "@/components/PostDetailDialog";
 
-interface Post {
+interface PostsGridPost {
   id: string;
   title: string;
   description: string | null;
@@ -25,13 +24,29 @@ interface Post {
   status?: string | null;
   timeframe?: string | null;
   availability?: string | null;
-  user?: {
+  user: {
     name: string;
     avatar: string;
     username?: string;
-  }
+  };
   isFavorited?: boolean;
   favoriteId?: string | null;
+}
+
+interface PostDetailDialogPost {
+  id: string;
+  title: string;
+  description: string | null;
+  type: "offer" | "request";
+  category: string | null;
+  location: string | null;
+  created_at: string;
+  user_id: string;
+  photos?: string[] | null;
+  user: {
+    name: string;
+    avatar: string;
+  };
 }
 
 interface PostsGridProps {
@@ -53,17 +68,17 @@ const PostsGrid = ({
   sortBy = "newest",
   limit
 }: PostsGridProps) => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<PostsGridPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostDetailDialogPost | null>(null);
   const [favoritingPost, setFavoritingPost] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   // Function to check if a post is favorited by the current user
-  const checkFavoriteStatus = useCallback(async (post: Post, currentUserId: string) => {
+  const checkFavoriteStatus = useCallback(async (post: PostsGridPost, currentUserId: string) => {
     try {
       const { data, error } = await supabase
         .from('favorites')
@@ -188,16 +203,13 @@ const PostsGrid = ({
               .eq('id', post.user_id)
               .maybeSingle();
             
-            const typedPost: Post = {
+            const typedPost: PostsGridPost = {
               ...post,
               type: post.type as "offer" | "request",
-              user: userData ? {
-                name: userData.name || "Unknown User",
-                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}`,
-                username: userData.username
-              } : {
-                name: "Unknown User",
-                avatar: "https://ui-avatars.com/api/?name=Unknown"
+              user: {
+                name: userData?.name || "Unknown User",
+                avatar: userData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || 'User')}`,
+                username: userData?.username
               }
             };
             
@@ -231,7 +243,7 @@ const PostsGrid = ({
     fetchPosts();
   }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, checkFavoriteStatus]);
 
-  const handleToggleFavorite = async (post: Post, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (post: PostsGridPost, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the detail dialog
     
     if (!isAuthenticated) {
@@ -281,6 +293,26 @@ const PostsGrid = ({
     } finally {
       setFavoritingPost(null);
     }
+  };
+
+  const handlePostClick = (post: PostsGridPost) => {
+    // Convert PostsGridPost to PostDetailDialogPost format
+    const detailPost: PostDetailDialogPost = {
+      id: post.id,
+      title: post.title,
+      description: post.description,
+      type: post.type,
+      category: post.category,
+      location: post.location,
+      created_at: post.created_at,
+      user_id: post.user_id,
+      photos: post.photos,
+      user: {
+        name: post.user.name,
+        avatar: post.user.avatar
+      }
+    };
+    setSelectedPost(detailPost);
   };
 
   if (loading) {
@@ -334,7 +366,7 @@ const PostsGrid = ({
           <Card 
             key={post.id} 
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden"
-            onClick={() => setSelectedPost(post)}
+            onClick={() => handlePostClick(post)}
           >
             <div className="relative">
               {/* Post image or placeholder */}

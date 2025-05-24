@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -51,6 +50,8 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
       onOpenChange(false);
       return;
     }
+
+    if (profileLoading) return; // Prevent multiple clicks while loading
 
     try {
       setProfileLoading(true);
@@ -133,8 +134,10 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
 
           <div className="space-y-4">
             {/* User Info - Clickable */}
-            <div 
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            <button 
+              className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors w-full text-left ${
+                profileLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}
               onClick={handleUserClick}
               disabled={profileLoading}
             >
@@ -157,7 +160,7 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
                   <div className="animate-spin h-4 w-4 border-2 border-thryvance-green border-t-transparent rounded-full"></div>
                 </div>
               )}
-            </div>
+            </button>
 
             {/* Post Type Badge */}
             <div className="flex items-center gap-2">
