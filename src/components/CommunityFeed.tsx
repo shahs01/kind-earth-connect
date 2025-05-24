@@ -37,6 +37,21 @@ interface CommunityFeedProps {
   sortBy?: string;
 }
 
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return "Unknown date";
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "Unknown date";
+    }
+    return date.toLocaleString();
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Unknown date";
+  }
+};
+
 const CommunityFeed = ({
   searchQuery = "",
   locationFilter = "",
@@ -107,7 +122,7 @@ const CommunityFeed = ({
                 name: profileData?.name || profileData?.username || "Unknown User",
                 avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
-              createdAt: new Date(post.created_at).toLocaleString(),
+              createdAt: formatDate(post.created_at),
               likes: 0, // These would be actual counts from a likes table
               comments: 0 // These would be actual counts from a comments table
             };

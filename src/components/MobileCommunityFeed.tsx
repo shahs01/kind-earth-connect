@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -37,6 +38,21 @@ interface MobileCommunityFeedProps {
   postTypeFilter?: string;
   sortBy?: string;
 }
+
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return "Unknown date";
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "Unknown date";
+    }
+    return date.toLocaleString();
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Unknown date";
+  }
+};
 
 const MobileCommunityFeed = ({
   searchQuery = "",
@@ -106,7 +122,7 @@ const MobileCommunityFeed = ({
                 name: profileData?.name || profileData?.username || "Unknown User",
                 avatar: profileData?.avatar || "https://ui-avatars.com/api/?name=User"
               },
-              createdAt: new Date(post.created_at).toLocaleString(),
+              createdAt: formatDate(post.created_at),
               likes: 0,
               comments: 0
             };
