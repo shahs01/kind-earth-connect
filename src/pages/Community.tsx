@@ -68,8 +68,8 @@ const Community = () => {
               >
                 <option value="All Categories">All Categories</option>
                 {categories.map((category) => (
-                  <option key={category.name} value={category.name}>
-                    {category.name}
+                  <option key={category} value={category}>
+                    {category}
                   </option>
                 ))}
               </select>
