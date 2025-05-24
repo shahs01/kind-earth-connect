@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +19,6 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      // Use correct options format for Supabase v2
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -33,7 +31,6 @@ export const useAuthOperations = () => {
         description: "Welcome back to Thryvance."
       });
       
-      // Don't navigate here - let the auth context handle it
     } catch (error: any) {
       let message = "Failed to log in";
       if (error instanceof Error) {
@@ -60,7 +57,7 @@ export const useAuthOperations = () => {
     
     try {
       const redirectTo = `${window.location.origin}/auth-callback`;
-      console.log("Redirecting to:", redirectTo);
+      console.log("Starting OAuth flow with redirect:", redirectTo);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -75,6 +72,7 @@ export const useAuthOperations = () => {
       
       if (error) throw error;
       
+      console.log("OAuth initialization successful");
       // The user will be redirected to the provider's auth page
     } catch (error: any) {
       let message = "Failed to sign in with provider";
@@ -82,6 +80,7 @@ export const useAuthOperations = () => {
         message = error.message;
       }
       
+      console.error("OAuth error:", error);
       toast({
         title: "Login failed",
         description: message,

@@ -11,27 +11,40 @@ const AuthCallback = () => {
   
   useEffect(() => {
     const handleAuthCallback = async () => {
-      // Get URL hash, which contains access token after OAuth login
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("Auth callback error:", error);
+      try {
+        // Handle the auth callback
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth callback error:", error);
+          toast({
+            title: "Authentication error",
+            description: error.message,
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
+        
+        if (data?.session) {
+          console.log("Auth callback successful, session found");
+          toast({
+            title: "Login successful!",
+            description: "Welcome back to Thryvance.",
+          });
+          // Navigate to profile page after successful auth
+          navigate("/profile", { replace: true });
+        } else {
+          console.log("No session found in auth callback");
+          navigate("/login", { replace: true });
+        }
+      } catch (err) {
+        console.error("Auth callback handling error:", err);
         toast({
           title: "Authentication error",
-          description: error.message,
+          description: "Something went wrong during authentication",
           variant: "destructive",
         });
-        navigate("/login");
-        return;
-      }
-      
-      if (data?.session) {
-        toast({
-          title: "Login successful!",
-          description: "Welcome back to Thryvance.",
-        });
-        navigate("/profile");
-      } else {
         navigate("/login");
       }
     };
