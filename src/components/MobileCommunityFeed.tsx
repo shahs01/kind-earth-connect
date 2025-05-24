@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Heart, MessageSquare, Share2, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PostDetailDialog from "@/components/PostDetailDialog";
 
 interface ProfileData {
   name?: string | null;
@@ -47,6 +47,8 @@ const MobileCommunityFeed = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [postDialogOpen, setPostDialogOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -130,6 +132,11 @@ const MobileCommunityFeed = ({
     fetchPosts();
   }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast]);
 
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+    setPostDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="p-4">
@@ -157,128 +164,148 @@ const MobileCommunityFeed = ({
   }
 
   return (
-    <div className="p-2">
-      <div className="flex justify-between items-center mb-4 px-2">
-        <h2 className="text-lg font-semibold text-gray-900">Community Posts</h2>
-        {isAuthenticated ? (
-          <div className="flex gap-1">
-            <Button asChild size="sm" className="bg-thryvance-green hover:bg-thryvance-green-dark text-xs">
-              <Link to="/offer-help">Offer</Link>
-            </Button>
+    <>
+      <div className="p-2">
+        <div className="flex justify-between items-center mb-4 px-2">
+          <h2 className="text-lg font-semibold text-gray-900">Community Posts</h2>
+          {isAuthenticated ? (
+            <div className="flex gap-1">
+              <Button asChild size="sm" className="bg-thryvance-green hover:bg-thryvance-green-dark text-xs">
+                <Link to="/offer-help">Offer</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="border-thryvance-blue text-thryvance-blue text-xs">
+                <Link to="/request-help">Request</Link>
+              </Button>
+            </div>
+          ) : (
             <Button asChild size="sm" variant="outline" className="border-thryvance-blue text-thryvance-blue text-xs">
-              <Link to="/request-help">Request</Link>
+              <Link to="/login">Login</Link>
             </Button>
-          </div>
+          )}
+        </div>
+
+        {posts.length === 0 ? (
+          <Card className="text-center py-8 mx-2">
+            <CardContent>
+              <AlertCircle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+              <h3 className="text-lg font-medium text-gray-700">No posts yet</h3>
+              <p className="text-gray-500 mt-1 text-sm">
+                {searchQuery || locationFilter || (postTypeFilter !== "all")
+                  ? "Try adjusting your filters"
+                  : "Be the first to create a post!"}
+              </p>
+              {isAuthenticated && (
+                <div className="mt-4 flex gap-2 justify-center">
+                  <Button asChild size="sm" className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                    <Link to="/offer-help">Offer Help</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="border-thryvance-blue text-thryvance-blue">
+                    <Link to="/request-help">Request Help</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         ) : (
-          <Button asChild size="sm" variant="outline" className="border-thryvance-blue text-thryvance-blue text-xs">
-            <Link to="/login">Login</Link>
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            {posts.map((post) => (
+              <Card 
+                key={post.id} 
+                className={`${post.type === 'offer' 
+                      ? 'border-l-2 border-thryvance-green' 
+                      : 'border-l-2 border-thryvance-blue'} hover:shadow-md transition-shadow cursor-pointer`}
+                onClick={() => handlePostClick(post)}
+              >
+                <CardHeader className="p-3 pb-2">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={post.user.avatar}
+                      alt={post.user.name}
+                      className="h-6 w-6 rounded-full flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-xs truncate">{post.user.name}</h3>
+                      <p className="text-xs text-gray-500 truncate">{post.createdAt}</p>
+                    </div>
+                  </div>
+                  <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full self-start ${
+                    post.type === 'offer' 
+                      ? 'bg-thryvance-green-light text-thryvance-green' 
+                      : 'bg-thryvance-blue-light text-thryvance-blue'
+                  }`}>
+                    {post.type === 'offer' ? 'Offering' : 'Requesting'}
+                  </span>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <h4 className="text-sm font-medium mb-1 line-clamp-2">{post.title}</h4>
+                  <p className="text-xs text-gray-700 mb-2 line-clamp-2">{post.description}</p>
+                  
+                  {/* Display only the first photo if available */}
+                  {post.photos && post.photos.length > 0 && (
+                    <div className="mb-2">
+                      <div className="aspect-video rounded overflow-hidden bg-gray-100">
+                        <img 
+                          src={post.photos[0]} 
+                          alt="Post preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x100?text=Error';
+                          }}
+                        />
+                      </div>
+                      {post.photos.length > 1 && (
+                        <p className="text-xs text-gray-500 mt-1">+{post.photos.length - 1} more photos</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {post.location && (
+                    <div className="text-xs text-gray-500 mb-2 truncate">📍 {post.location}</div>
+                  )}
+                  {post.category && (
+                    <div className="mb-2">
+                      <span className="inline-block bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded truncate">
+                        {post.category}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-2 border-t border-gray-100">
+                    <button className="flex items-center gap-1 text-xs text-gray-600">
+                      <Heart className="h-3 w-3" /> {post.likes}
+                    </button>
+                    <button className="flex items-center gap-1 text-xs text-gray-600">
+                      <MessageSquare className="h-3 w-3" /> {post.comments}
+                    </button>
+                    <button className="flex items-center gap-1 text-xs text-gray-600">
+                      <Share2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
 
-      {posts.length === 0 ? (
-        <Card className="text-center py-8 mx-2">
-          <CardContent>
-            <AlertCircle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-            <h3 className="text-lg font-medium text-gray-700">No posts yet</h3>
-            <p className="text-gray-500 mt-1 text-sm">
-              {searchQuery || locationFilter || (postTypeFilter !== "all")
-                ? "Try adjusting your filters"
-                : "Be the first to create a post!"}
-            </p>
-            {isAuthenticated && (
-              <div className="mt-4 flex gap-2 justify-center">
-                <Button asChild size="sm" className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                  <Link to="/offer-help">Offer Help</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline" className="border-thryvance-blue text-thryvance-blue">
-                  <Link to="/request-help">Request Help</Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {posts.map((post) => (
-            <Card key={post.id} className={`${post.type === 'offer' 
-                  ? 'border-l-2 border-thryvance-green' 
-                  : 'border-l-2 border-thryvance-blue'} hover:shadow-md transition-shadow`}
-            >
-              <CardHeader className="p-3 pb-2">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={post.user.avatar}
-                    alt={post.user.name}
-                    className="h-6 w-6 rounded-full flex-shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-xs truncate">{post.user.name}</h3>
-                    <p className="text-xs text-gray-500 truncate">{post.createdAt}</p>
-                  </div>
-                </div>
-                <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full self-start ${
-                  post.type === 'offer' 
-                    ? 'bg-thryvance-green-light text-thryvance-green' 
-                    : 'bg-thryvance-blue-light text-thryvance-blue'
-                }`}>
-                  {post.type === 'offer' ? 'Offering' : 'Requesting'}
-                </span>
-              </CardHeader>
-              <CardContent className="p-3 pt-0">
-                <h4 className="text-sm font-medium mb-1 line-clamp-2">{post.title}</h4>
-                <p className="text-xs text-gray-700 mb-2 line-clamp-2">{post.description}</p>
-                
-                {/* Display photos if available */}
-                {post.photos && post.photos.length > 0 && (
-                  <div className="mb-2">
-                    <div className="grid grid-cols-2 gap-1">
-                      {post.photos.slice(0, 4).map((photo, index) => (
-                        <div key={index} className="aspect-square rounded overflow-hidden bg-gray-100">
-                          <img 
-                            src={photo} 
-                            alt={`Photo ${index + 1}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Error';
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    {post.photos.length > 4 && (
-                      <p className="text-xs text-gray-500 mt-1">+{post.photos.length - 4} more photos</p>
-                    )}
-                  </div>
-                )}
-                
-                {post.location && (
-                  <div className="text-xs text-gray-500 mb-2 truncate">📍 {post.location}</div>
-                )}
-                {post.category && (
-                  <div className="mb-2">
-                    <span className="inline-block bg-gray-100 text-gray-800 text-xs px-1.5 py-0.5 rounded truncate">
-                      {post.category}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-gray-100">
-                  <button className="flex items-center gap-1 text-xs text-gray-600">
-                    <Heart className="h-3 w-3" /> {post.likes}
-                  </button>
-                  <button className="flex items-center gap-1 text-xs text-gray-600">
-                    <MessageSquare className="h-3 w-3" /> {post.comments}
-                  </button>
-                  <button className="flex items-center gap-1 text-xs text-gray-600">
-                    <Share2 className="h-3 w-3" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {selectedPost && (
+        <PostDetailDialog
+          post={{
+            id: selectedPost.id,
+            title: selectedPost.title,
+            description: selectedPost.description,
+            type: selectedPost.type as "offer" | "request",
+            category: selectedPost.category,
+            location: selectedPost.location,
+            created_at: selectedPost.createdAt,
+            user_id: "", // This will be handled by the dialog
+            photos: selectedPost.photos,
+            user: selectedPost.user
+          }}
+          open={postDialogOpen}
+          onOpenChange={setPostDialogOpen}
+        />
       )}
-    </div>
+    </>
   );
 };
 
