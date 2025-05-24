@@ -61,12 +61,12 @@ export const useAuthOperations = () => {
       const getRedirectUrl = () => {
         const currentUrl = window.location.origin;
         
-        // Production domains
+        // Production domains - prioritize main domain
         if (currentUrl.includes('thryvance.ca')) {
-          return `${currentUrl}/auth-callback`;
+          return 'https://thryvance.ca/auth-callback';
         }
         
-        // Development/preview domains
+        // For development/preview environments
         return `${currentUrl}/auth-callback`;
       };
       

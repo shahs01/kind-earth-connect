@@ -44,8 +44,9 @@ const AuthCallback = () => {
             description: "Welcome back to Thryvance.",
           });
           
-          // Navigate to profile page after successful auth
-          navigate("/profile", { replace: true });
+          // Navigate to home page after successful auth for production
+          const isProduction = window.location.hostname.includes('thryvance.ca');
+          navigate(isProduction ? "/" : "/profile", { replace: true });
         } else {
           console.log("No session found in auth callback, checking URL hash for tokens");
           
@@ -65,7 +66,8 @@ const AuthCallback = () => {
                   title: "Login successful!",
                   description: "Welcome back to Thryvance.",
                 });
-                navigate("/profile", { replace: true });
+                const isProduction = window.location.hostname.includes('thryvance.ca');
+                navigate(isProduction ? "/" : "/profile", { replace: true });
               } else {
                 console.log("No session found on retry, redirecting to login");
                 navigate("/login", { replace: true });
