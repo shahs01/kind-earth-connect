@@ -57,6 +57,7 @@ interface PostsGridProps {
   userId?: string;
   sortBy?: string;
   limit?: number;
+  customPosts?: PostsGridPost[];
 }
 
 const PostsGrid = ({
@@ -66,7 +67,8 @@ const PostsGrid = ({
   typeFilter = null,
   userId,
   sortBy = "newest",
-  limit
+  limit,
+  customPosts
 }: PostsGridProps) => {
   const [posts, setPosts] = useState<PostsGridPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,6 +144,13 @@ const PostsGrid = ({
   }, []);
   
   useEffect(() => {
+    // If customPosts are provided, use them instead of fetching
+    if (customPosts) {
+      setPosts(customPosts);
+      setLoading(false);
+      return;
+    }
+
     const fetchPosts = async () => {
       try {
         setLoading(true);
@@ -241,7 +250,7 @@ const PostsGrid = ({
     };
 
     fetchPosts();
-  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, checkFavoriteStatus]);
+  }, [searchQuery, categoryFilter, locationFilter, typeFilter, userId, sortBy, limit, toast, user, checkFavoriteStatus, customPosts]);
 
   const handleToggleFavorite = async (post: PostsGridPost, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the detail dialog

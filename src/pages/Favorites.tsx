@@ -12,27 +12,33 @@ import PostsGrid from "@/components/PostsGrid";
 const Favorites = () => {
   const { loading, favorites, fetchFavorites } = useFavorites();
   const navigate = useNavigate();
+  const [favoritePosts, setFavoritePosts] = useState<any[]>([]);
   
   useEffect(() => {
     fetchFavorites();
   }, []);
   
   // Transform favorites into posts format for PostsGrid
-  const favoritePosts = favorites.map(favorite => ({
-    id: favorite.post?.id || favorite.post_id,
-    title: favorite.post?.title || "Unknown Title",
-    description: favorite.post?.description || null,
-    type: (favorite.post?.type as "offer" | "request") || "offer",
-    category: favorite.post?.category || null,
-    location: favorite.post?.location || null,
-    created_at: favorite.post?.created_at || favorite.created_at,
-    user_id: favorite.post?.user_id || "",
-    photos: null,
-    user: {
-      name: "Unknown User",
-      avatar: "https://ui-avatars.com/api/?name=User"
-    }
-  }));
+  useEffect(() => {
+    const transformedPosts = favorites.map(favorite => ({
+      id: favorite.post?.id || favorite.post_id,
+      title: favorite.post?.title || "Unknown Title",
+      description: favorite.post?.description || null,
+      type: (favorite.post?.type as "offer" | "request") || "offer",
+      category: favorite.post?.category || null,
+      location: favorite.post?.location || null,
+      created_at: favorite.post?.created_at || favorite.created_at,
+      user_id: favorite.post?.user_id || "",
+      photos: null,
+      user: {
+        name: "Unknown User",
+        avatar: "https://ui-avatars.com/api/?name=User"
+      },
+      isFavorited: true,
+      favoriteId: favorite.id
+    }));
+    setFavoritePosts(transformedPosts);
+  }, [favorites]);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,6 +67,7 @@ const Favorites = () => {
               </Card>
             ) : (
               <PostsGrid 
+                customPosts={favoritePosts}
                 searchQuery=""
                 categoryFilter=""
                 locationFilter=""

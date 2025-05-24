@@ -15,12 +15,35 @@ interface FavoritesTabProps {
 const FavoritesTab = ({ userId, isOwnProfile }: FavoritesTabProps) => {
   const { loading, favorites, fetchFavorites } = useFavorites();
   const navigate = useNavigate();
+  const [favoritePosts, setFavoritePosts] = useState<any[]>([]);
   
   useEffect(() => {
     if (isOwnProfile) {
       fetchFavorites();
     }
   }, [isOwnProfile, fetchFavorites]);
+  
+  // Transform favorites into posts format for PostsGrid
+  useEffect(() => {
+    const transformedPosts = favorites.map(favorite => ({
+      id: favorite.post?.id || favorite.post_id,
+      title: favorite.post?.title || "Unknown Title",
+      description: favorite.post?.description || null,
+      type: (favorite.post?.type as "offer" | "request") || "offer",
+      category: favorite.post?.category || null,
+      location: favorite.post?.location || null,
+      created_at: favorite.post?.created_at || favorite.created_at,
+      user_id: favorite.post?.user_id || "",
+      photos: null,
+      user: {
+        name: "Unknown User",
+        avatar: "https://ui-avatars.com/api/?name=User"
+      },
+      isFavorited: true,
+      favoriteId: favorite.id
+    }));
+    setFavoritePosts(transformedPosts);
+  }, [favorites]);
   
   // Only show favorites for own profile
   if (!isOwnProfile) {
@@ -58,27 +81,11 @@ const FavoritesTab = ({ userId, isOwnProfile }: FavoritesTabProps) => {
     );
   }
 
-  // Transform favorites into posts format for PostsGrid
-  const favoritePosts = favorites.map(favorite => ({
-    id: favorite.post?.id || favorite.post_id,
-    title: favorite.post?.title || "Unknown Title",
-    description: favorite.post?.description || null,
-    type: (favorite.post?.type as "offer" | "request") || "offer",
-    category: favorite.post?.category || null,
-    location: favorite.post?.location || null,
-    created_at: favorite.post?.created_at || favorite.created_at,
-    user_id: favorite.post?.user_id || "",
-    photos: null,
-    user: {
-      name: "Unknown User",
-      avatar: "https://ui-avatars.com/api/?name=User"
-    }
-  }));
-
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Favorite Posts ({favorites.length})</h3>
       <PostsGrid 
+        customPosts={favoritePosts}
         searchQuery=""
         categoryFilter=""
         locationFilter=""
