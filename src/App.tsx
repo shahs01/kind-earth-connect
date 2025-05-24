@@ -70,6 +70,8 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        {/* Updated auth callback route to handle both variations */}
+        <Route path="/auth-callback" element={<AuthCallback />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/community" element={<Community />} />
         <Route path="/volunteer" element={<Volunteer />} />

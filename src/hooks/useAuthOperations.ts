@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +57,20 @@ export const useAuthOperations = () => {
     setIsLoading(true);
     
     try {
-      const redirectTo = `${window.location.origin}/auth-callback`;
+      // Determine the correct redirect URL based on current environment
+      const getRedirectUrl = () => {
+        const currentUrl = window.location.origin;
+        
+        // Production domains
+        if (currentUrl.includes('thryvance.ca')) {
+          return `${currentUrl}/auth-callback`;
+        }
+        
+        // Development/preview domains
+        return `${currentUrl}/auth-callback`;
+      };
+      
+      const redirectTo = getRedirectUrl();
       console.log("Starting OAuth flow with redirect:", redirectTo);
       
       const { data, error } = await supabase.auth.signInWithOAuth({

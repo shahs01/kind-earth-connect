@@ -34,13 +34,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { validateField } = useAuthValidation(user);
 
   useEffect(() => {
-    // Security fix: Set up auth state listener FIRST to avoid missing auth events
+    console.log("AuthContext: Setting up auth state listener");
+    
+    // Set up auth state listener FIRST to avoid missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event, session);
-        if (session) {
+      async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email || 'no user');
+        
+        if (event === 'SIGNED_IN' && session) {
+          console.log("User signed in, fetching profile");
           setSession(session);
-          handleSessionChange(session.user.id);
+          await handleSessionChange(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out, clearing state");
+          setUser(null);
+          setSession(null);
+          setEmailVerified(false);
+          // Clear any stored session debug info
+          localStorage.removeItem('supabase_session_debug');
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          console.log("Token refreshed, updating session");
+          setSession(session);
+        } else if (session) {
+          setSession(session);
+          await handleSessionChange(session.user.id);
         } else {
           setUser(null);
           setSession(null);
@@ -52,11 +69,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // THEN check for existing session
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("AuthContext: Checking for existing session");
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (session?.user) {
+        if (error) {
+          console.error("Error getting session:", error);
+        } else if (session?.user) {
+          console.log("Found existing session for:", session.user.email);
           setSession(session);
           await handleSessionChange(session.user.id);
+        } else {
+          console.log("No existing session found");
         }
       } catch (error) {
         console.error("Error checking auth session:", error);
@@ -68,7 +91,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     initializeAuth();
 
     return () => {
-      // Security fix: Properly clean up subscription to prevent memory leaks
+      console.log("AuthContext: Cleaning up auth listener");
       subscription?.unsubscribe();
     };
   }, []);
