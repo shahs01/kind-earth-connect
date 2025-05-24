@@ -40,6 +40,7 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
   const { fetchUserProfile } = useAuthProfile();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isFullScreenProfile, setIsFullScreenProfile] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -57,6 +58,7 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
       setProfileLoading(true);
       const userData = await fetchUserProfile(post.user_id);
       setProfileUser(userData);
+      setIsFullScreenProfile(false);
       setIsProfileDialogOpen(true);
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -68,6 +70,10 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
     } finally {
       setProfileLoading(false);
     }
+  };
+
+  const handleViewFullProfile = () => {
+    setIsFullScreenProfile(true);
   };
 
   const handleMessageUser = () => {
@@ -267,11 +273,8 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
           user={profileUser}
           open={isProfileDialogOpen}
           onOpenChange={setIsProfileDialogOpen}
-          onViewFullProfile={() => {
-            navigate(`/profile/${profileUser.id}`);
-            setIsProfileDialogOpen(false);
-            onOpenChange(false);
-          }}
+          onViewFullProfile={handleViewFullProfile}
+          isFullScreen={isFullScreenProfile}
         />
       )}
     </>
