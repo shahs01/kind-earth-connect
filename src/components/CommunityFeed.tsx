@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,8 @@ interface Post {
   created_at: string;
   likes: number;
   comments: number;
+  isFavorited?: boolean;
+  favoriteId?: string | null;
 }
 
 interface CommunityFeedProps {
@@ -71,10 +73,75 @@ const CommunityFeed = ({
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [selectedProfileUser, setSelectedProfileUser] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [favoritingPost, setFavoritingPost] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { fetchUserProfile } = useAuthProfile();
+
+  // Function to check if a post is favorited by the current user
+  const checkFavoriteStatus = useCallback(async (post: Post, currentUserId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUserId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error checking favorite status:", error);
+        return { ...post, isFavorited: false, favoriteId: null };
+      }
+      
+      return { 
+        ...post, 
+        isFavorited: !!data, 
+        favoriteId: data?.id || null 
+      };
+    } catch (err) {
+      console.error("Error in checkFavoriteStatus:", err);
+      return { ...post, isFavorited: false, favoriteId: null };
+    }
+  }, []);
+
+  // Function to add a post to favorites
+  const addToFavorites = useCallback(async (postId: string, userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .insert({
+          post_id: postId,
+          user_id: userId
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      return data.id;
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      throw error;
+    }
+  }, []);
+  
+  // Function to remove a post from favorites
+  const removeFromFavorites = useCallback(async (favoriteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('id', favoriteId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -119,7 +186,7 @@ const CommunityFeed = ({
               .eq('id', post.user_id)
               .single();
               
-            return {
+            const formattedPost: Post = {
               id: post.id,
               type: post.type,
               title: post.title,
@@ -137,6 +204,13 @@ const CommunityFeed = ({
               likes: 0,
               comments: 0
             };
+
+            // Check if user is logged in to get favorite status
+            if (user) {
+              return await checkFavoriteStatus(formattedPost, user.id);
+            }
+            
+            return formattedPost;
           }));
           
           setPosts(postsWithProfiles);
@@ -157,7 +231,59 @@ const CommunityFeed = ({
     };
     
     fetchPosts();
-  }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast]);
+  }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast, user, checkFavoriteStatus]);
+
+  const handleToggleFavorite = async (post: Post, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the detail dialog
+    
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required", 
+        description: "Please log in to favorite posts"
+      });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    
+    setFavoritingPost(post.id);
+    
+    try {
+      if (post.isFavorited && post.favoriteId) {
+        // Remove from favorites
+        await removeFromFavorites(post.favoriteId);
+        
+        // Update local state
+        setPosts(prevPosts => prevPosts.map(p => 
+          p.id === post.id ? { ...p, isFavorited: false, favoriteId: null } : p
+        ));
+        
+        toast({ title: "Removed from favorites" });
+      } else {
+        if (!user) {
+          throw new Error("User not authenticated");
+        }
+        
+        // Add to favorites
+        const favoriteId = await addToFavorites(post.id, user.id);
+        
+        // Update local state
+        setPosts(prevPosts => prevPosts.map(p => 
+          p.id === post.id ? { ...p, isFavorited: true, favoriteId } : p
+        ));
+        
+        toast({ title: "Added to favorites" });
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast({ 
+        title: "Error", 
+        description: "Failed to update favorites", 
+        variant: "destructive" 
+      });
+    } finally {
+      setFavoritingPost(null);
+    }
+  };
 
   const handlePostClick = (post: Post) => {
     console.log("Post clicked:", post);
@@ -302,6 +428,21 @@ const CommunityFeed = ({
                   }`}>
                     {post.type === 'offer' ? 'Offer' : 'Request'}
                   </div>
+                  
+                  {/* Favorite Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
+                    onClick={(e) => handleToggleFavorite(post, e)}
+                    disabled={favoritingPost === post.id}
+                  >
+                    {favoritingPost === post.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Heart className={`h-4 w-4 ${post.isFavorited ? 'fill-rose-500 text-rose-500' : 'text-gray-600'}`} />
+                    )}
+                  </Button>
                   
                   {/* Multiple Photos Indicator */}
                   {post.photos && post.photos.length > 1 && (
