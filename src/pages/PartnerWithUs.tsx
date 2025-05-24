@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -38,15 +39,35 @@ const PartnerWithUs = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.organizationName || !formData.contactName || !formData.email || !formData.organizationType || !formData.message) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields marked with *",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
+    console.log("Submitting partnership form:", formData);
     
     try {
       const { data, error } = await supabase.functions.invoke('send-partnership-email', {
         body: formData
       });
 
+      console.log("Function response:", { data, error });
+
       if (error) {
-        throw error;
+        console.error("Supabase function error:", error);
+        throw new Error(error.message || "Failed to send partnership request");
+      }
+
+      // Check if the response indicates success
+      if (data && !data.success && data.error) {
+        throw new Error(data.error);
       }
 
       toast({
@@ -68,7 +89,7 @@ const PartnerWithUs = () => {
       console.error("Error sending partnership request:", error);
       toast({
         title: "Error sending request",
-        description: "Please try again or contact us directly.",
+        description: error.message || "Please try again or contact us directly.",
         variant: "destructive"
       });
     } finally {
@@ -100,6 +121,7 @@ const PartnerWithUs = () => {
                     value={formData.organizationName}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full"
                   />
                 </div>
@@ -115,6 +137,7 @@ const PartnerWithUs = () => {
                       value={formData.contactName}
                       onChange={handleChange}
                       required
+                      disabled={isSubmitting}
                       className="w-full"
                     />
                   </div>
@@ -127,6 +150,7 @@ const PartnerWithUs = () => {
                       value={formData.organizationType}
                       onValueChange={handleSelectChange}
                       required
+                      disabled={isSubmitting}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select organization type" />
@@ -155,6 +179,7 @@ const PartnerWithUs = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      disabled={isSubmitting}
                       className="w-full"
                     />
                   </div>
@@ -169,6 +194,7 @@ const PartnerWithUs = () => {
                       type="tel"
                       value={formData.phone}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className="w-full"
                     />
                   </div>
@@ -184,6 +210,7 @@ const PartnerWithUs = () => {
                     value={formData.message}
                     onChange={handleChange}
                     required
+                    disabled={isSubmitting}
                     className="w-full h-32"
                     placeholder="Tell us how you'd like to collaborate, what resources you can offer, or what you're looking for in a partnership..."
                   />
