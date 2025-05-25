@@ -1,31 +1,20 @@
 
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { useAuth } from "@/context/AuthContext";
-import { 
-  Info, 
-  Heart, 
-  HelpCircle, 
-  Bell, 
-  Handshake, 
-  Shield, 
-  FileText, 
-  File,
-  ChevronDown,
-  Search,
-  Plus,
-  User,
-  MessageSquare,
-  Settings,
-  LogOut
-} from "lucide-react";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  User, 
+  LogOut, 
+  Heart, 
+  Settings, 
+  Bell, 
+  MessageSquare,
+  FileText,
+  Shield
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface MobileMenuProps {
   isActive: (path: string) => boolean;
@@ -35,217 +24,180 @@ interface MobileMenuProps {
 
 const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
   const { isAuthenticated, user, logout } = useAuth();
-  
-  if (!isMenuOpen) return null;
+  const { checkIfAdmin } = useAdmin();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const aboutItems = [
-    { label: "About Us", path: "/about", icon: <Info className="h-4 w-4" /> },
-    { label: "Our Values", path: "/values", icon: <Heart className="h-4 w-4" /> },
-    { label: "FAQ", path: "/faq", icon: <HelpCircle className="h-4 w-4" /> },
-    { label: "Safety Tips", path: "/safety-tips", icon: <Shield className="h-4 w-4" /> },
-    { label: "Privacy Policy", path: "/privacy-policy", icon: <FileText className="h-4 w-4" /> },
-    { label: "Terms of Service", path: "/terms-of-service", icon: <File className="h-4 w-4" /> },
-    { label: "Stay Updated", path: "/subscribe", icon: <Bell className="h-4 w-4" /> },
-    { label: "Contact Us", path: "/contact", icon: <Info className="h-4 w-4" /> },
-  ];
-  
-  const involvedItems = [
-    { label: "Partner With Us", path: "/partner-with-us", icon: <Handshake className="h-4 w-4" /> },
-    { label: "Volunteer", path: "/volunteer", icon: <HelpCircle className="h-4 w-4" /> },
-    { label: "Sponsor a Project", path: "/sponsor-project", icon: <Heart className="h-4 w-4" /> },
-    { label: "Donate", path: "/donate", icon: <Heart className="h-4 w-4" /> },
-  ];
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        const adminStatus = await checkIfAdmin();
+        setIsAdmin(adminStatus);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user, checkIfAdmin]);
 
   const handleSignOut = async () => {
     await logout();
     toggleMenu();
   };
 
+  const handleLinkClick = () => {
+    toggleMenu();
+  };
+
+  if (!isMenuOpen) return null;
+
   return (
-    <div className="md:hidden bg-white border-t border-gray-100 p-4 max-h-[70vh] overflow-y-auto">
-      <nav className="flex flex-col space-y-3">
-        <Link
-          to="/"
-          className={`px-3 py-2 rounded-md ${
-            isActive("/") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-          }`}
-          onClick={toggleMenu}
-        >
-          Home
-        </Link>
-        
-        {/* Create Posting Button */}
-        <Button 
-          asChild 
-          className="bg-thryvance-green hover:bg-thryvance-green-dark text-white w-full justify-start"
-        >
+    <div className="md:hidden bg-white border-t border-gray-200">
+      <div className="container mx-auto px-4 py-4">
+        {/* Navigation Links */}
+        <div className="space-y-2 mb-4">
           <Link
-            to="/create-posting"
-            onClick={toggleMenu}
-            className="flex items-center"
+            to="/community"
+            className={`block py-2 px-3 rounded-md transition-colors ${
+              isActive("/community")
+                ? "bg-thryvance-green text-white"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={handleLinkClick}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Posting
+            Community
           </Link>
-        </Button>
-        
-        <Accordion type="single" collapsible className="border-none shadow-none w-full">
-          {/* User Account Section - Only show if authenticated */}
-          {isAuthenticated && user && (
-            <AccordionItem value="my-account" className="border-none">
-              <AccordionTrigger className="px-3 rounded-md text-gray-700 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar || ""} />
-                    <AvatarFallback className="bg-thryvance-blue text-white text-xs">
-                      {user.name?.charAt(0) || user.email?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>My Account</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="flex flex-col space-y-2 pl-4 mt-2">
-                  <Link
-                    to={`/profile/${user.id}`}
-                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                    onClick={toggleMenu}
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                  <Link
-                    to="/messages"
-                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                    onClick={toggleMenu}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Messages
-                  </Link>
-                  <Link
-                    to="/favorites"
-                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                    onClick={toggleMenu}
-                  >
-                    <Heart className="mr-2 h-4 w-4" />
-                    Favorites
-                  </Link>
-                  <Link
-                    to="/notifications"
-                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                    onClick={toggleMenu}
-                  >
-                    <Bell className="mr-2 h-4 w-4" />
-                    Notifications
-                  </Link>
-                  <Link
-                    to={`/profile/${user.id}`}
-                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50"
-                    onClick={toggleMenu}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50 w-full text-left"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          )}
+          <Link
+            to="/volunteer"
+            className={`block py-2 px-3 rounded-md transition-colors ${
+              isActive("/volunteer")
+                ? "bg-thryvance-green text-white"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={handleLinkClick}
+          >
+            Volunteer
+          </Link>
+          <Link
+            to="/nonprofit-directory"
+            className={`block py-2 px-3 rounded-md transition-colors ${
+              isActive("/nonprofit-directory")
+                ? "bg-thryvance-green text-white"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={handleLinkClick}
+          >
+            Nonprofits
+          </Link>
+          <Link
+            to="/donate"
+            className={`block py-2 px-3 rounded-md transition-colors ${
+              isActive("/donate")
+                ? "bg-thryvance-green text-white"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={handleLinkClick}
+          >
+            Donate
+          </Link>
+        </div>
 
-          {/* About Us dropdown */}
-          <AccordionItem value="about-us" className="border-none">
-            <AccordionTrigger className="px-3 rounded-md text-gray-700 hover:no-underline">
-              About Us
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col space-y-2 pl-4 mt-2">
-                {aboutItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`px-3 py-2 rounded-md flex items-center ${
-                      isActive(item.path) ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-                    }`}
-                    onClick={toggleMenu}
-                  >
-                    <span className="mr-2">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+        <Separator className="my-4" />
 
-          {/* Get Involved dropdown */}
-          <AccordionItem value="get-involved" className="border-none">
-            <AccordionTrigger className="px-3 rounded-md text-gray-700 hover:no-underline">
-              Get Involved
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col space-y-2 pl-4 mt-2">
-                {involvedItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`px-3 py-2 rounded-md flex items-center ${
-                      isActive(item.path) ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-                    }`}
-                    onClick={toggleMenu}
-                  >
-                    <span className="mr-2">{item.icon}</span>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        {/* User Actions */}
+        {isAuthenticated ? (
+          <div className="space-y-2">
+            <Link
+              to={`/profile/${user?.id}`}
+              className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <User className="mr-3 h-4 w-4" />
+              Profile
+            </Link>
+            <Link
+              to="/messages"
+              className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <MessageSquare className="mr-3 h-4 w-4" />
+              Messages
+            </Link>
+            <Link
+              to="/favorites"
+              className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <Heart className="mr-3 h-4 w-4" />
+              Favorites
+            </Link>
+            <Link
+              to={`/profile/${user?.id}`}
+              state={{ defaultTab: 'posts' }}
+              className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <FileText className="mr-3 h-4 w-4" />
+              My Posts
+            </Link>
+            <Link
+              to="/notifications"
+              className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <Bell className="mr-3 h-4 w-4" />
+              Notifications
+            </Link>
+            <Link
+              to={`/profile/${user?.id}`}
+              className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <Settings className="mr-3 h-4 w-4" />
+              Settings
+            </Link>
 
-        <Link
-          to="/community"
-          className={`px-3 py-2 rounded-md ${
-            isActive("/community") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-          }`}
-          onClick={toggleMenu}
-        >
-          Community
-        </Link>
-        <Link
-          to="/nonprofit-directory"
-          className={`px-3 py-2 rounded-md ${
-            isActive("/nonprofit-directory") ? "bg-thryvance-green-light text-thryvance-green" : "text-gray-700"
-          }`}
-          onClick={toggleMenu}
-        >
-          Nonprofits
-        </Link>
-        
-        {!isAuthenticated && (
-          <>
-            <div className="border-t my-2 border-gray-100"></div>
+            {isAdmin && (
+              <>
+                <Separator className="my-2" />
+                <Link
+                  to="/admin/dashboard"
+                  className="flex items-center py-2 px-3 rounded-md text-orange-600 hover:bg-orange-50 transition-colors"
+                  onClick={handleLinkClick}
+                >
+                  <Shield className="mr-3 h-4 w-4" />
+                  Admin Panel
+                </Link>
+              </>
+            )}
+
+            <Separator className="my-2" />
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-gray-700 hover:bg-gray-100"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-3 h-4 w-4" />
+              Log out
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
             <Link
               to="/login"
-              className="px-3 py-2 rounded-md text-thryvance-blue"
-              onClick={toggleMenu}
+              className="block w-full py-2 px-3 text-center rounded-md border border-thryvance-green text-thryvance-green hover:bg-thryvance-green hover:text-white transition-colors"
+              onClick={handleLinkClick}
             >
-              Log In
+              Sign In
             </Link>
             <Link
               to="/signup"
-              className="px-3 py-2 rounded-md bg-thryvance-green text-white"
-              onClick={toggleMenu}
+              className="block w-full py-2 px-3 text-center rounded-md bg-thryvance-green text-white hover:bg-thryvance-green-dark transition-colors"
+              onClick={handleLinkClick}
             >
               Sign Up
             </Link>
-          </>
+          </div>
         )}
-      </nav>
+      </div>
     </div>
   );
 };
