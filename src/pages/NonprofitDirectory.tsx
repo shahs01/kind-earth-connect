@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import NonprofitCard from "@/components/NonprofitCard";
@@ -7,85 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Nonprofit } from "@/types";
-import { Search } from "lucide-react";
-import { Badge, Globe, Phone, Mail, MapPin } from "@/components/NonprofitUtils";
-
-// Sample nonprofit data
-const sampleNonprofits: Nonprofit[] = [
-  {
-    id: "1",
-    name: "Portland Food Bank",
-    description: "Providing emergency food assistance to individuals and families in need throughout Portland.",
-    category: "Food Assistance",
-    location: "Downtown Portland",
-    website: "https://example.com/pfb",
-    phoneNumber: "(503) 555-1234",
-    email: "info@portlandfoodbank.org",
-    logo: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&q=80",
-    verified: true, // Added verified property
-  },
-  {
-    id: "2",
-    name: "Safe Harbor Shelter",
-    description: "Emergency shelter and supportive services for individuals experiencing homelessness.",
-    category: "Housing & Shelter",
-    location: "Southeast Portland",
-    website: "https://example.com/shelter",
-    phoneNumber: "(503) 555-5678",
-    email: "contact@safeharbor.org",
-    logo: "", // Added empty logo property
-    verified: false, // Added verified property
-  },
-  {
-    id: "3",
-    name: "Community Care Clinic",
-    description: "Providing affordable healthcare services to underserved populations in our community.",
-    category: "Healthcare",
-    location: "North Portland",
-    website: "https://example.com/clinic",
-    phoneNumber: "(503) 555-9876",
-    email: "info@carelinic.org",
-    logo: "", // Added empty logo property
-    verified: true, // Added verified property
-  },
-  {
-    id: "4",
-    name: "Youth Mentorship Alliance",
-    description: "Connecting youth with positive role models through one-on-one mentorship programs.",
-    category: "Youth Services",
-    location: "West Portland",
-    website: "https://example.com/yma",
-    phoneNumber: "(503) 555-4321",
-    email: "info@youthmentorship.org",
-    logo: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&q=80",
-    verified: true, // Added verified property
-  },
-  {
-    id: "5",
-    name: "Senior Support Network",
-    description: "Services and social activities for seniors to help them live independently and combat isolation.",
-    category: "Senior Services",
-    location: "Downtown Portland",
-    website: "https://example.com/ssn",
-    phoneNumber: "(503) 555-8765",
-    email: "help@seniorsupport.org",
-    logo: "", // Added empty logo property
-    verified: false, // Added verified property
-  },
-  {
-    id: "6",
-    name: "Veterans Resource Center",
-    description: "Supporting veterans with resources, counseling, and community connections.",
-    category: "Veterans Services",
-    location: "Northeast Portland",
-    website: "https://example.com/vrc",
-    phoneNumber: "(503) 555-3456",
-    email: "info@veteransrc.org",
-    logo: "", // Added empty logo property
-    verified: true, // Added verified property
-  }
-];
+import { useNonprofits, Nonprofit } from "@/hooks/useNonprofits";
+import { Search, Loader2, Building } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Globe, Phone, Mail } from "lucide-react";
 
 const categories = [
   "All Categories",
@@ -99,14 +24,27 @@ const categories = [
   "Job Training",
   "Crisis Support",
   "Mental Health",
-  "Disability Services"
+  "Disability Services",
+  "Environmental",
+  "Animal Welfare"
 ];
 
 const NonprofitDirectory = () => {
+  const { loading, fetchNonprofits } = useNonprofits();
+  const [nonprofits, setNonprofits] = useState<Nonprofit[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   
-  const filteredNonprofits = sampleNonprofits.filter(nonprofit => {
+  useEffect(() => {
+    loadNonprofits();
+  }, []);
+
+  const loadNonprofits = async () => {
+    const data = await fetchNonprofits(false); // Only active nonprofits for public
+    setNonprofits(data);
+  };
+
+  const filteredNonprofits = nonprofits.filter(nonprofit => {
     const matchesSearch = 
       nonprofit.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       nonprofit.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -116,6 +54,21 @@ const NonprofitDirectory = () => {
     
     return matchesSearch && matchesCategory;
   });
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mx-auto mb-4" />
+            <p className="text-gray-600">Loading nonprofits...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -183,6 +136,7 @@ const NonprofitDirectory = () => {
                   ))
                 ) : (
                   <div className="col-span-full py-12 text-center">
+                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-xl font-medium text-gray-700">No results found</h3>
                     <p className="text-gray-500 mt-2">
                       Try adjusting your search or category filters
@@ -218,7 +172,7 @@ const NonprofitDirectory = () => {
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <Search className="h-8 w-8 text-thryvance-green" />
+                          <Building className="h-8 w-8 text-thryvance-green" />
                         )}
                       </div>
                       
@@ -259,13 +213,13 @@ const NonprofitDirectory = () => {
                             </a>
                           )}
                           
-                          {nonprofit.phoneNumber && (
+                          {nonprofit.phone_number && (
                             <a 
-                              href={`tel:${nonprofit.phoneNumber}`} 
+                              href={`tel:${nonprofit.phone_number}`} 
                               className="text-sm text-thryvance-blue hover:underline flex items-center gap-1"
                             >
                               <Phone className="h-4 w-4" />
-                              <span>{nonprofit.phoneNumber}</span>
+                              <span>{nonprofit.phone_number}</span>
                             </a>
                           )}
                           
@@ -284,6 +238,7 @@ const NonprofitDirectory = () => {
                   ))
                 ) : (
                   <div className="py-12 text-center">
+                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-xl font-medium text-gray-700">No results found</h3>
                     <p className="text-gray-500 mt-2">
                       Try adjusting your search or category filters

@@ -6,12 +6,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, MessageSquare, HelpCircle, Settings, BarChart, Shield, FileText } from "lucide-react";
+import { Loader2, Users, MessageSquare, HelpCircle, Settings, BarChart, Shield, FileText, Building } from "lucide-react";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPosts from "@/components/admin/AdminPosts";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminStatsPage from "@/components/admin/AdminStats";
 import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
+import AdminNonprofits from "@/components/admin/AdminNonprofits";
 
 const AdminDashboard = () => {
   const { isAdmin, loading, checkIfAdmin, fetchStats } = useAdmin();
@@ -129,7 +130,7 @@ const AdminDashboard = () => {
           <Card className="mb-8 border-red-200">
             <CardHeader>
               <CardTitle className="text-red-800">Admin Controls</CardTitle>
-              <CardDescription>Manage users, content, and platform settings</CardDescription>
+              <CardDescription>Manage users, content, nonprofits, and platform settings</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">
@@ -143,6 +144,12 @@ const AdminDashboard = () => {
                   <Link to="/admin/dashboard/posts">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Manage Posts
+                  </Link>
+                </Button>
+                <Button asChild variant={location.pathname.includes('/nonprofits') ? 'default' : 'outline'}>
+                  <Link to="/admin/dashboard/nonprofits">
+                    <Building className="mr-2 h-4 w-4" />
+                    Manage Nonprofits
                   </Link>
                 </Button>
                 <Button asChild variant={location.pathname.includes('/settings') ? 'default' : 'outline'}>
@@ -174,7 +181,7 @@ const AdminDashboard = () => {
                 <Shield className="h-16 w-16 text-red-600 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-red-800 mb-2">Welcome to Admin Dashboard</h3>
                 <p className="text-gray-600 mb-6">Select an option above to manage your application</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
                   <Card className="p-4 hover:shadow-md transition-shadow">
                     <Users className="h-8 w-8 text-blue-600 mb-2" />
                     <h4 className="font-semibold">User Management</h4>
@@ -186,6 +193,11 @@ const AdminDashboard = () => {
                     <p className="text-sm text-gray-600">Review and manage user posts and content</p>
                   </Card>
                   <Card className="p-4 hover:shadow-md transition-shadow">
+                    <Building className="h-8 w-8 text-orange-600 mb-2" />
+                    <h4 className="font-semibold">Nonprofit Management</h4>
+                    <p className="text-sm text-gray-600">Add, edit, and manage nonprofit organizations</p>
+                  </Card>
+                  <Card className="p-4 hover:shadow-md transition-shadow">
                     <Settings className="h-8 w-8 text-purple-600 mb-2" />
                     <h4 className="font-semibold">Platform Settings</h4>
                     <p className="text-sm text-gray-600">Configure global platform settings</p>
@@ -195,6 +207,7 @@ const AdminDashboard = () => {
             } />
             <Route path="/users" element={<AdminUsers />} />
             <Route path="/posts" element={<AdminPosts />} />
+            <Route path="/nonprofits" element={<AdminNonprofits />} />
             <Route path="/settings" element={<AdminSettings />} />
             <Route path="/stats" element={<AdminStatsPage />} />
             <Route path="/audit" element={<AdminAuditLogs />} />

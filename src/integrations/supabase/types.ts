@@ -95,6 +95,57 @@ export type Database = {
         }
         Relationships: []
       }
+      nonprofits: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string
+          description: string
+          email: string | null
+          id: string
+          location: string
+          logo: string | null
+          name: string
+          phone_number: string | null
+          status: string | null
+          updated_at: string | null
+          verified: boolean | null
+          website: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          created_by: string
+          description: string
+          email?: string | null
+          id?: string
+          location: string
+          logo?: string | null
+          name: string
+          phone_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          verified?: boolean | null
+          website?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string
+          description?: string
+          email?: string | null
+          id?: string
+          location?: string
+          logo?: string | null
+          name?: string
+          phone_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+          verified?: boolean | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           content: string

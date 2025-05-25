@@ -2,8 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, Phone, Mail, Flag } from "lucide-react";
-import { Nonprofit } from "@/types";
+import { MapPin, Globe, Phone, Mail, Building } from "lucide-react";
+import { Nonprofit } from "@/hooks/useNonprofits";
 
 interface NonprofitCardProps {
   nonprofit: Nonprofit;
@@ -22,7 +22,7 @@ const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <Flag className="h-8 w-8 text-thryvance-green" />
+              <Building className="h-8 w-8 text-thryvance-green" />
             )}
           </div>
           <div>
@@ -57,14 +57,14 @@ const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
             </div>
           )}
           
-          {nonprofit.phoneNumber && (
+          {nonprofit.phone_number && (
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-gray-500" />
               <a 
-                href={`tel:${nonprofit.phoneNumber}`} 
+                href={`tel:${nonprofit.phone_number}`} 
                 className="hover:underline"
               >
-                {nonprofit.phoneNumber}
+                {nonprofit.phone_number}
               </a>
             </div>
           )}
