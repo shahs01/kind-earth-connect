@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -279,6 +280,38 @@ const MessageConversation = () => {
     const messageContent = newMessage.trim();
     setNewMessage(""); // Clear input immediately for better UX
 
+    // Create optimistic message to show immediately
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      sender_id: user.id,
+      receiver_id: userId,
+      content: messageContent,
+      read: false,
+      created_at: new Date().toISOString(),
+      sender: {
+        id: user.id,
+        username: user.username || '',
+        email: user.email || '',
+        name: user.name || '',
+        avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || '')}`,
+        bio: user.bio || '',
+        location: user.location || '',
+        trustScore: user.trustScore || 0,
+        helpOffered: user.helpOffered || 0,
+        helpReceived: user.helpReceived || 0,
+        volunteerHours: user.volunteerHours || 0,
+        createdAt: user.createdAt || new Date(),
+        verifiedStatus: user.verifiedStatus || false,
+        emailVerified: user.emailVerified || true,
+        trustBadges: user.trustBadges || [],
+        loginAttempts: user.loginAttempts || 0,
+        lastLoginAttempt: user.lastLoginAttempt || null
+      }
+    };
+
+    // Add optimistic message immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+
     try {
       console.log("Sending message:", messageContent);
       
@@ -300,12 +333,26 @@ const MessageConversation = () => {
           description: "Failed to send message",
           variant: "destructive"
         });
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
         // Restore message content on error
         setNewMessage(messageContent);
         return;
       }
 
       console.log("Message sent successfully:", data);
+      
+      // Replace optimistic message with real message
+      setMessages(prev => {
+        const withoutOptimistic = prev.filter(msg => msg.id !== optimisticMessage.id);
+        const realMessage = {
+          ...data,
+          sender: optimisticMessage.sender
+        };
+        return [...withoutOptimistic, realMessage].sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
       
     } catch (error) {
       console.error("Error sending message:", error);
@@ -314,6 +361,8 @@ const MessageConversation = () => {
         description: "Failed to send message",
         variant: "destructive"
       });
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       setNewMessage(messageContent);
     } finally {
       setSending(false);
