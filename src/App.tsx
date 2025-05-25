@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
@@ -38,6 +37,7 @@ import DonateGoods from "./pages/DonateGoods";
 import Careers from "./pages/Careers";
 import CreatePosting from "./pages/CreatePosting";
 import EditPosting from "./pages/EditPosting";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 import "./App.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -101,6 +101,11 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/edit-post/:postId" element={<EditPosting />} />
+        </Route>
+        
+        {/* Admin protected routes */}
+        <Route path="/admin/*" element={<AdminProtectedRoute />}>
+          <Route path="dashboard/*" element={<AdminDashboard />} />
         </Route>
         
         {/* 404 route */}

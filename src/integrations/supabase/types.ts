@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -142,6 +172,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string | null
           avatar: string | null
           bio: string | null
           created_at: string | null
@@ -158,6 +189,7 @@ export type Database = {
           volunteer_hours: number | null
         }
         Insert: {
+          account_status?: string | null
           avatar?: string | null
           bio?: string | null
           created_at?: string | null
@@ -174,6 +206,7 @@ export type Database = {
           volunteer_hours?: number | null
         }
         Update: {
+          account_status?: string | null
           avatar?: string | null
           bio?: string | null
           created_at?: string | null
@@ -221,6 +254,33 @@ export type Database = {
           rating?: number
           text?: string | null
           to_user_id?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }
@@ -288,9 +348,22 @@ export type Database = {
           last_message_at: string
         }[]
       }
+      get_platform_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       is_admin: {
-        Args: { user_id: string }
+        Args: { user_id?: string }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          action_text: string
+          target_type_param: string
+          target_id_param?: string
+          details_param?: Json
+        }
+        Returns: undefined
       }
     }
     Enums: {

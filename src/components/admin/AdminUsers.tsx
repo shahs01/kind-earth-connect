@@ -12,16 +12,30 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield, Ban, CheckCircle, AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+
+interface UserWithRole extends User {
+  role?: string;
+  account_status?: string;
+}
 
 const AdminUsers = () => {
-  const { loading, fetchUsers, fetchUserRoles, setUserRole } = useAdmin();
-  const [users, setUsers] = useState<User[]>([]);
+  const { loading, fetchUsers, fetchUserRoles, setUserRole, updateUserStatus } = useAdmin();
+  const [users, setUsers] = useState<UserWithRole[]>([]);
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   
@@ -43,21 +57,58 @@ const AdminUsers = () => {
   
   const handleSetRole = async (userId: string, role: 'user' | 'admin') => {
     setUpdatingRole(userId);
-    await setUserRole(userId, role);
+    const success = await setUserRole(userId, role);
     
-    // Update local state
-    setUserRoles(prev => ({
-      ...prev,
-      [userId]: role
-    }));
+    if (success) {
+      setUserRoles(prev => ({
+        ...prev,
+        [userId]: role
+      }));
+    }
     
     setUpdatingRole(null);
+  };
+
+  const handleSetStatus = async (userId: string, status: 'active' | 'banned' | 'suspended') => {
+    setUpdatingStatus(userId);
+    const success = await updateUserStatus(userId, status);
+    
+    if (success) {
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, account_status: status } : user
+      ));
+    }
+    
+    setUpdatingStatus(null);
+  };
+
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'banned':
+        return <Badge variant="destructive" className="flex items-center gap-1">
+          <Ban className="h-3 w-3" />
+          Banned
+        </Badge>;
+      case 'suspended':
+        return <Badge variant="secondary" className="flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          Suspended
+        </Badge>;
+      default:
+        return <Badge variant="outline" className="flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Active
+        </Badge>;
+    }
   };
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-red-600" />
+          User Management
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {loading && users.length === 0 ? (
@@ -73,8 +124,9 @@ const AdminUsers = () => {
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -95,44 +147,68 @@ const AdminUsers = () => {
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.location || 'Not specified'}</TableCell>
-                      <TableCell>{format(user.createdAt, 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{getStatusBadge(user.account_status)}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
+                        <Badge variant={
                           userRoles[user.id] === 'admin' 
-                            ? 'bg-thryvance-green/10 text-thryvance-green' 
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
+                            ? 'default' 
+                            : 'outline'
+                        }>
                           {userRoles[user.id] || 'user'}
-                        </span>
+                        </Badge>
                       </TableCell>
+                      <TableCell>{format(user.createdAt, 'MMM d, yyyy')}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              disabled={updatingRole === user.id}
+                              disabled={updatingRole === user.id || updatingStatus === user.id}
                             >
-                              {updatingRole === user.id ? (
+                              {(updatingRole === user.id || updatingStatus === user.id) ? (
                                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
                               ) : null}
-                              Change Role
+                              Manage
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuLabel>Set User Role</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Change Role</DropdownMenuLabel>
                             <DropdownMenuItem
                               onClick={() => handleSetRole(user.id, 'user')}
                               className={userRoles[user.id] === 'user' ? 'bg-gray-100' : ''}
                             >
-                              User
+                              Set as User
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleSetRole(user.id, 'admin')}
                               className={userRoles[user.id] === 'admin' ? 'bg-gray-100' : ''}
                             >
-                              Admin
+                              Set as Admin
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Account Status</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => handleSetStatus(user.id, 'active')}
+                              className={user.account_status === 'active' ? 'bg-gray-100' : ''}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                              Activate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleSetStatus(user.id, 'suspended')}
+                              className={user.account_status === 'suspended' ? 'bg-gray-100' : ''}
+                            >
+                              <AlertTriangle className="h-4 w-4 mr-2 text-yellow-600" />
+                              Suspend
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleSetStatus(user.id, 'banned')}
+                              className={user.account_status === 'banned' ? 'bg-gray-100' : ''}
+                            >
+                              <Ban className="h-4 w-4 mr-2 text-red-600" />
+                              Ban
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

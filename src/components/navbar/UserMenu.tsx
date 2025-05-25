@@ -1,6 +1,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,13 +21,28 @@ import {
   Bell, 
   ChevronDown,
   MessageSquare,
-  FileText
+  FileText,
+  Shield
 } from "lucide-react";
 import NotificationIndicator from "../NotificationIndicator";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const UserMenu = () => {
   const { user, logout } = useAuth();
+  const { checkIfAdmin } = useAdmin();
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        const adminStatus = await checkIfAdmin();
+        setIsAdmin(adminStatus);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user, checkIfAdmin]);
 
   const handleSignOut = async () => {
     await logout();
@@ -51,6 +67,10 @@ const UserMenu = () => {
 
   const goToUserPosts = () => {
     navigate(`/profile/${user?.id}`, { state: { defaultTab: 'posts' } });
+  };
+
+  const goToAdminDashboard = () => {
+    navigate("/admin/dashboard");
   };
 
   if (!user) return null;
@@ -101,6 +121,19 @@ const UserMenu = () => {
             <span>Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={goToAdminDashboard} className="text-orange-600">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Panel</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />

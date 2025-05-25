@@ -9,6 +9,11 @@ export interface AdminStats {
   totalPosts: number;
   totalHelpRequests: number;
   totalHelpOffers: number;
+  activeUsers: number;
+  activePosts: number;
+  totalMessages: number;
+  usersThisMonth: number;
+  postsThisMonth: number;
 }
 
 export interface UserRole {
@@ -16,6 +21,25 @@ export interface UserRole {
   user_id: string;
   role: 'user' | 'admin';
   created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  admin_user_id: string;
+  action: string;
+  target_type: string;
+  target_id?: string;
+  details?: any;
+  created_at: string;
+}
+
+export interface SiteSetting {
+  id: string;
+  key: string;
+  value: any;
+  description?: string;
+  updated_by?: string;
+  updated_at: string;
 }
 
 export function useAdmin() {
@@ -40,41 +64,20 @@ export function useAdmin() {
   const fetchStats = async (): Promise<AdminStats> => {
     setLoading(true);
     try {
-      // Get total users
-      const { count: totalUsers, error: usersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      const { data, error } = await supabase.rpc('get_platform_stats');
       
-      if (usersError) throw usersError;
-      
-      // Get total posts
-      const { count: totalPosts, error: postsError } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true });
-      
-      if (postsError) throw postsError;
-      
-      // Get total help requests
-      const { count: totalHelpRequests, error: requestsError } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('type', 'request');
-      
-      if (requestsError) throw requestsError;
-      
-      // Get total help offers
-      const { count: totalHelpOffers, error: offersError } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('type', 'offer');
-      
-      if (offersError) throw offersError;
+      if (error) throw error;
       
       return {
-        totalUsers: totalUsers || 0,
-        totalPosts: totalPosts || 0,
-        totalHelpRequests: totalHelpRequests || 0,
-        totalHelpOffers: totalHelpOffers || 0
+        totalUsers: data.total_users || 0,
+        activePosts: data.active_posts || 0,
+        activeUsers: data.active_users || 0,
+        totalPosts: data.total_posts || 0,
+        totalHelpRequests: data.total_help_requests || 0,
+        totalHelpOffers: data.total_help_offers || 0,
+        totalMessages: data.total_messages || 0,
+        usersThisMonth: data.users_this_month || 0,
+        postsThisMonth: data.posts_this_month || 0
       };
     } catch (error: any) {
       toast({
@@ -86,7 +89,12 @@ export function useAdmin() {
         totalUsers: 0,
         totalPosts: 0,
         totalHelpRequests: 0,
-        totalHelpOffers: 0
+        totalHelpOffers: 0,
+        activeUsers: 0,
+        activePosts: 0,
+        totalMessages: 0,
+        usersThisMonth: 0,
+        postsThisMonth: 0
       };
     } finally {
       setLoading(false);
@@ -96,7 +104,6 @@ export function useAdmin() {
   const fetchUsers = async (page = 1, pageSize = 10): Promise<User[]> => {
     setLoading(true);
     try {
-      // Calculate the range based on page and pageSize
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
       
@@ -108,7 +115,6 @@ export function useAdmin() {
       
       if (error) throw error;
       
-      // Transform the data to match the User type
       return data.map(profile => ({
         id: profile.id,
         username: profile.username || '',
@@ -165,7 +171,6 @@ export function useAdmin() {
   const setUserRole = async (userId: string, role: 'user' | 'admin') => {
     setLoading(true);
     try {
-      // Check if user already has a role
       const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('*')
@@ -175,7 +180,6 @@ export function useAdmin() {
       if (checkError) throw checkError;
       
       if (existingRole) {
-        // Update existing role
         const { error } = await supabase
           .from('user_roles')
           .update({ role })
@@ -183,13 +187,20 @@ export function useAdmin() {
         
         if (error) throw error;
       } else {
-        // Insert new role
         const { error } = await supabase
           .from('user_roles')
           .insert({ user_id: userId, role });
         
         if (error) throw error;
       }
+      
+      // Log the action
+      await supabase.rpc('log_admin_action', {
+        action_text: `Changed user role to ${role}`,
+        target_type_param: 'user',
+        target_id_param: userId,
+        details_param: { new_role: role, old_role: existingRole?.role || 'user' }
+      });
       
       toast({
         title: "Role updated",
@@ -208,6 +219,124 @@ export function useAdmin() {
       setLoading(false);
     }
   };
+
+  const updateUserStatus = async (userId: string, status: 'active' | 'banned' | 'suspended') => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ account_status: status })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      // Log the action
+      await supabase.rpc('log_admin_action', {
+        action_text: `Changed user status to ${status}`,
+        target_type_param: 'user',
+        target_id_param: userId,
+        details_param: { new_status: status }
+      });
+      
+      toast({
+        title: "User status updated",
+        description: `User account ${status}`,
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error updating user status",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSiteSettings = async (): Promise<SiteSetting[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .order('key');
+      
+      if (error) throw error;
+      
+      return data as SiteSetting[];
+    } catch (error: any) {
+      toast({
+        title: "Error fetching site settings",
+        description: error.message,
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const updateSiteSetting = async (key: string, value: any, description?: string) => {
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          key,
+          value,
+          description,
+          updated_by: (await supabase.auth.getUser()).data.user?.id,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+      
+      // Log the action
+      await supabase.rpc('log_admin_action', {
+        action_text: `Updated site setting: ${key}`,
+        target_type_param: 'setting',
+        target_id_param: key,
+        details_param: { new_value: value, description }
+      });
+      
+      toast({
+        title: "Setting updated",
+        description: `${key} has been updated`,
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error updating setting",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const fetchAuditLogs = async (page = 1, pageSize = 20): Promise<AuditLog[]> => {
+    try {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .range(from, to)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data as AuditLog[];
+    } catch (error: any) {
+      toast({
+        title: "Error fetching audit logs",
+        description: error.message,
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
   
   return {
     loading,
@@ -216,6 +345,10 @@ export function useAdmin() {
     fetchStats,
     fetchUsers,
     fetchUserRoles,
-    setUserRole
+    setUserRole,
+    updateUserStatus,
+    fetchSiteSettings,
+    updateSiteSetting,
+    fetchAuditLogs
   };
 }
