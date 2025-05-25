@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -68,16 +67,19 @@ export function useAdmin() {
       
       if (error) throw error;
       
+      // Type assertion for the JSON response
+      const statsData = data as any;
+      
       return {
-        totalUsers: data.total_users || 0,
-        activePosts: data.active_posts || 0,
-        activeUsers: data.active_users || 0,
-        totalPosts: data.total_posts || 0,
-        totalHelpRequests: data.total_help_requests || 0,
-        totalHelpOffers: data.total_help_offers || 0,
-        totalMessages: data.total_messages || 0,
-        usersThisMonth: data.users_this_month || 0,
-        postsThisMonth: data.posts_this_month || 0
+        totalUsers: statsData.total_users || 0,
+        activePosts: statsData.active_posts || 0,
+        activeUsers: statsData.active_users || 0,
+        totalPosts: statsData.total_posts || 0,
+        totalHelpRequests: statsData.total_help_requests || 0,
+        totalHelpOffers: statsData.total_help_offers || 0,
+        totalMessages: statsData.total_messages || 0,
+        usersThisMonth: statsData.users_this_month || 0,
+        postsThisMonth: statsData.posts_this_month || 0
       };
     } catch (error: any) {
       toast({

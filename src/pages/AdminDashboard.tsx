@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Route, Routes, Link, useLocation } from "react-router-dom";
-import { useAdmin, AdminStats } from "@/hooks/useAdmin";
+import { useAdmin, AdminStats as AdminStatsType } from "@/hooks/useAdmin";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +10,13 @@ import { Loader2, Users, MessageSquare, HelpCircle, Settings, BarChart, Shield, 
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPosts from "@/components/admin/AdminPosts";
 import AdminSettings from "@/components/admin/AdminSettings";
-import AdminStats from "@/components/admin/AdminStats";
+import AdminStatsPage from "@/components/admin/AdminStats";
 import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 
 const AdminDashboard = () => {
   const { isAdmin, loading, checkIfAdmin, fetchStats } = useAdmin();
   const [checking, setChecking] = useState(true);
-  const [stats, setStats] = useState<AdminStats>({
+  const [stats, setStats] = useState<AdminStatsType>({
     totalUsers: 0,
     totalPosts: 0,
     totalHelpRequests: 0,
@@ -196,7 +196,7 @@ const AdminDashboard = () => {
             <Route path="/users" element={<AdminUsers />} />
             <Route path="/posts" element={<AdminPosts />} />
             <Route path="/settings" element={<AdminSettings />} />
-            <Route path="/stats" element={<AdminStats />} />
+            <Route path="/stats" element={<AdminStatsPage />} />
             <Route path="/audit" element={<AdminAuditLogs />} />
           </Routes>
         </div>
