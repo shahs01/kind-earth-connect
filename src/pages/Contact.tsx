@@ -1,14 +1,98 @@
 
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, MapPin, Phone, Clock } from "lucide-react";
+import { Mail, MapPin, Phone, Clock, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+    subscribe: false
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      subject: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    console.log("Submitting contact form:", formData);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+        body: formData
+      });
+
+      console.log("Function response:", { data, error });
+
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw new Error(error.message || "Failed to send message");
+      }
+
+      if (data && !data.success && data.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Message sent!",
+        description: "Thank you for contacting us. We'll get back to you soon.",
+      });
+      
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+        subscribe: false
+      });
+      
+    } catch (error: any) {
+      console.error("Error sending contact message:", error);
+      toast({
+        title: "Error sending message",
+        description: error.message || "Please try again or contact us directly.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -65,19 +149,36 @@ const Contact = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
             <div className="lg:col-span-3 bg-white shadow-md rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-6">Send us a Message</h2>
-              <form className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Name
                     </label>
-                    <Input id="name" placeholder="Your name" />
+                    <Input 
+                      id="name" 
+                      name="name"
+                      placeholder="Your name" 
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                      required
+                    />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                       Email
                     </label>
-                    <Input id="email" type="email" placeholder="your@email.com" />
+                    <Input 
+                      id="email" 
+                      name="email"
+                      type="email" 
+                      placeholder="your@email.com" 
+                      value={formData.email}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                      required
+                    />
                   </div>
                 </div>
                 
@@ -85,17 +186,17 @@ const Contact = () => {
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                     Subject
                   </label>
-                  <Select>
+                  <Select value={formData.subject} onValueChange={handleSelectChange} disabled={isSubmitting}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a topic" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="general">General Inquiry</SelectItem>
-                      <SelectItem value="support">Technical Support</SelectItem>
-                      <SelectItem value="partnership">Partnership Opportunities</SelectItem>
-                      <SelectItem value="donation">Donation Questions</SelectItem>
-                      <SelectItem value="volunteer">Volunteering</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="General Inquiry">General Inquiry</SelectItem>
+                      <SelectItem value="Technical Support">Technical Support</SelectItem>
+                      <SelectItem value="Partnership Opportunities">Partnership Opportunities</SelectItem>
+                      <SelectItem value="Donation Questions">Donation Questions</SelectItem>
+                      <SelectItem value="Volunteering">Volunteering</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -104,22 +205,46 @@ const Contact = () => {
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                     Message
                   </label>
-                  <Textarea id="message" placeholder="How can we help you?" rows={5} />
+                  <Textarea 
+                    id="message" 
+                    name="message"
+                    placeholder="How can we help you?" 
+                    rows={5} 
+                    value={formData.message}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                    required
+                  />
                 </div>
                 
                 <div className="flex items-center">
                   <input
                     id="subscribe"
+                    name="subscribe"
                     type="checkbox"
                     className="h-4 w-4 text-thryvance-green border-gray-300 rounded"
+                    checked={formData.subscribe}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
                   />
                   <label htmlFor="subscribe" className="ml-2 block text-sm text-gray-700">
                     Subscribe to our newsletter
                   </label>
                 </div>
                 
-                <Button type="submit" className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                  Send Message
+                <Button 
+                  type="submit" 
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send Message'
+                  )}
                 </Button>
               </form>
             </div>
