@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -129,8 +128,8 @@ const NonprofitDirectory = () => {
             </div>
             
             <TabsContent value="grid">
-              {/* Mobile: 3 columns, Tablet: 2 columns, Desktop: 3 columns */}
-              <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+              {/* Mobile: 2 columns, Desktop: 3 columns */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                 {filteredNonprofits.length > 0 ? (
                   filteredNonprofits.map((nonprofit) => (
                     <NonprofitCard key={nonprofit.id} nonprofit={nonprofit} />
