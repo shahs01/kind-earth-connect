@@ -446,14 +446,14 @@ const CommunityFeed = ({
                   
                   {/* Multiple Photos Indicator */}
                   {post.photos && post.photos.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
                       +{post.photos.length - 1}
                     </div>
                   )}
                 </div>
 
                 <CardContent className="p-3">
-                  {/* Price/Title */}
+                  {/* Title */}
                   <h3 className="font-semibold text-base mb-1 line-clamp-2 text-gray-900">
                     {post.title}
                   </h3>
