@@ -52,6 +52,19 @@ const Contact = () => {
     console.log("Submitting contact form:", formData);
 
     try {
+      // First, save to database
+      const { error: dbError } = await supabase
+        .from('contacts')
+        .insert([formData]);
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        throw new Error("Failed to save contact submission");
+      }
+
+      console.log("Contact saved to database successfully");
+
+      // Then send email via Edge Function
       const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: formData
       });
