@@ -54,17 +54,9 @@ const PartnerWithUs = () => {
     console.log("Submitting partnership form:", formData);
     
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
-      );
-
-      // Send email via Edge Function with timeout
-      const emailPromise = supabase.functions.invoke('send-partnership-email', {
+      const { data, error } = await supabase.functions.invoke('send-partnership-email', {
         body: formData
       });
-
-      const { data, error } = await Promise.race([emailPromise, timeoutPromise]) as any;
 
       console.log("Function response received:", { data, error });
 
@@ -73,31 +65,33 @@ const PartnerWithUs = () => {
         throw new Error(error.message || "Failed to send partnership request");
       }
 
-      // Handle successful response
-      console.log("Partnership email sent successfully");
+      // Check if the response indicates success
+      if (data && data.success) {
+        console.log("Partnership email sent successfully");
 
-      toast({
-        title: "Partnership request sent!",
-        description: "We'll review your information and contact you soon.",
-      });
-      
-      // Reset form
-      setFormData({
-        organizationName: "",
-        contactName: "",
-        email: "",
-        phone: "",
-        organizationType: "",
-        message: ""
-      });
+        toast({
+          title: "Partnership request sent!",
+          description: "We'll review your information and contact you soon.",
+        });
+        
+        // Reset form
+        setFormData({
+          organizationName: "",
+          contactName: "",
+          email: "",
+          phone: "",
+          organizationType: "",
+          message: ""
+        });
+      } else {
+        throw new Error(data?.error || "Failed to send partnership request");
+      }
       
     } catch (error: any) {
       console.error("Error sending partnership request:", error);
       toast({
         title: "Error sending request",
-        description: error.message === 'Request timeout' 
-          ? "Request timed out. Please try again." 
-          : "Please try again or contact us directly.",
+        description: error.message || "Please try again or contact us directly.",
         variant: "destructive"
       });
     } finally {

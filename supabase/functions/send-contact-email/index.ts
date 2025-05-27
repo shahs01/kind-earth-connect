@@ -65,7 +65,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Thryvance Contact <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
-      reply_to: email, // Use just the email address
+      reply_to: email,
       subject: `Contact Form: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Contact message sent successfully",
-      emailId: emailResponse.data?.id 
+      data: emailResponse.data 
     }), {
       status: 200,
       headers: {

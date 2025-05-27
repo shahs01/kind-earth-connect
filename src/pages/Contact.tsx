@@ -51,17 +51,9 @@ const Contact = () => {
     console.log("Submitting contact form:", formData);
 
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
-      );
-
-      // Send email via Edge Function with timeout
-      const emailPromise = supabase.functions.invoke('send-contact-email', {
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: formData
       });
-
-      const { data, error } = await Promise.race([emailPromise, timeoutPromise]) as any;
 
       console.log("Function response received:", { data, error });
 
@@ -70,30 +62,32 @@ const Contact = () => {
         throw new Error(error.message || "Failed to send message");
       }
 
-      // Handle successful response
-      console.log("Email sent successfully");
-      
-      toast({
-        title: "Message sent!",
-        description: "Thank you for contacting us. We'll get back to you soon.",
-      });
-      
-      // Reset form
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-        subscribe: false
-      });
+      // Check if the response indicates success
+      if (data && data.success) {
+        console.log("Email sent successfully");
+        
+        toast({
+          title: "Message sent!",
+          description: "Thank you for contacting us. We'll get back to you soon.",
+        });
+        
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: "",
+          subscribe: false
+        });
+      } else {
+        throw new Error(data?.error || "Failed to send message");
+      }
       
     } catch (error: any) {
       console.error("Error sending contact message:", error);
       toast({
         title: "Error sending message",
-        description: error.message === 'Request timeout' 
-          ? "Request timed out. Please try again." 
-          : "Please try again or contact us directly.",
+        description: error.message || "Please try again or contact us directly.",
         variant: "destructive"
       });
     } finally {
