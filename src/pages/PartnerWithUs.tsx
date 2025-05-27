@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const PartnerWithUs = () => {
   const { toast } = useToast();
@@ -65,9 +66,9 @@ const PartnerWithUs = () => {
         throw new Error(error.message || "Failed to send partnership request");
       }
 
-      // Check if the response indicates success
-      if (data && !data.success && data.error) {
-        throw new Error(data.error);
+      // Check if the email was sent successfully
+      if (!data || !data.success) {
+        throw new Error(data?.error || "Failed to send partnership request");
       }
 
       toast({
@@ -222,7 +223,14 @@ const PartnerWithUs = () => {
                     disabled={isSubmitting} 
                     className="bg-thryvance-green hover:bg-thryvance-green-dark text-white w-full sm:w-auto"
                   >
-                    {isSubmitting ? "Sending..." : "Submit Request"}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Submit Request'
+                    )}
                   </Button>
                 </div>
               </form>

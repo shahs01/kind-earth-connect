@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -52,19 +51,7 @@ const Contact = () => {
     console.log("Submitting contact form:", formData);
 
     try {
-      // First, save to database
-      const { error: dbError } = await supabase
-        .from('contacts')
-        .insert([formData]);
-
-      if (dbError) {
-        console.error("Database error:", dbError);
-        throw new Error("Failed to save contact submission");
-      }
-
-      console.log("Contact saved to database successfully");
-
-      // Then send email via Edge Function
+      // Send email via Edge Function
       const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: formData
       });
@@ -76,8 +63,9 @@ const Contact = () => {
         throw new Error(error.message || "Failed to send message");
       }
 
-      if (data && !data.success && data.error) {
-        throw new Error(data.error);
+      // Check if the email was sent successfully
+      if (!data || !data.success) {
+        throw new Error(data?.error || "Failed to send message");
       }
 
       toast({
@@ -166,7 +154,7 @@ const Contact = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Name
+                      Name *
                     </label>
                     <Input 
                       id="name" 
@@ -180,7 +168,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
+                      Email *
                     </label>
                     <Input 
                       id="email" 
@@ -197,7 +185,7 @@ const Contact = () => {
                 
                 <div>
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                    Subject
+                    Subject *
                   </label>
                   <Select value={formData.subject} onValueChange={handleSelectChange} disabled={isSubmitting}>
                     <SelectTrigger className="w-full">
@@ -216,7 +204,7 @@ const Contact = () => {
                 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
+                    Message *
                   </label>
                   <Textarea 
                     id="message" 
