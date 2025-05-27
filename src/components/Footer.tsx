@@ -118,10 +118,12 @@ const Footer = () => {
                   type="email" 
                   placeholder="Your email"
                   className="px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent"
+                  aria-label="Email address for newsletter subscription"
                 />
                 <Link to="/subscribe">
                   <button 
                     className="bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-r-md transition-colors"
+                    aria-label="Subscribe to newsletter"
                   >
                     Subscribe
                   </button>
@@ -131,8 +133,9 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-thryvance-neutral mt-10 pt-6 text-center text-gray-600 text-sm">
-          <p>© {new Date().getFullYear()} Thryvance. All rights reserved.</p>
+        <div className="border-t border-thryvance-neutral mt-10 pt-6 text-center text-gray-600 text-sm space-y-2">
+          <p>© {new Date().getFullYear()} Thryvance. Unregistered BC non-profit.</p>
+          <p>Donations support our mission but are not tax-deductible.</p>
         </div>
       </div>
     </footer>
