@@ -1,9 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { User, Clock, Calendar, MapPin, Users as UsersIcon, Plus, Briefcase, Image, Link, X, AlertCircle } from "lucide-react";
+import { User, Clock, Calendar, MapPin, Users as UsersIcon, Plus, Briefcase, Image, Link, X, AlertCircle, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ const Volunteer = () => {
   const { isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState("browse");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -31,6 +33,68 @@ const Volunteer = () => {
 
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+
+  // Fetch volunteer opportunities from database
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch volunteer opportunities (posts with type "offer")
+        const { data: postsData, error: postsError } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('status', 'active')
+          .eq('type', 'offer')
+          .order('created_at', { ascending: false });
+
+        if (postsError) throw postsError;
+
+        if (postsData && postsData.length > 0) {
+          // Get profiles for each post
+          const postsWithProfiles = await Promise.all(
+            postsData.map(async (post) => {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('name, avatar, username')
+                .eq('id', post.user_id)
+                .single();
+
+              return {
+                id: post.id,
+                title: post.title,
+                location: post.location || "Location not specified",
+                category: post.category || "General",
+                description: post.description,
+                created_at: post.created_at,
+                user: {
+                  name: profileData?.name || "Unknown User",
+                  avatar: profileData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.name || 'User')}`
+                }
+              };
+            })
+          );
+
+          setOpportunities(postsWithProfiles);
+        } else {
+          setOpportunities([]);
+        }
+      } catch (error) {
+        console.error("Error fetching volunteer opportunities:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load volunteer opportunities. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (activeTab === "browse") {
+      fetchOpportunities();
+    }
+  }, [activeTab]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -152,7 +216,7 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
       setPhotos([]);
       setPhotoPreviewUrls([]);
       
-      // Switch back to browse tab
+      // Switch back to browse tab and refresh opportunities
       setActiveTab("browse");
       
     } catch (error) {
@@ -166,63 +230,6 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
       setIsSubmitting(false);
     }
   };
-
-  const opportunities = [
-    {
-      id: 1,
-      title: "Community Garden Helper",
-      location: "East Side Neighborhood",
-      schedule: "Weekends, 9am-12pm",
-      commitment: "Flexible",
-      category: "Environment",
-      spots: 8
-    },
-    {
-      id: 2,
-      title: "Literacy Tutor",
-      location: "Multiple Libraries",
-      schedule: "Weekday evenings",
-      commitment: "3 months minimum",
-      category: "Education",
-      spots: 5
-    },
-    {
-      id: 3,
-      title: "Food Pantry Assistant",
-      location: "Central Community Center",
-      schedule: "Tuesdays & Thursdays, 2pm-5pm",
-      commitment: "Weekly",
-      category: "Food Security",
-      spots: 12
-    },
-    {
-      id: 4,
-      title: "Senior Companion",
-      location: "Various Neighborhoods",
-      schedule: "Flexible hours",
-      commitment: "2 hours/week",
-      category: "Senior Support",
-      spots: 20
-    },
-    {
-      id: 5,
-      title: "Youth Mentor",
-      location: "Westside Youth Center",
-      schedule: "After school hours",
-      commitment: "6 months minimum",
-      category: "Youth",
-      spots: 10
-    },
-    {
-      id: 6,
-      title: "Event Organizer",
-      location: "Various Locations",
-      schedule: "Based on event schedule",
-      commitment: "Project-based",
-      category: "Community Events",
-      spots: 6
-    }
-  ];
 
   const categories = [
     "Environment", 
@@ -280,45 +287,70 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                     <Button variant="outline">Individuals</Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {opportunities.map(opportunity => (
-                      <div key={opportunity.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="h-40 bg-gray-200"></div>
-                        <div className="p-5">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{opportunity.title}</h3>
-                            <span className="bg-thryvance-green-light text-thryvance-green text-xs font-medium px-2 py-1 rounded">
-                              {opportunity.category}
-                            </span>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+                      <span className="ml-2">Loading opportunities...</span>
+                    </div>
+                  ) : opportunities.length === 0 ? (
+                    <div className="text-center py-12">
+                      <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-xl font-medium text-gray-700">No volunteer opportunities yet</h3>
+                      <p className="text-gray-500 mt-2">
+                        Be the first to post a volunteer opportunity!
+                      </p>
+                      {isAuthenticated && (
+                        <Button 
+                          onClick={() => setActiveTab("post")}
+                          className="mt-4 bg-thryvance-green hover:bg-thryvance-green-dark"
+                        >
+                          Post an Opportunity
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                      {opportunities.map(opportunity => (
+                        <div key={opportunity.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                          <div className="h-40 bg-gray-200"></div>
+                          <div className="p-5">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">{opportunity.title}</h3>
+                              <span className="bg-thryvance-green-light text-thryvance-green text-xs font-medium px-2 py-1 rounded">
+                                {opportunity.category}
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-2 mb-4">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <MapPin className="h-4 w-4 mr-2" />
+                                {opportunity.location}
+                              </div>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <User className="h-4 w-4 mr-2" />
+                                Posted by {opportunity.user.name}
+                              </div>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                {new Date(opportunity.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            
+                            <div className="mb-4">
+                              <p className="text-sm text-gray-700 line-clamp-3">
+                                {opportunity.description}
+                              </p>
+                            </div>
+                            
+                            <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
+                              <User className="mr-2 h-4 w-4" />
+                              Sign Up to Volunteer
+                            </Button>
                           </div>
-                          
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <MapPin className="h-4 w-4 mr-2" />
-                              {opportunity.location}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Calendar className="h-4 w-4 mr-2" />
-                              {opportunity.schedule}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Clock className="h-4 w-4 mr-2" />
-                              Commitment: {opportunity.commitment}
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <UsersIcon className="h-4 w-4 mr-2" />
-                              {opportunity.spots} spots available
-                            </div>
-                          </div>
-                          
-                          <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
-                            <User className="mr-2 h-4 w-4" />
-                            Sign Up to Volunteer
-                          </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                   
                   <div className="bg-white shadow-md rounded-lg p-6 mb-8">
                     <h2 className="text-xl font-semibold mb-4">Virtual Volunteer Opportunities</h2>
