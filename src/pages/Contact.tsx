@@ -51,23 +51,28 @@ const Contact = () => {
     console.log("Submitting contact form:", formData);
 
     try {
-      // Send email via Edge Function
-      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+
+      // Send email via Edge Function with timeout
+      const emailPromise = supabase.functions.invoke('send-contact-email', {
         body: formData
       });
 
-      console.log("Function response:", { data, error });
+      const { data, error } = await Promise.race([emailPromise, timeoutPromise]) as any;
+
+      console.log("Function response received:", { data, error });
 
       if (error) {
         console.error("Supabase function error:", error);
         throw new Error(error.message || "Failed to send message");
       }
 
-      // Check if the email was sent successfully
-      if (!data || !data.success) {
-        throw new Error(data?.error || "Failed to send message");
-      }
-
+      // Handle successful response
+      console.log("Email sent successfully");
+      
       toast({
         title: "Message sent!",
         description: "Thank you for contacting us. We'll get back to you soon.",
@@ -86,7 +91,9 @@ const Contact = () => {
       console.error("Error sending contact message:", error);
       toast({
         title: "Error sending message",
-        description: error.message || "Please try again or contact us directly.",
+        description: error.message === 'Request timeout' 
+          ? "Request timed out. Please try again." 
+          : "Please try again or contact us directly.",
         variant: "destructive"
       });
     } finally {

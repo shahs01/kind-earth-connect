@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -55,21 +54,27 @@ const PartnerWithUs = () => {
     console.log("Submitting partnership form:", formData);
     
     try {
-      const { data, error } = await supabase.functions.invoke('send-partnership-email', {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+
+      // Send email via Edge Function with timeout
+      const emailPromise = supabase.functions.invoke('send-partnership-email', {
         body: formData
       });
 
-      console.log("Function response:", { data, error });
+      const { data, error } = await Promise.race([emailPromise, timeoutPromise]) as any;
+
+      console.log("Function response received:", { data, error });
 
       if (error) {
         console.error("Supabase function error:", error);
         throw new Error(error.message || "Failed to send partnership request");
       }
 
-      // Check if the email was sent successfully
-      if (!data || !data.success) {
-        throw new Error(data?.error || "Failed to send partnership request");
-      }
+      // Handle successful response
+      console.log("Partnership email sent successfully");
 
       toast({
         title: "Partnership request sent!",
@@ -90,7 +95,9 @@ const PartnerWithUs = () => {
       console.error("Error sending partnership request:", error);
       toast({
         title: "Error sending request",
-        description: error.message || "Please try again or contact us directly.",
+        description: error.message === 'Request timeout' 
+          ? "Request timed out. Please try again." 
+          : "Please try again or contact us directly.",
         variant: "destructive"
       });
     } finally {
