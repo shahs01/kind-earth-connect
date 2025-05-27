@@ -2,9 +2,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import MobileUserMenu from "./MobileUserMenu";
+import { useEffect } from "react";
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -27,8 +29,21 @@ interface MobileMenuProps {
 }
 
 const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { checkIfAdmin } = useAdmin();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        const adminStatus = await checkIfAdmin();
+        setIsAdmin(adminStatus);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user, checkIfAdmin]);
 
   const handleLinkClick = () => {
     toggleMenu();
@@ -128,7 +143,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
           <div className="space-y-2">
             <Button
               variant="ghost"
-              className="w-full justify-between text-gray-700 hover:bg-gray-100"
+              className="w-full justify-between text-gray-700 hover:bg-gray-100 px-3"
               onClick={() => toggleDropdown('about')}
             >
               About Us
@@ -160,7 +175,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
           <div className="space-y-2">
             <Button
               variant="ghost"
-              className="w-full justify-between text-gray-700 hover:bg-gray-100"
+              className="w-full justify-between text-gray-700 hover:bg-gray-100 px-3"
               onClick={() => toggleDropdown('involved')}
             >
               Get Involved
@@ -187,6 +202,21 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
               </div>
             )}
           </div>
+
+          {/* Admin Panel Link - Show for admin users */}
+          {isAuthenticated && isAdmin && (
+            <>
+              <Separator className="my-2" />
+              <Link
+                to="/admin/dashboard"
+                className="flex items-center py-2 px-3 rounded-md text-orange-600 hover:bg-orange-50 transition-colors"
+                onClick={handleLinkClick}
+              >
+                <Shield className="mr-3 h-4 w-4" />
+                Admin Panel
+              </Link>
+            </>
+          )}
         </div>
 
         <Separator className="my-4" />

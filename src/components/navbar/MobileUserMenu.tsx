@@ -56,7 +56,7 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
       {/* My Account Header - Clickable to expand/collapse */}
       <Button
         variant="ghost"
-        className="w-full justify-between text-gray-700 hover:bg-gray-100"
+        className="w-full justify-between text-gray-700 hover:bg-gray-100 px-3"
         onClick={toggleExpanded}
       >
         <div className="flex items-center">
@@ -122,20 +122,6 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
             <Settings className="mr-3 h-4 w-4" />
             Settings
           </Link>
-
-          {isAdmin && (
-            <>
-              <Separator className="my-2" />
-              <Link
-                to="/admin/dashboard"
-                className="flex items-center py-2 px-3 rounded-md text-orange-600 hover:bg-orange-50 transition-colors"
-                onClick={handleLinkClick}
-              >
-                <Shield className="mr-3 h-4 w-4" />
-                Admin Panel
-              </Link>
-            </>
-          )}
 
           <Separator className="my-2" />
           <Button
