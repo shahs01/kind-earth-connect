@@ -98,6 +98,30 @@ export type Database = {
           },
         ]
       }
+      help_interactions: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          helped_by_id: string
+          helper_id: string
+          id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          helped_by_id: string
+          helper_id: string
+          id?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          helped_by_id?: string
+          helper_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -338,6 +362,33 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          content: string | null
+          id: string
+          section_key: string
+          title: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string | null
+          id?: string
+          section_key: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string | null
+          id?: string
+          section_key?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           description: string | null
@@ -362,6 +413,48 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          bio: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          linkedin_url: string | null
+          name: string
+          order_position: number | null
+          photo_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name: string
+          order_position?: number | null
+          photo_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name?: string
+          order_position?: number | null
+          photo_url?: string | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

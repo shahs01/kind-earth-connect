@@ -41,6 +41,29 @@ export interface SiteSetting {
   updated_at: string;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  title: string;
+  bio?: string;
+  photo_url?: string;
+  linkedin_url?: string;
+  order_position: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
+export interface SiteContentItem {
+  id: string;
+  section_key: string;
+  title?: string;
+  content?: string;
+  updated_at: string;
+  updated_by?: string;
+}
+
 export function useAdmin() {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -339,6 +362,145 @@ export function useAdmin() {
       return [];
     }
   };
+
+  const fetchTeamMembers = async (): Promise<TeamMember[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .order('order_position');
+      
+      if (error) throw error;
+      return data as TeamMember[];
+    } catch (error: any) {
+      toast({
+        title: "Error fetching team members",
+        description: error.message,
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const createTeamMember = async (teamMember: Omit<TeamMember, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .insert([teamMember])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Team member created",
+        description: "The team member has been added successfully",
+      });
+      
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Error creating team member",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const updateTeamMember = async (id: string, updates: Partial<TeamMember>) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Team member updated",
+        description: "The team member has been updated successfully",
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error updating team member",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const deleteTeamMember = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Team member deleted",
+        description: "The team member has been removed successfully",
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error deleting team member",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const fetchSiteContent = async (): Promise<SiteContentItem[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('*')
+        .order('section_key');
+      
+      if (error) throw error;
+      return data as SiteContentItem[];
+    } catch (error: any) {
+      toast({
+        title: "Error fetching site content",
+        description: error.message,
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const updateSiteContent = async (id: string, updates: Partial<SiteContentItem>) => {
+    try {
+      const { error } = await supabase
+        .from('site_content')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Content updated",
+        description: "The site content has been updated successfully",
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error updating content",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
   
   return {
     loading,
@@ -351,6 +513,12 @@ export function useAdmin() {
     updateUserStatus,
     fetchSiteSettings,
     updateSiteSetting,
-    fetchAuditLogs
+    fetchAuditLogs,
+    fetchTeamMembers,
+    createTeamMember,
+    updateTeamMember,
+    deleteTeamMember,
+    fetchSiteContent,
+    updateSiteContent
   };
 }

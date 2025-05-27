@@ -1,16 +1,11 @@
 
-import { useState } from "react";
+import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal, ArchiveIcon, Trash2, UserIcon, AlertTriangle } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreVertical, User, Flag, Trash2, Archive } from "lucide-react";
+import HelpInteractionButton from "./HelpInteractionButton";
+import { useParams } from "react-router-dom";
 
 interface ConversationHeaderProps {
   otherUser: any;
@@ -29,78 +24,79 @@ const ConversationHeader = ({
   onDeleteConversation,
   onArchiveConversation
 }: ConversationHeaderProps) => {
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = () => {
-    setIsDeleting(true);
-    onDeleteConversation();
-    setIsDeleting(false);
-  };
+  const { userId } = useParams<{ userId: string }>();
 
   if (loading || !otherUser) {
     return (
-      <div className="border-b border-gray-200 p-3 flex items-center">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <div className="ml-3">
-          <Skeleton className="h-5 w-40" />
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
+          <div className="space-y-1">
+            <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+            <div className="h-3 bg-gray-200 rounded w-16 animate-pulse"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="border-b border-gray-200 p-3 flex items-center justify-between">
-      <div className="flex items-center cursor-pointer hover:bg-gray-50 rounded-lg p-2 -ml-2" onClick={onViewProfile}>
+    <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+      <div className="flex items-center space-x-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={otherUser.avatar} alt={otherUser.name || 'User'} />
+          <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
           <AvatarFallback>
-            {otherUser.name?.charAt(0) || <UserIcon className="h-4 w-4" />}
+            {otherUser.name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
-        <div className="ml-3">
-          <h3 className="font-semibold hover:text-thryvance-blue transition-colors">
-            {otherUser.name || otherUser.username || 'Unknown User'}
-          </h3>
-          {otherUser.status && (
-            <p className="text-xs text-gray-500">
-              {otherUser.status === 'online' ? 'Active now' : 'Offline'}
-            </p>
-          )}
+        <div>
+          <h2 className="font-medium text-gray-900">{otherUser.name}</h2>
+          <p className="text-sm text-gray-500">@{otherUser.username}</p>
         </div>
       </div>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-5 w-5" />
-            <span className="sr-only">More options</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onViewProfile}>
-            <UserIcon className="mr-2 h-4 w-4" />
-            View Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onArchiveConversation}>
-            <ArchiveIcon className="mr-2 h-4 w-4" />
-            Archive Conversation
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onReportUser}>
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            Report User
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={handleDelete}
-            className="text-red-600 focus:text-red-600"
-            disabled={isDeleting}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? 'Deleting...' : 'Delete Conversation'}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      
+      <div className="flex items-center space-x-2">
+        <HelpInteractionButton 
+          helperId={otherUser.id}
+          conversationId={userId}
+          className="hidden md:flex"
+        />
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onViewProfile}>
+              <User className="mr-2 h-4 w-4" />
+              View Profile
+            </DropdownMenuItem>
+            <div className="md:hidden">
+              <DropdownMenuItem asChild>
+                <HelpInteractionButton 
+                  helperId={otherUser.id}
+                  conversationId={userId}
+                  className="w-full justify-start"
+                />
+              </DropdownMenuItem>
+            </div>
+            <DropdownMenuItem onClick={onReportUser}>
+              <Flag className="mr-2 h-4 w-4" />
+              Report User
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onArchiveConversation}>
+              <Archive className="mr-2 h-4 w-4" />
+              Archive Conversation
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDeleteConversation} className="text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Conversation
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };

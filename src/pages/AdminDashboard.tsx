@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Route, Routes, Link, useLocation } from "react-router-dom";
 import { useAdmin, AdminStats as AdminStatsType } from "@/hooks/useAdmin";
@@ -6,13 +5,15 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, MessageSquare, HelpCircle, Settings, BarChart, Shield, FileText, Building } from "lucide-react";
+import { Loader2, Users, MessageSquare, HelpCircle, Settings, BarChart, Shield, FileText, Building, UserCheck, Edit3 } from "lucide-react";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPosts from "@/components/admin/AdminPosts";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminStatsPage from "@/components/admin/AdminStats";
 import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 import AdminNonprofits from "@/components/admin/AdminNonprofits";
+import AdminTeamMembers from "@/components/admin/AdminTeamMembers";
+import AdminSiteContent from "@/components/admin/AdminSiteContent";
 
 const AdminDashboard = () => {
   const { isAdmin, loading, checkIfAdmin, fetchStats } = useAdmin();
@@ -152,6 +153,18 @@ const AdminDashboard = () => {
                     Manage Nonprofits
                   </Link>
                 </Button>
+                <Button asChild variant={location.pathname.includes('/team') ? 'default' : 'outline'}>
+                  <Link to="/admin/dashboard/team">
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Team Members
+                  </Link>
+                </Button>
+                <Button asChild variant={location.pathname.includes('/content') ? 'default' : 'outline'}>
+                  <Link to="/admin/dashboard/content">
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Site Content
+                  </Link>
+                </Button>
                 <Button asChild variant={location.pathname.includes('/settings') ? 'default' : 'outline'}>
                   <Link to="/admin/dashboard/settings">
                     <Settings className="mr-2 h-4 w-4" />
@@ -198,9 +211,9 @@ const AdminDashboard = () => {
                     <p className="text-sm text-gray-600">Add, edit, and manage nonprofit organizations</p>
                   </Card>
                   <Card className="p-4 hover:shadow-md transition-shadow">
-                    <Settings className="h-8 w-8 text-purple-600 mb-2" />
-                    <h4 className="font-semibold">Platform Settings</h4>
-                    <p className="text-sm text-gray-600">Configure global platform settings</p>
+                    <UserCheck className="h-8 w-8 text-purple-600 mb-2" />
+                    <h4 className="font-semibold">Team Management</h4>
+                    <p className="text-sm text-gray-600">Manage team members and site content</p>
                   </Card>
                 </div>
               </div>
@@ -208,6 +221,8 @@ const AdminDashboard = () => {
             <Route path="/users" element={<AdminUsers />} />
             <Route path="/posts" element={<AdminPosts />} />
             <Route path="/nonprofits" element={<AdminNonprofits />} />
+            <Route path="/team" element={<AdminTeamMembers />} />
+            <Route path="/content" element={<AdminSiteContent />} />
             <Route path="/settings" element={<AdminSettings />} />
             <Route path="/stats" element={<AdminStatsPage />} />
             <Route path="/audit" element={<AdminAuditLogs />} />
