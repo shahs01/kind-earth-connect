@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Save, FileText } from "lucide-react";
+import { Save, FileText, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -80,13 +80,36 @@ const AdminSiteContent = () => {
     );
   };
 
-  if (loading) return <div>Loading site content...</div>;
+  const getSectionDisplayName = (sectionKey: string) => {
+    const displayNames: Record<string, string> = {
+      'about_thryvance': 'About Thryvance',
+      'our_mission': 'Our Mission',
+      'our_story': 'Our Story'
+    };
+    return displayNames[sectionKey] || sectionKey.replace('_', ' ');
+  };
+
+  const getSectionDescription = (sectionKey: string) => {
+    const descriptions: Record<string, string> = {
+      'about_thryvance': 'Main description displayed at the top of the About page',
+      'our_mission': 'Mission statement and core values section',
+      'our_story': 'Company history and background story'
+    };
+    return descriptions[sectionKey] || 'Website content section';
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-12">
+      <RefreshCw className="h-8 w-8 animate-spin text-red-600" />
+      <span className="ml-2">Loading site content...</span>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-red-800">Site Content Management</h2>
-        <p className="text-gray-600">Edit static content sections displayed on your website</p>
+        <p className="text-gray-600">Edit content sections displayed on your website pages</p>
       </div>
 
       <div className="space-y-6">
@@ -105,15 +128,15 @@ const AdminSiteContent = () => {
             <Card key={section.id}>
               <CardHeader>
                 <CardTitle className="capitalize">
-                  {section.section_key.replace('_', ' ')} Section
+                  {getSectionDisplayName(section.section_key)}
                 </CardTitle>
                 <CardDescription>
-                  Last updated: {new Date(section.updated_at).toLocaleString()}
+                  {getSectionDescription(section.section_key)} • Last updated: {new Date(section.updated_at).toLocaleString()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor={`title-${section.id}`}>Title</Label>
+                  <Label htmlFor={`title-${section.id}`}>Section Title</Label>
                   <Input
                     id={`title-${section.id}`}
                     value={section.title || ''}
@@ -127,9 +150,13 @@ const AdminSiteContent = () => {
                     id={`content-${section.id}`}
                     value={section.content || ''}
                     onChange={(e) => updateSection(section.id, 'content', e.target.value)}
-                    rows={4}
+                    rows={section.section_key === 'our_story' ? 8 : 4}
                     placeholder="Section content"
+                    className="min-h-[100px]"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tip: Use line breaks to create new paragraphs
+                  </p>
                 </div>
                 <div className="flex justify-end">
                   <Button
