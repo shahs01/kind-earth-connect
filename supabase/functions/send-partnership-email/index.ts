@@ -18,15 +18,17 @@ interface PartnershipRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Partnership email function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Partnership email function called");
-    
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY exists:", !!resendApiKey);
+    
     if (!resendApiKey) {
       console.error("RESEND_API_KEY not found in environment variables");
       return new Response(JSON.stringify({ 
@@ -39,6 +41,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = new Resend(resendApiKey);
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
 
     const {
       organizationName,
@@ -47,9 +51,34 @@ const handler = async (req: Request): Promise<Response> => {
       phone,
       organizationType,
       message,
-    }: PartnershipRequest = await req.json();
+    }: PartnershipRequest = JSON.parse(requestBody);
 
-    console.log("Sending partnership email to thryvance.ca@gmail.com from:", contactName, email);
+    console.log("Parsed partnership data:", { 
+      organizationName, 
+      contactName, 
+      email, 
+      phone, 
+      organizationType, 
+      messageLength: message?.length 
+    });
+
+    // Validate required fields
+    if (!organizationName || !contactName || !email || !organizationType || !message) {
+      console.error("Missing required fields:", { 
+        organizationName: !!organizationName, 
+        contactName: !!contactName, 
+        email: !!email, 
+        organizationType: !!organizationType, 
+        message: !!message 
+      });
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        success: false 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -63,6 +92,8 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    console.log("Sending partnership email via Resend...");
 
     const emailResponse = await resend.emails.send({
       from: "Thryvance Partnership <noreply@thryvance.ca>",
@@ -108,12 +139,12 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Partnership email sent successfully:", emailResponse);
+    console.log("Partnership email sent successfully. Response:", JSON.stringify(emailResponse, null, 2));
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Partnership request sent successfully",
-      data: emailResponse.data 
+      emailId: emailResponse.data?.id 
     }), {
       status: 200,
       headers: {
@@ -123,6 +154,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-partnership-email function:", error);
+    console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message || "Failed to send email",

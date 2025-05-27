@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -58,7 +59,7 @@ const PartnerWithUs = () => {
         body: formData
       });
 
-      console.log("Function response received:", { data, error });
+      console.log("Partnership function response:", { data, error });
 
       if (error) {
         console.error("Supabase function error:", error);
@@ -66,12 +67,12 @@ const PartnerWithUs = () => {
       }
 
       // Check if the response indicates success
-      if (data && data.success) {
+      if (data?.success) {
         console.log("Partnership email sent successfully");
 
         toast({
           title: "Partnership request sent!",
-          description: "We'll review your information and contact you soon.",
+          description: "Thank you for your interest! We'll review your information and contact you soon.",
         });
         
         // Reset form
@@ -91,7 +92,7 @@ const PartnerWithUs = () => {
       console.error("Error sending partnership request:", error);
       toast({
         title: "Error sending request",
-        description: error.message || "Please try again or contact us directly.",
+        description: error.message || "Please try again or contact us directly at thryvance.ca@gmail.com",
         variant: "destructive"
       });
     } finally {

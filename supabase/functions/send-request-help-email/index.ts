@@ -20,15 +20,17 @@ interface RequestHelpRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Request help email function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Request help email function called");
-    
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY exists:", !!resendApiKey);
+    
     if (!resendApiKey) {
       console.error("RESEND_API_KEY not found in environment variables");
       return new Response(JSON.stringify({ 
@@ -41,6 +43,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = new Resend(resendApiKey);
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
 
     const {
       title,
@@ -51,14 +55,37 @@ const handler = async (req: Request): Promise<Response> => {
       name,
       email,
       phone,
-    }: RequestHelpRequest = await req.json();
+    }: RequestHelpRequest = JSON.parse(requestBody);
 
-    console.log("Sending request help email to thryvance.ca@gmail.com from:", name, email);
+    console.log("Parsed request help data:", { 
+      title, 
+      category, 
+      urgency, 
+      location, 
+      name, 
+      email, 
+      phone,
+      descriptionLength: description?.length 
+    });
+
+    // Validate required fields
+    if (!title || !description || !category || !urgency || !location || !name || !email) {
+      console.error("Missing required fields");
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        success: false 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("Sending request help email via Resend...");
 
     const emailResponse = await resend.emails.send({
       from: "Thryvance Help Requests <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
-      reply_to: `${name} <${email}>`,
+      reply_to: email,
       subject: `New Help Request: ${title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -100,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Request help email sent successfully:", emailResponse);
+    console.log("Request help email sent successfully. Response:", JSON.stringify(emailResponse, null, 2));
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -115,6 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-request-help-email function:", error);
+    console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message || "Failed to send email",

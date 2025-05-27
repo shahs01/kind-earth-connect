@@ -19,15 +19,17 @@ interface VolunteerRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Volunteer email function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Volunteer email function called");
-    
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY exists:", !!resendApiKey);
+    
     if (!resendApiKey) {
       console.error("RESEND_API_KEY not found in environment variables");
       return new Response(JSON.stringify({ 
@@ -40,6 +42,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = new Resend(resendApiKey);
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
 
     const {
       name,
@@ -49,14 +53,36 @@ const handler = async (req: Request): Promise<Response> => {
       availability,
       experience,
       message,
-    }: VolunteerRequest = await req.json();
+    }: VolunteerRequest = JSON.parse(requestBody);
 
-    console.log("Sending volunteer email to thryvance.ca@gmail.com from:", name, email);
+    console.log("Parsed volunteer data:", { 
+      name, 
+      email, 
+      phone, 
+      interests: interests?.length, 
+      availability, 
+      experienceLength: experience?.length,
+      messageLength: message?.length 
+    });
+
+    // Validate required fields
+    if (!name || !email || !interests || !availability || !experience || !message) {
+      console.error("Missing required fields");
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        success: false 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("Sending volunteer email via Resend...");
 
     const emailResponse = await resend.emails.send({
       from: "Thryvance Volunteers <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
-      reply_to: `${name} <${email}>`,
+      reply_to: email,
       subject: `New Volunteer Application from ${name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -73,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <h2 style="color: #1e40af; margin-top: 0;">Volunteer Preferences</h2>
-            <p><strong>Areas of Interest:</strong> ${interests.join(', ')}</p>
+            <p><strong>Areas of Interest:</strong> ${Array.isArray(interests) ? interests.join(', ') : interests}</p>
             <p><strong>Availability:</strong> ${availability}</p>
           </div>
           
@@ -101,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Volunteer email sent successfully:", emailResponse);
+    console.log("Volunteer email sent successfully. Response:", JSON.stringify(emailResponse, null, 2));
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -116,6 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-volunteer-email function:", error);
+    console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message || "Failed to send email",

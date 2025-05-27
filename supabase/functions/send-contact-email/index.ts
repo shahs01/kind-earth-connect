@@ -17,15 +17,17 @@ interface ContactRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Contact email function called with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Contact email function called");
-    
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY exists:", !!resendApiKey);
+    
     if (!resendApiKey) {
       console.error("RESEND_API_KEY not found in environment variables");
       return new Response(JSON.stringify({ 
@@ -38,6 +40,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = new Resend(resendApiKey);
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
 
     const {
       name,
@@ -45,9 +49,21 @@ const handler = async (req: Request): Promise<Response> => {
       subject,
       message,
       subscribe = false,
-    }: ContactRequest = await req.json();
+    }: ContactRequest = JSON.parse(requestBody);
 
-    console.log("Sending contact email to thryvance.ca@gmail.com from:", name, email);
+    console.log("Parsed form data:", { name, email, subject, messageLength: message?.length, subscribe });
+
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      console.error("Missing required fields:", { name: !!name, email: !!email, subject: !!subject, message: !!message });
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        success: false 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,6 +78,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    console.log("Sending email via Resend...");
+    
     const emailResponse = await resend.emails.send({
       from: "Thryvance Contact <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
@@ -100,12 +118,12 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Contact email sent successfully:", emailResponse);
+    console.log("Email sent successfully. Response:", JSON.stringify(emailResponse, null, 2));
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: "Contact message sent successfully",
-      data: emailResponse.data 
+      emailId: emailResponse.data?.id 
     }), {
       status: 200,
       headers: {
@@ -115,6 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-contact-email function:", error);
+    console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message || "Failed to send email",

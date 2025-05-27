@@ -55,7 +55,7 @@ const Contact = () => {
         body: formData
       });
 
-      console.log("Function response received:", { data, error });
+      console.log("Contact function response:", { data, error });
 
       if (error) {
         console.error("Supabase function error:", error);
@@ -63,8 +63,8 @@ const Contact = () => {
       }
 
       // Check if the response indicates success
-      if (data && data.success) {
-        console.log("Email sent successfully");
+      if (data?.success) {
+        console.log("Contact email sent successfully");
         
         toast({
           title: "Message sent!",
@@ -87,7 +87,7 @@ const Contact = () => {
       console.error("Error sending contact message:", error);
       toast({
         title: "Error sending message",
-        description: error.message || "Please try again or contact us directly.",
+        description: error.message || "Please try again or contact us directly at thryvance.ca@gmail.com",
         variant: "destructive"
       });
     } finally {
