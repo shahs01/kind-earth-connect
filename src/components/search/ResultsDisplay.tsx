@@ -52,10 +52,12 @@ const ResultsDisplay = ({
         console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter, sortBy });
         
         // Updated query to fetch posts first, then get profiles separately
+        // Exclude volunteer opportunities by filtering out posts with volunteer-specific markers
         let query = supabase
           .from('posts')
           .select('*')
-          .eq('status', 'active');
+          .eq('status', 'active')
+          .not('description', 'like', '%Schedule:%'); // Exclude volunteer opportunities
           
         // Apply search filters if provided
         if (searchQuery) {

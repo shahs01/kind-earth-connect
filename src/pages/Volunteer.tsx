@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -40,12 +39,13 @@ const Volunteer = () => {
       try {
         setIsLoading(true);
         
-        // Fetch volunteer opportunities (posts with type "offer")
+        // Fetch volunteer opportunities - posts that contain volunteer-specific metadata
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select('*')
           .eq('status', 'active')
           .eq('type', 'offer')
+          .like('description', '%Schedule:%') // Filter for volunteer posts that have schedule info
           .order('created_at', { ascending: false });
 
         if (postsError) throw postsError;
@@ -176,9 +176,10 @@ const Volunteer = () => {
       // Filter out empty links
       const validLinks = formData.links.filter(link => link.trim() !== "");
       
-      // Create description that includes all the volunteer-specific information
+      // Create description that includes volunteer-specific information with clear markers
       const fullDescription = `${formData.description}
 
+VOLUNTEER OPPORTUNITY DETAILS:
 Schedule: ${formData.schedule}
 Commitment: ${formData.commitment}
 Available Spots: ${formData.spots}
@@ -338,7 +339,7 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                             
                             <div className="mb-4">
                               <p className="text-sm text-gray-700 line-clamp-3">
-                                {opportunity.description}
+                                {opportunity.description.split('VOLUNTEER OPPORTUNITY DETAILS:')[0]}
                               </p>
                             </div>
                             
@@ -406,14 +407,6 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                               <h3 className="text-sm font-medium text-yellow-800">Authentication required</h3>
                               <div className="mt-2 text-sm text-yellow-700">
                                 <p>You need to be logged in to post volunteer opportunities.</p>
-                                <div className="mt-4">
-                                  <Button asChild variant="outline" className="mr-2">
-                                    <Link to="/login">Log in</Link>
-                                  </Button>
-                                  <Button asChild>
-                                    <Link to="/signup">Sign up</Link>
-                                  </Button>
-                                </div>
                               </div>
                             </div>
                           </div>
