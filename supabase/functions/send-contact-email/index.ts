@@ -49,10 +49,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending contact email to thryvance.ca@gmail.com from:", name, email);
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error("Invalid email format:", email);
+      return new Response(JSON.stringify({ 
+        error: "Invalid email format",
+        success: false 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const emailResponse = await resend.emails.send({
       from: "Thryvance Contact <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
-      reply_to: `${name} <${email}>`,
+      reply_to: email, // Use just the email address
       subject: `Contact Form: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
