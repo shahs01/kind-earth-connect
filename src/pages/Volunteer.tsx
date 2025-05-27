@@ -112,21 +112,23 @@ const Volunteer = () => {
       // Filter out empty links
       const validLinks = formData.links.filter(link => link.trim() !== "");
       
-      // Create the post in Supabase
+      // Create description that includes all the volunteer-specific information
+      const fullDescription = `${formData.description}
+
+Schedule: ${formData.schedule}
+Commitment: ${formData.commitment}
+Available Spots: ${formData.spots}
+${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
+      
+      // Create the post in Supabase using the standard posts table structure
       const { error } = await supabase.from('posts').insert({
         title: formData.title,
-        description: formData.description,
+        description: fullDescription,
         location: formData.location,
         category: formData.category,
-        type: "volunteer_opportunity",
+        type: "offer", // Using "offer" type since this is offering volunteer opportunities
         user_id: user?.id,
-        status: "active",
-        metadata: {
-          schedule: formData.schedule,
-          commitment: formData.commitment,
-          spots: parseInt(formData.spots),
-          links: validLinks
-        }
+        status: "active"
       });
       
       if (error) throw error;
