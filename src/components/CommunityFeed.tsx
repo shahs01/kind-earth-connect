@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -154,7 +153,8 @@ const CommunityFeed = ({
         let query = supabase
           .from('posts')
           .select('*')
-          .eq('status', 'active');
+          .eq('status', 'active')
+          .not('description', 'like', '%Schedule:%'); // Exclude volunteer opportunities
           
         // Apply filters
         if (searchQuery) {
@@ -654,6 +654,7 @@ const CommunityFeed = ({
           }}
           open={postDialogOpen}
           onOpenChange={setPostDialogOpen}
+          onMessageClick={handleMessageClick}
         />
       )}
 

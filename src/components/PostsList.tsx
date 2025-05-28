@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,11 @@ const PostsList = ({
           .from('posts')
           .select('*')
           .eq('status', 'active');
+
+        // Exclude volunteer opportunities unless we're specifically filtering for a user's posts
+        if (!userId) {
+          query = query.not('description', 'like', '%Schedule:%');
+        }
 
         // Apply filters
         if (searchQuery) {

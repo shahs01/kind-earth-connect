@@ -196,7 +196,8 @@ const MobileCommunityFeed = ({
         let query = supabase
           .from('posts')
           .select('*')
-          .eq('status', 'active');
+          .eq('status', 'active')
+          .not('description', 'like', '%Schedule:%'); // Exclude volunteer opportunities
           
         // Apply filters
         if (searchQuery) {
@@ -464,6 +465,7 @@ const MobileCommunityFeed = ({
           }}
           open={postDialogOpen}
           onOpenChange={setPostDialogOpen}
+          onMessageClick={handleMessageClick}
         />
       )}
     </>
