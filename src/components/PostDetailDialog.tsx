@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, User, MessageCircle, X } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 interface PostDetailDialogProps {
   post: {
@@ -23,11 +24,13 @@ interface PostDetailDialogProps {
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onMessageClick?: (postUserId: string, userName?: string) => void;
 }
 
-const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) => {
+const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDetailDialogProps) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
+  const { isAuthenticated, user } = useAuth();
 
   if (!post) return null;
 
@@ -59,6 +62,12 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
   const prevImage = () => {
     if (selectedImageIndex > 0) {
       setSelectedImageIndex(selectedImageIndex - 1);
+    }
+  };
+
+  const handleContactClick = () => {
+    if (onMessageClick && user?.id !== post.user_id) {
+      onMessageClick(post.user_id, post.user.name);
     }
   };
 
@@ -167,10 +176,16 @@ const PostDetailDialog = ({ post, open, onOpenChange }: PostDetailDialogProps) =
                 </div>
               </div>
               
-              <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Contact
-              </Button>
+              {/* Contact Button - Only show if user is authenticated and not the post author */}
+              {isAuthenticated && user?.id !== post.user_id && onMessageClick && (
+                <Button 
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark"
+                  onClick={handleContactClick}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Contact
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
