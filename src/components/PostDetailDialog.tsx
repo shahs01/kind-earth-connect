@@ -1,10 +1,11 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, User, MessageCircle, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface PostDetailDialogProps {
   post: {
@@ -31,6 +32,8 @@ const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDeta
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (!post) return null;
 
@@ -66,7 +69,24 @@ const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDeta
   };
 
   const handleContactClick = () => {
-    if (onMessageClick && user?.id !== post.user_id) {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to contact this user",
+      });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    
+    if (user?.id === post.user_id) {
+      toast({
+        title: "Cannot contact yourself",
+        description: "You cannot send messages to yourself",
+      });
+      return;
+    }
+    
+    if (onMessageClick) {
       onMessageClick(post.user_id, post.user.name);
     }
   };
@@ -176,16 +196,14 @@ const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDeta
                 </div>
               </div>
               
-              {/* Contact Button - Only show if user is authenticated and not the post author */}
-              {isAuthenticated && user?.id !== post.user_id && onMessageClick && (
-                <Button 
-                  className="bg-thryvance-green hover:bg-thryvance-green-dark"
-                  onClick={handleContactClick}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Contact
-                </Button>
-              )}
+              {/* Contact Button - Always show */}
+              <Button 
+                className="bg-thryvance-green hover:bg-thryvance-green-dark"
+                onClick={handleContactClick}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Contact
+              </Button>
             </div>
           </div>
         </DialogContent>
