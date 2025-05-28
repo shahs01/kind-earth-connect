@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,6 +75,7 @@ const CommunityFeed = ({
   const [selectedProfileUser, setSelectedProfileUser] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [favoritingPost, setFavoritingPost] = useState<string | null>(null);
+  const [messageLoading, setMessageLoading] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -232,6 +234,122 @@ const CommunityFeed = ({
     
     fetchPosts();
   }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast, user, checkFavoriteStatus]);
+
+  const handleMessageClick = async (postUserId: string, userName?: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to send messages",
+      });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    
+    if (user?.id === postUserId) {
+      toast({
+        title: "Cannot message yourself",
+        description: "You cannot send messages to yourself",
+      });
+      return;
+    }
+    
+    // Set loading state for this specific post
+    setMessageLoading(postUserId);
+    
+    try {
+      // Show loading toast
+      toast({
+        title: "Opening conversation",
+        description: "Preparing your conversation...",
+      });
+      
+      // First check if user exists
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', postUserId)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error("Error checking user profile:", profileError);
+        throw new Error("Failed to verify user profile");
+      }
+      
+      if (!profileData) {
+        toast({
+          title: "User not found",
+          description: "This user no longer exists",
+          variant: "destructive"
+        });
+        setMessageLoading(null);
+        return;
+      }
+      
+      // Generate a welcome message
+      const welcomeMessage = `Hello! I'm interested in connecting about your post.`;
+      
+      // Check if a conversation already exists by looking for any messages
+      const { data: existingMessages, error: checkError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${postUserId}),and(sender_id.eq.${postUserId},receiver_id.eq.${user?.id})`)
+        .limit(1);
+      
+      if (checkError) {
+        console.error("Error checking for existing conversation:", checkError);
+      }
+      
+      // If no conversation exists, create one with a real welcome message
+      if (!existingMessages || existingMessages.length === 0) {
+        // Create a real initial message
+        const { data: messageData, error: insertError } = await supabase
+          .from('messages')
+          .insert([{
+            receiver_id: postUserId,
+            sender_id: user?.id,
+            content: welcomeMessage,
+            read: false
+          }])
+          .select();
+          
+        if (insertError) {
+          console.error("Error creating initial message:", insertError);
+          throw new Error("Failed to start conversation");
+        }
+        
+        console.log("Created new conversation with message:", messageData);
+      } else {
+        console.log("Existing conversation found:", existingMessages);
+      }
+      
+      // Give Supabase a moment to process the new message
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Navigate to the conversation with the correct state
+      navigate(`/messages/${postUserId}`, { 
+        state: { 
+          action: 'newMessage',
+          receiverId: postUserId,
+          receiverName: profileData.name || userName || "User"
+        },
+        replace: true
+      });
+      
+      toast({
+        title: "Conversation ready",
+        description: `You can now chat with ${profileData.name || userName || "this user"}`,
+      });
+    } catch (err) {
+      console.error("Error initializing conversation:", err);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setMessageLoading(null);
+    }
+  };
 
   const handleToggleFavorite = async (post: Post, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the detail dialog
@@ -473,21 +591,44 @@ const CommunityFeed = ({
                   )}
                   
                   {/* User Info - Clickable */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <img
-                      src={post.user.avatar}
-                      alt={post.user.name}
-                      className="h-6 w-6 rounded-full cursor-pointer hover:ring-2 hover:ring-thryvance-blue transition-all"
-                      onClick={(e) => handleUserClick(post.user_id, e)}
-                    />
-                    <span 
-                      className="text-xs text-gray-600 truncate cursor-pointer hover:text-thryvance-blue transition-colors"
-                      onClick={(e) => handleUserClick(post.user_id, e)}
-                    >
-                      {post.user.name}
-                    </span>
-                    {profileLoading && (
-                      <div className="animate-spin h-3 w-3 border-2 border-thryvance-green border-t-transparent rounded-full"></div>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={post.user.avatar}
+                        alt={post.user.name}
+                        className="h-6 w-6 rounded-full cursor-pointer hover:ring-2 hover:ring-thryvance-blue transition-all"
+                        onClick={(e) => handleUserClick(post.user_id, e)}
+                      />
+                      <span 
+                        className="text-xs text-gray-600 truncate cursor-pointer hover:text-thryvance-blue transition-colors"
+                        onClick={(e) => handleUserClick(post.user_id, e)}
+                      >
+                        {post.user.name}
+                      </span>
+                      {profileLoading && (
+                        <div className="animate-spin h-3 w-3 border-2 border-thryvance-green border-t-transparent rounded-full"></div>
+                      )}
+                    </div>
+                    
+                    {/* Contact Button */}
+                    {isAuthenticated && user?.id !== post.user_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-thryvance-blue hover:bg-thryvance-blue-light"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMessageClick(post.user_id, post.user.name);
+                        }}
+                        disabled={messageLoading === post.user_id}
+                      >
+                        {messageLoading === post.user_id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                        )}
+                        {messageLoading === post.user_id ? 'Opening...' : 'Contact'}
+                      </Button>
                     )}
                   </div>
                 </CardContent>
