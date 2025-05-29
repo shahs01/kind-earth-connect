@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -104,7 +105,8 @@ const MessageConversation = () => {
         // Process messages with profile data
         const processedMessages = (messagesData || []).map(message => ({
           ...message,
-          sender: profilesMap.get(message.sender_id)
+          sender: profilesMap.get(message.sender_id),
+          receiver: profilesMap.get(message.receiver_id)
         }));
 
         console.log("Loaded messages:", processedMessages.length);
@@ -195,7 +197,8 @@ const MessageConversation = () => {
               trustBadges: senderProfile.trust_badges || [],
               loginAttempts: 0,
               lastLoginAttempt: null
-            } : undefined
+            } : undefined,
+            receiver: undefined // This can be undefined as it's not always needed
           };
 
           setMessages(prev => {
@@ -207,19 +210,6 @@ const MessageConversation = () => {
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
           });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'messages',
-          filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id}))`
-        },
-        (payload) => {
-          console.log("Message deleted:", payload);
-          setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
         }
       )
       .subscribe((status) => {

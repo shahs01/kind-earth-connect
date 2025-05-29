@@ -8,7 +8,6 @@ interface UseConversationRealtimeProps {
   userId?: string;
   currentUserId?: string;
   onMessageReceived: (message: Message) => void;
-  onMessageDeleted: (messageId: string) => void;
   setConnectionError: (value: boolean) => void;
 }
 
@@ -16,7 +15,6 @@ export function useConversationRealtime({
   userId,
   currentUserId,
   onMessageReceived,
-  onMessageDeleted,
   setConnectionError
 }: UseConversationRealtimeProps) {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -34,7 +32,7 @@ export function useConversationRealtime({
     };
   }, []);
   
-  // Set up realtime subscription to listen for new messages and deletions
+  // Set up realtime subscription to listen for new messages
   const setupRealtimeSubscription = useCallback((): RealtimeChannel | null => {
     if (!userId || !currentUserId) {
       console.error("Cannot set up realtime without userId and currentUserId");
@@ -127,30 +125,6 @@ export function useConversationRealtime({
             }
           }
         )
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'messages'
-          },
-          (payload) => {
-            const deletedMessage = payload.old;
-            
-            // Check if this deleted message is part of the current conversation
-            const isRelevant = (
-              (deletedMessage.sender_id === currentUserId && deletedMessage.receiver_id === userId) ||
-              (deletedMessage.sender_id === userId && deletedMessage.receiver_id === currentUserId)
-            );
-            
-            if (!isRelevant) {
-              return;
-            }
-            
-            console.log("Realtime: Message deleted for conversation", payload);
-            onMessageDeleted(deletedMessage.id);
-          }
-        )
         .subscribe((status) => {
           setIsConnecting(false);
           console.log(`Realtime subscription status: ${status}`);
@@ -171,7 +145,7 @@ export function useConversationRealtime({
       setIsConnecting(false);
       return null;
     }
-  }, [userId, currentUserId, onMessageReceived, onMessageDeleted, setConnectionError]);
+  }, [userId, currentUserId, onMessageReceived, setConnectionError]);
   
   return {
     setupRealtimeSubscription,

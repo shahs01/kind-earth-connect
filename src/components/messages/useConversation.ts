@@ -24,7 +24,6 @@ export default function useConversation(userId?: string) {
     loadConversation,
     sending,
     clearLocalMessages,
-    removeMessage,
     setConnectionError: setMessagesConnectionError
   } = useMessages();
 
@@ -170,14 +169,6 @@ export default function useConversation(userId?: string) {
     }
   }, [userId, loadConversation, setMessagesConnectionError, toast]);
 
-  // Handle message deletion from realtime
-  const handleMessageDeleted = useCallback((messageId: string) => {
-    console.log("useConversation: Handling message deletion:", messageId);
-    if (removeMessage) {
-      removeMessage(messageId);
-    }
-  }, [removeMessage]);
-
   return {
     user,
     otherUser,
@@ -194,7 +185,6 @@ export default function useConversation(userId?: string) {
     handleDeleteConversation: () => handleDeleteConversation(),
     handleArchiveConversation: () => handleArchiveConversation(),
     handleReconnect,
-    handleMessageDeleted,
     isDeleting,
     isArchiving
   };
