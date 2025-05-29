@@ -34,7 +34,8 @@ const MessageConversation = ({ onViewProfile }: MessageConversationProps) => {
     handleReportUser,
     handleDeleteConversation,
     handleReconnect,
-    handleArchiveConversation
+    handleArchiveConversation,
+    handleMessageDeleted
   } = useConversation(userId);
   
   const { fetchError, setFetchError, handleRetry } = useConnectionState(

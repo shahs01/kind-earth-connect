@@ -27,6 +27,17 @@ export function useLocalMessages() {
     });
   }, []);
 
+  // When a message is deleted via realtime, remove it from the messages list
+  const handleMessageDeleted = useCallback((messageId: string) => {
+    console.log(`Message deleted: ${messageId}`);
+    
+    setLocalMessages(prev => {
+      const filteredMessages = prev.filter(msg => msg.id !== messageId);
+      console.log(`Removed message ${messageId}, now contains ${filteredMessages.length} messages`);
+      return filteredMessages;
+    });
+  }, []);
+
   // Clear local messages
   const clearLocalMessages = useCallback(() => {
     console.log("Clearing local messages");
@@ -37,6 +48,7 @@ export function useLocalMessages() {
     localMessages,
     setLocalMessages,
     handleMessageReceived,
+    handleMessageDeleted,
     clearLocalMessages
   };
 }
