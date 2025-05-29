@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -77,7 +78,7 @@ export function useMessages() {
     setLocalMessages(prev => prev.filter(msg => msg.id !== messageId));
   }, [setLocalMessages]);
 
-  const loadConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user) {
       return;
     }
@@ -142,12 +143,10 @@ export function useMessages() {
     console.log("Loading conversation with user:", userId);
 
     try {
+      // Fetch messages without joins to avoid relation errors
       const { data, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:profiles!sender_id(*)
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
@@ -158,12 +157,23 @@ export function useMessages() {
 
       console.log(`Loaded ${data?.length || 0} messages`);
       const messages = data || [];
-      setLocalMessages(messages as Message[]);
+      
+      // Convert to Message type and set local messages
+      const typedMessages: Message[] = messages.map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_id,
+        receiver_id: msg.receiver_id,
+        content: msg.content,
+        created_at: msg.created_at,
+        read: msg.read
+      }));
+      
+      setLocalMessages(typedMessages);
       
       // Set up realtime subscription for this conversation
       setupRealtimeSubscription();
 
-      return messages as Message[];
+      return typedMessages;
     } catch (error) {
       console.error("Failed to load conversation:", error);
       throw error;
@@ -189,10 +199,7 @@ export function useMessages() {
           content: content.trim(),
           read: false
         })
-        .select(`
-          *,
-          sender:profiles!sender_id(*)
-        `)
+        .select()
         .single();
 
       if (error) {
@@ -218,6 +225,7 @@ export function useMessages() {
     connectionError,
     loadConversation,
     sendMessage,
+    fetchConversations,
     clearLocalMessages,
     removeMessage,
     setConnectionError
