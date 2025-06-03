@@ -14,39 +14,88 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Starting payment creation...");
+    console.log("=== PAYMENT CREATION STARTED ===");
+    console.log("Request method:", req.method);
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
     
-    // Get the Stripe secret key
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    console.log("Stripe key exists:", !!stripeSecretKey);
+    // Check all available environment variables
+    console.log("Available env vars:", Object.keys(Deno.env.toObject()));
+    
+    // Get the Stripe secret key with multiple possible names
+    let stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || 
+                         Deno.env.get("STRIPE_SECRET") || 
+                         Deno.env.get("STRIPE_SK");
+    
+    console.log("Stripe key check - STRIPE_SECRET_KEY exists:", !!Deno.env.get("STRIPE_SECRET_KEY"));
+    console.log("Stripe key check - STRIPE_SECRET exists:", !!Deno.env.get("STRIPE_SECRET"));
+    console.log("Stripe key check - STRIPE_SK exists:", !!Deno.env.get("STRIPE_SK"));
+    console.log("Final stripe key exists:", !!stripeSecretKey);
+    console.log("Stripe key starts with sk_:", stripeSecretKey?.startsWith('sk_') || false);
     
     if (!stripeSecretKey) {
-      console.error("STRIPE_SECRET_KEY environment variable is not set");
-      throw new Error("Payment configuration error. Please contact support.");
+      console.error("❌ NO STRIPE SECRET KEY FOUND");
+      console.error("Please ensure you have added STRIPE_SECRET_KEY to your Supabase edge function secrets");
+      return new Response(JSON.stringify({ 
+        error: "Payment system configuration error. The Stripe secret key is not configured.",
+        details: "Please check your Supabase edge function secrets configuration."
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    if (!stripeSecretKey.startsWith('sk_')) {
+      console.error("❌ INVALID STRIPE SECRET KEY FORMAT");
+      console.error("Key should start with 'sk_' but starts with:", stripeSecretKey.substring(0, 3));
+      return new Response(JSON.stringify({ 
+        error: "Invalid Stripe secret key format. Please check your configuration.",
+        details: "The secret key should start with 'sk_test_' or 'sk_live_'"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     // Get the request body
-    const { amount, currency = 'usd', description, donorEmail } = await req.json();
-    console.log("Payment request:", { amount, currency, description, donorEmail });
+    const body = await req.json();
+    console.log("Request body received:", body);
+    
+    const { amount, currency = 'usd', description, donorEmail } = body;
 
-    if (!amount || amount < 100) { // Minimum $1.00
-      throw new Error("Invalid amount. Minimum donation is $1.00");
+    // Validate required fields
+    if (!amount || amount < 100) {
+      console.error("❌ Invalid amount:", amount);
+      return new Response(JSON.stringify({ 
+        error: "Invalid amount. Minimum donation is $1.00" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     if (!donorEmail || !donorEmail.includes('@')) {
-      throw new Error("Valid email address is required");
+      console.error("❌ Invalid email:", donorEmail);
+      return new Response(JSON.stringify({ 
+        error: "Valid email address is required" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
-    // Initialize Stripe with the secret key
+    console.log("✅ Validation passed - Amount:", amount, "Email:", donorEmail);
+
+    // Initialize Stripe
+    console.log("🔄 Initializing Stripe...");
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
     // Get the origin for redirect URLs
-    const origin = req.headers.get("origin") || "http://localhost:3000";
-    console.log("Origin:", origin);
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "http://localhost:3000";
+    console.log("✅ Stripe initialized, Origin:", origin);
 
-    // Create a one-time payment session
+    // Create checkout session
     const sessionData = {
       customer_email: donorEmail,
       line_items: [
@@ -57,7 +106,7 @@ serve(async (req) => {
               name: "Donation to Thryvance",
               description: description || `Donation to support Thryvance - $${(amount / 100).toFixed(2)}`
             },
-            unit_amount: amount, // Amount in cents
+            unit_amount: amount,
           },
           quantity: 1,
         },
@@ -71,9 +120,14 @@ serve(async (req) => {
       }
     };
 
-    console.log("Creating Stripe session with data:", JSON.stringify(sessionData, null, 2));
+    console.log("🔄 Creating Stripe checkout session...");
+    console.log("Session data:", JSON.stringify(sessionData, null, 2));
+    
     const session = await stripe.checkout.sessions.create(sessionData);
-    console.log("Session created successfully:", session.id);
+    
+    console.log("✅ Stripe session created successfully!");
+    console.log("Session ID:", session.id);
+    console.log("Session URL:", session.url);
 
     return new Response(JSON.stringify({ 
       url: session.url, 
@@ -83,13 +137,28 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+
   } catch (error: any) {
-    console.error("Error creating payment session:", error);
+    console.error("❌ ERROR in create-payment:", error);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
     
-    let errorMessage = "An unexpected error occurred";
+    let errorMessage = "An unexpected error occurred while processing your donation";
+    let statusCode = 500;
+    
     if (error.message) {
       errorMessage = error.message;
+    }
+    
+    // Handle specific Stripe errors
+    if (error.type === 'StripeInvalidRequestError') {
+      console.error("🔴 Stripe Invalid Request Error:", error.message);
+      errorMessage = "Invalid payment request. Please check your information and try again.";
+      statusCode = 400;
+    } else if (error.type === 'StripeAuthenticationError') {
+      console.error("🔴 Stripe Authentication Error - Check your secret key");
+      errorMessage = "Payment system authentication error. Please contact support.";
     }
     
     return new Response(JSON.stringify({ 
@@ -97,7 +166,7 @@ serve(async (req) => {
       success: false 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: statusCode,
     });
   }
 });
