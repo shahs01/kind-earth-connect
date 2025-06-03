@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -15,9 +14,46 @@ const Donate = () => {
   const [customAmount, setCustomAmount] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSendingReceipt, setIsSendingReceipt] = useState(false);
   const { toast } = useToast();
 
   const predefinedAmounts = [25, 50, 100, 250, 500, 1000];
+
+  const sendDonationReceipt = async (donorEmail: string, amount: number, sessionId: string) => {
+    try {
+      setIsSendingReceipt(true);
+      console.log("Sending donation receipt to:", donorEmail);
+      
+      const { data, error } = await supabase.functions.invoke('send-donation-receipt', {
+        body: {
+          donorEmail,
+          amount,
+          currency: 'cad',
+          sessionId,
+          donationDate: new Date().toISOString()
+        }
+      });
+
+      if (error) {
+        console.error("Receipt email error:", error);
+        toast({
+          title: "Receipt Email Issue",
+          description: "Your donation was successful, but we couldn't send your receipt email. Please contact us at donations@thryvance.org",
+          variant: "destructive"
+        });
+      } else {
+        console.log("Receipt sent successfully:", data);
+        toast({
+          title: "Receipt Sent",
+          description: `A donation receipt has been sent to ${donorEmail}`,
+        });
+      }
+    } catch (error) {
+      console.error("Error sending receipt:", error);
+    } finally {
+      setIsSendingReceipt(false);
+    }
+  };
 
   useEffect(() => {
     // Check for payment success/failure in URL params
@@ -26,11 +62,29 @@ const Donate = () => {
     const canceled = urlParams.get('canceled');
     const sessionId = urlParams.get('session_id');
 
-    if (success === 'true') {
-      toast({
-        title: "Thank You!",
-        description: "Your donation has been processed successfully. We appreciate your support!",
-      });
+    if (success === 'true' && sessionId) {
+      // Get donation details from localStorage (set before redirect)
+      const donationDetails = localStorage.getItem('pendingDonation');
+      if (donationDetails) {
+        const { email, amount } = JSON.parse(donationDetails);
+        
+        toast({
+          title: "Thank You!",
+          description: "Your donation has been processed successfully. We appreciate your support!",
+        });
+
+        // Send receipt email
+        sendDonationReceipt(email, amount, sessionId);
+        
+        // Clean up stored donation details
+        localStorage.removeItem('pendingDonation');
+      } else {
+        toast({
+          title: "Thank You!",
+          description: "Your donation has been processed successfully. We appreciate your support!",
+        });
+      }
+      
       // Clean up URL params
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (canceled === 'true') {
@@ -88,6 +142,12 @@ const Donate = () => {
     setIsProcessing(true);
 
     try {
+      // Store donation details for receipt email after success
+      localStorage.setItem('pendingDonation', JSON.stringify({
+        email: donorEmail,
+        amount: donationAmount * 100 // Store in cents
+      }));
+
       console.log("Invoking create-payment function with:", {
         amount: donationAmount * 100,
         currency: 'cad',
@@ -108,11 +168,13 @@ const Donate = () => {
 
       if (error) {
         console.error("Supabase function error:", error);
+        localStorage.removeItem('pendingDonation'); // Clean up on error
         throw new Error(error.message || "Failed to create payment session");
       }
 
       if (data?.error) {
         console.error("Payment creation error:", data.error);
+        localStorage.removeItem('pendingDonation'); // Clean up on error
         throw new Error(data.error);
       }
 
@@ -130,10 +192,12 @@ const Donate = () => {
           window.location.href = data.url;
         }, 1000);
       } else {
+        localStorage.removeItem('pendingDonation'); // Clean up on error
         throw new Error("No checkout URL received from payment processor");
       }
     } catch (error: any) {
       console.error("Error creating payment:", error);
+      localStorage.removeItem('pendingDonation'); // Clean up on error
       toast({
         title: "Payment Error",
         description: error.message || "Failed to process donation. Please try again.",
@@ -147,12 +211,21 @@ const Donate = () => {
   const currentAmount = customAmount ? parseInt(customAmount) || 0 : selectedAmount;
   const isValidAmount = currentAmount >= 1;
   const isValidEmail = donorEmail && validateEmail(donorEmail);
-  const canDonate = isValidAmount && isValidEmail && !isProcessing;
+  const canDonate = isValidAmount && isValidEmail && !isProcessing && !isSendingReceipt;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8">
+        {isSendingReceipt && (
+          <Alert className="mb-4 max-w-3xl mx-auto">
+            <Mail className="h-4 w-4" />
+            <AlertDescription>
+              Sending your donation receipt email...
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Support Our Mission</h1>
@@ -271,6 +344,7 @@ const Donate = () => {
             
             <p className="text-sm text-gray-600 text-center mt-4">
               You will be redirected to our secure payment processor to complete your donation.
+              A receipt will be automatically sent to your email after successful payment.
             </p>
           </div>
           
