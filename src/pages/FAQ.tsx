@@ -1,4 +1,3 @@
-
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -59,8 +58,8 @@ const FAQ = () => {
       category: "Donations & Volunteering",
       questions: [
         {
-          question: "Is my donation tax-deductible?",
-          answer: "Yes, donations made through Thryvance are typically tax-deductible. You will receive a receipt for your records after making a donation."
+          question: "Are my donations tax-deductible?",
+          answer: "Currently, donations made through Thryvance are not tax-deductible. We are working toward obtaining the necessary certifications and registrations to make donations tax-deductible in the future. We appreciate your understanding and continued support as we work through this process."
         },
         {
           question: "Can I designate where my donation goes?",
