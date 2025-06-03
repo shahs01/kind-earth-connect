@@ -1,9 +1,8 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,6 +13,31 @@ const Donate = () => {
   const { toast } = useToast();
 
   const predefinedAmounts = [25, 50, 100, 250, 500, 1000];
+
+  useEffect(() => {
+    // Check for payment success/failure in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const canceled = urlParams.get('canceled');
+    const sessionId = urlParams.get('session_id');
+
+    if (success === 'true') {
+      toast({
+        title: "Thank You!",
+        description: "Your donation has been processed successfully. We appreciate your support!",
+      });
+      // Clean up URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (canceled === 'true') {
+      toast({
+        title: "Payment Canceled",
+        description: "Your donation was canceled. No charges were made.",
+        variant: "destructive"
+      });
+      // Clean up URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   const handleAmountSelect = (amount: number) => {
     setSelectedAmount(amount);
