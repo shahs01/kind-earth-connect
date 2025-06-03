@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Loader2, Mail, DollarSign, AlertCircle } from "lucide-react";
+import { Heart, Loader2, Mail, DollarSign, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -56,8 +56,15 @@ const Donate = () => {
     }
   };
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleDonate = async () => {
     const donationAmount = customAmount ? parseInt(customAmount) : selectedAmount;
+    
+    console.log("Starting donation process with amount:", donationAmount);
     
     if (!donationAmount || donationAmount < 1) {
       toast({
@@ -68,7 +75,7 @@ const Donate = () => {
       return;
     }
 
-    if (!donorEmail || !donorEmail.includes('@')) {
+    if (!donorEmail || !validateEmail(donorEmail)) {
       toast({
         title: "Email Required",
         description: "Please enter a valid email address for your donation receipt.",
@@ -80,7 +87,12 @@ const Donate = () => {
     setIsProcessing(true);
 
     try {
-      console.log("Creating payment with amount:", donationAmount * 100);
+      console.log("Invoking create-payment function with:", {
+        amount: donationAmount * 100,
+        currency: 'usd',
+        description: `Donation to Thryvance - $${donationAmount}`,
+        donorEmail: donorEmail
+      });
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
@@ -95,11 +107,17 @@ const Donate = () => {
 
       if (error) {
         console.error("Supabase function error:", error);
-        throw error;
+        throw new Error(error.message || "Failed to create payment session");
+      }
+
+      if (data?.error) {
+        console.error("Payment creation error:", data.error);
+        throw new Error(data.error);
       }
 
       if (data?.url) {
-        // Redirect to Stripe checkout in the same tab
+        console.log("Redirecting to Stripe checkout:", data.url);
+        // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
         throw new Error("No checkout URL received from payment processor");
@@ -115,6 +133,11 @@ const Donate = () => {
       setIsProcessing(false);
     }
   };
+
+  const currentAmount = customAmount ? parseInt(customAmount) || 0 : selectedAmount;
+  const isValidAmount = currentAmount >= 1;
+  const isValidEmail = donorEmail && validateEmail(donorEmail);
+  const canDonate = isValidAmount && isValidEmail && !isProcessing;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -176,6 +199,9 @@ const Donate = () => {
                     className="pl-8 h-12 text-lg border-2 focus:border-thryvance-green"
                   />
                 </div>
+                {customAmount && !isValidAmount && (
+                  <p className="text-red-500 text-sm mt-1">Minimum donation is $1</p>
+                )}
               </div>
             </div>
 
@@ -194,6 +220,9 @@ const Donate = () => {
                 className="h-12 text-lg border-2 focus:border-thryvance-green"
                 required
               />
+              {donorEmail && !isValidEmail && (
+                <p className="text-red-500 text-sm mt-1">Please enter a valid email address</p>
+              )}
             </div>
 
             {/* Donation Summary */}
@@ -201,15 +230,21 @@ const Donate = () => {
               <div className="flex justify-between items-center text-lg">
                 <span className="font-medium">Donation Amount:</span>
                 <span className="font-bold text-thryvance-green text-xl">
-                  ${customAmount || selectedAmount}
+                  ${currentAmount || 0}
                 </span>
               </div>
+              {isValidEmail && (
+                <div className="flex items-center text-sm text-gray-600 mt-2">
+                  <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
+                  Receipt will be sent to {donorEmail}
+                </div>
+              )}
             </div>
 
             <Button 
               className="w-full h-14 bg-thryvance-green hover:bg-thryvance-green-dark text-lg font-semibold"
               onClick={handleDonate}
-              disabled={isProcessing || (!selectedAmount && !customAmount) || !donorEmail}
+              disabled={!canDonate}
             >
               {isProcessing ? (
                 <>
@@ -219,7 +254,7 @@ const Donate = () => {
               ) : (
                 <>
                   <Heart className="mr-2 h-5 w-5" />
-                  Donate ${customAmount || selectedAmount} Now
+                  Donate ${currentAmount || 0} Now
                 </>
               )}
             </Button>

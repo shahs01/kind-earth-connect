@@ -33,6 +33,10 @@ serve(async (req) => {
       throw new Error("Invalid amount. Minimum donation is $1.00");
     }
 
+    if (!donorEmail || !donorEmail.includes('@')) {
+      throw new Error("Valid email address is required");
+    }
+
     // Initialize Stripe with the secret key
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
@@ -44,6 +48,7 @@ serve(async (req) => {
 
     // Create a one-time payment session
     const sessionData = {
+      customer_email: donorEmail,
       line_items: [
         {
           price_data: {
@@ -60,25 +65,37 @@ serve(async (req) => {
       mode: "payment" as const,
       success_url: `${origin}/donate?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/donate?canceled=true`,
+      metadata: {
+        donor_email: donorEmail,
+        donation_amount: (amount / 100).toString(),
+      }
     };
 
-    // Add customer email if provided
-    if (donorEmail) {
-      (sessionData as any).customer_email = donorEmail;
-    }
-
-    console.log("Creating Stripe session...");
+    console.log("Creating Stripe session with data:", JSON.stringify(sessionData, null, 2));
     const session = await stripe.checkout.sessions.create(sessionData);
     console.log("Session created successfully:", session.id);
 
-    return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
+    return new Response(JSON.stringify({ 
+      url: session.url, 
+      sessionId: session.id,
+      success: true 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error: any) {
     console.error("Error creating payment session:", error);
-    const errorMessage = error.message || "An unexpected error occurred";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error("Error stack:", error.stack);
+    
+    let errorMessage = "An unexpected error occurred";
+    if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      success: false 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
