@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -69,7 +70,7 @@ const Donate = () => {
     if (!donationAmount || donationAmount < 1) {
       toast({
         title: "Invalid Amount",
-        description: "Please enter a valid donation amount of at least $1.",
+        description: "Please enter a valid donation amount of at least $1.00 CAD.",
         variant: "destructive"
       });
       return;
@@ -89,16 +90,16 @@ const Donate = () => {
     try {
       console.log("Invoking create-payment function with:", {
         amount: donationAmount * 100,
-        currency: 'usd',
-        description: `Donation to Thryvance - $${donationAmount}`,
+        currency: 'cad',
+        description: `Donation to Thryvance - $${donationAmount} CAD`,
         donorEmail: donorEmail
       });
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           amount: donationAmount * 100, // Convert to cents
-          currency: 'usd',
-          description: `Donation to Thryvance - $${donationAmount}`,
+          currency: 'cad',
+          description: `Donation to Thryvance - $${donationAmount} CAD`,
           donorEmail: donorEmail
         }
       });
@@ -173,12 +174,12 @@ const Donate = () => {
           <div className="bg-white shadow-lg rounded-lg p-8 mb-8">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               <DollarSign className="mr-2 h-6 w-6 text-thryvance-green" />
-              Make a One-Time Donation
+              Make a One-Time Donation (CAD)
             </h2>
             
             {/* Amount Selection */}
             <div className="mb-6">
-              <Label className="text-base font-medium mb-3 block">Select Amount</Label>
+              <Label className="text-base font-medium mb-3 block">Select Amount (CAD)</Label>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 {predefinedAmounts.map((amount) => (
                   <Button 
@@ -187,14 +188,14 @@ const Donate = () => {
                     className={`h-12 text-lg font-semibold ${selectedAmount === amount && !customAmount ? "bg-thryvance-green hover:bg-thryvance-green-dark" : ""}`}
                     onClick={() => handleAmountSelect(amount)}
                   >
-                    ${amount}
+                    ${amount} CAD
                   </Button>
                 ))}
               </div>
               
               <div className="mb-4">
                 <Label htmlFor="custom-amount" className="block text-sm font-medium text-gray-700 mb-2">
-                  Custom Amount ($)
+                  Custom Amount (CAD $)
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-3 text-gray-500 text-lg">$</span>
@@ -209,7 +210,7 @@ const Donate = () => {
                   />
                 </div>
                 {customAmount && !isValidAmount && (
-                  <p className="text-red-500 text-sm mt-1">Minimum donation is $1</p>
+                  <p className="text-red-500 text-sm mt-1">Minimum donation is $1 CAD</p>
                 )}
               </div>
             </div>
@@ -239,7 +240,7 @@ const Donate = () => {
               <div className="flex justify-between items-center text-lg">
                 <span className="font-medium">Donation Amount:</span>
                 <span className="font-bold text-thryvance-green text-xl">
-                  ${currentAmount || 0}
+                  ${currentAmount || 0} CAD
                 </span>
               </div>
               {isValidEmail && (
@@ -263,7 +264,7 @@ const Donate = () => {
               ) : (
                 <>
                   <Heart className="mr-2 h-5 w-5" />
-                  Donate ${currentAmount || 0} Now
+                  Donate ${currentAmount || 0} CAD Now
                 </>
               )}
             </Button>

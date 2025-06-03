@@ -60,13 +60,13 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Request body received:", body);
     
-    const { amount, currency = 'usd', description, donorEmail } = body;
+    const { amount, currency = 'cad', description, donorEmail } = body;
 
     // Validate required fields
     if (!amount || amount < 100) {
       console.error("❌ Invalid amount:", amount);
       return new Response(JSON.stringify({ 
-        error: "Invalid amount. Minimum donation is $1.00" 
+        error: "Invalid amount. Minimum donation is $1.00 CAD" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
@@ -104,7 +104,7 @@ serve(async (req) => {
             currency: currency,
             product_data: {
               name: "Donation to Thryvance",
-              description: description || `Donation to support Thryvance - $${(amount / 100).toFixed(2)}`
+              description: description || `Donation to support Thryvance - $${(amount / 100).toFixed(2)} CAD`
             },
             unit_amount: amount,
           },
