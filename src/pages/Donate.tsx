@@ -117,8 +117,17 @@ const Donate = () => {
 
       if (data?.url) {
         console.log("Redirecting to Stripe checkout:", data.url);
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
+        // Show success message before redirect
+        toast({
+          title: "Redirecting to Payment",
+          description: "Taking you to our secure payment processor...",
+        });
+        
+        // Add a small delay to ensure the toast is visible
+        setTimeout(() => {
+          // Force redirect to Stripe checkout
+          window.location.href = data.url;
+        }, 1000);
       } else {
         throw new Error("No checkout URL received from payment processor");
       }
