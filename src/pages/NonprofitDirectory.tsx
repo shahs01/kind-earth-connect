@@ -1,266 +1,195 @@
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import NonprofitCard from "@/components/NonprofitCard";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, MapPin, Filter } from "lucide-react";
+import NonprofitCard from "@/components/NonprofitCard";
+import NonprofitDetailDialog from "@/components/NonprofitDetailDialog";
 import { useNonprofits, Nonprofit } from "@/hooks/useNonprofits";
-import { Search, Loader2, Building } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, Phone, Mail } from "lucide-react";
-
-const categories = [
-  "All Categories",
-  "Food Assistance",
-  "Housing & Shelter",
-  "Healthcare",
-  "Youth Services",
-  "Senior Services",
-  "Veterans Services",
-  "Education",
-  "Job Training",
-  "Crisis Support",
-  "Mental Health",
-  "Disability Services",
-  "Environmental",
-  "Animal Welfare"
-];
 
 const NonprofitDirectory = () => {
-  const { loading, fetchNonprofits } = useNonprofits();
+  const { fetchNonprofits, loading } = useNonprofits();
   const [nonprofits, setNonprofits] = useState<Nonprofit[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
-  
+  const [filteredNonprofits, setFilteredNonprofits] = useState<Nonprofit[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [selectedNonprofit, setSelectedNonprofit] = useState<Nonprofit | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+
+  // Fetch nonprofits on component mount
   useEffect(() => {
+    const loadNonprofits = async () => {
+      const data = await fetchNonprofits();
+      setNonprofits(data);
+      setFilteredNonprofits(data);
+    };
     loadNonprofits();
   }, []);
 
-  const loadNonprofits = async () => {
-    const data = await fetchNonprofits(false); // Only active nonprofits for public
-    setNonprofits(data);
+  // Filter nonprofits based on search and filters
+  useEffect(() => {
+    let filtered = nonprofits;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(nonprofit =>
+        nonprofit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nonprofit.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nonprofit.location.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(nonprofit => nonprofit.category === selectedCategory);
+    }
+
+    // Filter by location
+    if (selectedLocation !== "all") {
+      filtered = filtered.filter(nonprofit => 
+        nonprofit.location.toLowerCase().includes(selectedLocation.toLowerCase())
+      );
+    }
+
+    setFilteredNonprofits(filtered);
+  }, [nonprofits, searchTerm, selectedCategory, selectedLocation]);
+
+  // Get unique categories and locations for filters
+  const categories = [...new Set(nonprofits.map(np => np.category))];
+  const locations = [...new Set(nonprofits.map(np => np.location))];
+
+  const handleNonprofitClick = (nonprofit: Nonprofit) => {
+    setSelectedNonprofit(nonprofit);
+    setShowDetailDialog(true);
   };
 
-  const filteredNonprofits = nonprofits.filter(nonprofit => {
-    const matchesSearch = 
-      nonprofit.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      nonprofit.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = 
-      selectedCategory === "All Categories" || nonprofit.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mx-auto mb-4" />
-            <p className="text-gray-600">Loading nonprofits...</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-  
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="bg-thryvance-blue-light py-10">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Find Local Nonprofits</h1>
-          <p className="text-gray-700 max-w-3xl">
-            Discover organizations in your community that provide specialized support and services.
-          </p>
-        </div>
-      </div>
-      
-      <main className="flex-grow py-10 bg-thryvance-neutral-light">
-        <div className="container mx-auto px-4">
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <Input 
-                  placeholder="Search nonprofits..." 
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Nonprofit Directory</h1>
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+              Discover local nonprofits making a difference in our community. Connect with organizations 
+              that align with your values and interests.
+            </p>
+          </div>
+
+          {/* Search and Filter Section */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search nonprofits by name, description, or location..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
               
-              <Select 
-                value={selectedCategory} 
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
-              <Input placeholder="Location (Portland, OR)" />
+              <div>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>{location}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-          
-          <Tabs defaultValue="grid">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">
-                {filteredNonprofits.length} {filteredNonprofits.length === 1 ? "Result" : "Results"}
-              </h2>
-              
-              <TabsList>
-                <TabsTrigger value="grid">Grid View</TabsTrigger>
-                <TabsTrigger value="list">List View</TabsTrigger>
-              </TabsList>
+
+          {/* Results Summary */}
+          <div className="mb-6">
+            <p className="text-gray-600">
+              Showing {filteredNonprofits.length} of {nonprofits.length} nonprofits
+            </p>
+          </div>
+
+          {/* Nonprofits Grid */}
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-thryvance-green"></div>
+              <span className="ml-2">Loading nonprofits...</span>
             </div>
-            
-            <TabsContent value="grid">
-              {/* Mobile: 2 columns, Desktop: 3 columns */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                {filteredNonprofits.length > 0 ? (
-                  filteredNonprofits.map((nonprofit) => (
-                    <NonprofitCard key={nonprofit.id} nonprofit={nonprofit} />
-                  ))
-                ) : (
-                  <div className="col-span-full py-12 text-center">
-                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700">No results found</h3>
-                    <p className="text-gray-500 mt-2">
-                      Try adjusting your search or category filters
-                    </p>
-                    <Button 
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSelectedCategory("All Categories");
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  </div>
-                )}
+          ) : filteredNonprofits.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <MapPin className="h-12 w-12 mx-auto" />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="list">
-              <div className="space-y-4">
-                {filteredNonprofits.length > 0 ? (
-                  filteredNonprofits.map((nonprofit) => (
-                    <div 
-                      key={nonprofit.id}
-                      className="bg-white p-6 rounded-lg shadow-sm flex flex-col md:flex-row gap-6"
-                    >
-                      <div className="h-24 w-24 rounded-lg bg-thryvance-neutral flex-shrink-0 flex items-center justify-center overflow-hidden">
-                        {nonprofit.logo ? (
-                          <img 
-                            src={nonprofit.logo} 
-                            alt={nonprofit.name} 
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <Building className="h-8 w-8 text-thryvance-green" />
-                        )}
-                      </div>
-                      
-                      <div className="flex-grow">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                          <div>
-                            <h3 className="text-xl font-semibold">{nonprofit.name}</h3>
-                            <div className="flex items-center gap-6 mt-1">
-                              <Badge className="bg-thryvance-green-light/50 text-thryvance-green border-thryvance-green/20">
-                                {nonprofit.category}
-                              </Badge>
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <MapPin className="h-4 w-4" />
-                                <span>{nonprofit.location}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <Button className="bg-thryvance-green hover:bg-thryvance-green-dark whitespace-nowrap">
-                            Contact
-                          </Button>
-                        </div>
-                        
-                        <p className="text-gray-600 mt-3">
-                          {nonprofit.description}
-                        </p>
-                        
-                        <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4">
-                          {nonprofit.website && (
-                            <a 
-                              href={nonprofit.website} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-sm text-thryvance-blue hover:underline flex items-center gap-1"
-                            >
-                              <Globe className="h-4 w-4" />
-                              <span>Website</span>
-                            </a>
-                          )}
-                          
-                          {nonprofit.phone_number && (
-                            <a 
-                              href={`tel:${nonprofit.phone_number}`} 
-                              className="text-sm text-thryvance-blue hover:underline flex items-center gap-1"
-                            >
-                              <Phone className="h-4 w-4" />
-                              <span>{nonprofit.phone_number}</span>
-                            </a>
-                          )}
-                          
-                          {nonprofit.email && (
-                            <a 
-                              href={`mailto:${nonprofit.email}`} 
-                              className="text-sm text-thryvance-blue hover:underline flex items-center gap-1"
-                            >
-                              <Mail className="h-4 w-4" />
-                              <span>{nonprofit.email}</span>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-12 text-center">
-                    <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700">No results found</h3>
-                    <p className="text-gray-500 mt-2">
-                      Try adjusting your search or category filters
-                    </p>
-                    <Button 
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSelectedCategory("All Categories");
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+              <h3 className="text-xl font-medium text-gray-700 mb-2">No nonprofits found</h3>
+              <p className="text-gray-500">
+                {searchTerm || selectedCategory !== "all" || selectedLocation !== "all"
+                  ? "Try adjusting your search criteria or filters."
+                  : "Be the first to add a nonprofit to our directory!"
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredNonprofits.map(nonprofit => (
+                <NonprofitCard 
+                  key={nonprofit.id} 
+                  nonprofit={nonprofit}
+                  onClick={() => handleNonprofitClick(nonprofit)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Call to Action */}
+          <div className="mt-12 text-center bg-thryvance-green-light rounded-lg p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Don't see your organization?
+            </h2>
+            <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+              Join our directory to connect with volunteers and supporters in your community. 
+              It's free and easy to get started.
+            </p>
+            <Button 
+              className="bg-thryvance-green hover:bg-thryvance-green-dark"
+              onClick={() => window.location.href = '/list-nonprofit'}
+            >
+              List Your Nonprofit
+            </Button>
+          </div>
         </div>
       </main>
       <Footer />
+      
+      <NonprofitDetailDialog
+        nonprofit={selectedNonprofit}
+        isOpen={showDetailDialog}
+        onClose={() => setShowDetailDialog(false)}
+      />
     </div>
   );
 };

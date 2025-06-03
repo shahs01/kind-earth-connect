@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import VolunteerOpportunityDialog from "@/components/VolunteerOpportunityDialog";
 
 const Volunteer = () => {
   const { isAuthenticated, user } = useAuth();
@@ -18,6 +19,8 @@ const Volunteer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
+  const [showOpportunityDialog, setShowOpportunityDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -56,7 +59,7 @@ const Volunteer = () => {
             postsData.map(async (post) => {
               const { data: profileData } = await supabase
                 .from('profiles')
-                .select('name, avatar, username')
+                .select('name, avatar, username, email')
                 .eq('id', post.user_id)
                 .single();
 
@@ -66,9 +69,11 @@ const Volunteer = () => {
                 location: post.location || "Location not specified",
                 category: post.category || "General",
                 description: post.description,
+                photos: post.photos || [],
                 created_at: post.created_at,
                 user: {
                   name: profileData?.name || "Unknown User",
+                  email: profileData?.email,
                   avatar: profileData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.name || 'User')}`
                 }
               };
@@ -158,6 +163,39 @@ const Volunteer = () => {
     setFormData(prev => ({ ...prev, links: newLinks }));
   };
 
+  const uploadPhotosToStorage = async (userId: string, postId: string, photoFiles: File[]): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+    
+    for (let i = 0; i < photoFiles.length; i++) {
+      const file = photoFiles[i];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${postId}/${Date.now()}_${i}.${fileExt}`;
+      
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('post-photos')
+          .upload(fileName, file);
+          
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          continue;
+        }
+        
+        const { data } = supabase.storage
+          .from('post-photos')
+          .getPublicUrl(fileName);
+          
+        if (data?.publicUrl) {
+          uploadedUrls.push(data.publicUrl);
+        }
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+      }
+    }
+    
+    return uploadedUrls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -186,17 +224,31 @@ Available Spots: ${formData.spots}
 ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
       
       // Create the post in Supabase using the standard posts table structure
-      const { error } = await supabase.from('posts').insert({
+      const { data: postData, error } = await supabase.from('posts').insert({
         title: formData.title,
         description: fullDescription,
         location: formData.location,
         category: formData.category,
-        type: "offer", // Using "offer" type since this is offering volunteer opportunities
+        type: "offer",
         user_id: user?.id,
         status: "active"
-      });
+      }).select().single();
       
       if (error) throw error;
+      
+      // Upload photos if any were selected
+      let photoUrls: string[] = [];
+      if (photos.length > 0 && postData) {
+        photoUrls = await uploadPhotosToStorage(user!.id, postData.id, photos);
+        
+        // Update the post with photo URLs
+        if (photoUrls.length > 0) {
+          await supabase
+            .from('posts')
+            .update({ photos: photoUrls })
+            .eq('id', postData.id);
+        }
+      }
       
       toast({
         title: "Success!",
@@ -230,6 +282,11 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOpportunityClick = (opportunity: any) => {
+    setSelectedOpportunity(opportunity);
+    setShowOpportunityDialog(true);
   };
 
   const categories = [
@@ -312,8 +369,24 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                       {opportunities.map(opportunity => (
-                        <div key={opportunity.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                          <div className="h-40 bg-gray-200"></div>
+                        <div 
+                          key={opportunity.id} 
+                          className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => handleOpportunityClick(opportunity)}
+                        >
+                          <div className="h-40 bg-gray-200 overflow-hidden">
+                            {opportunity.photos && opportunity.photos.length > 0 ? (
+                              <img 
+                                src={opportunity.photos[0]} 
+                                alt={opportunity.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <Image className="h-8 w-8" />
+                              </div>
+                            )}
+                          </div>
                           <div className="p-5">
                             <div className="flex justify-between items-start mb-2">
                               <h3 className="text-lg font-semibold text-gray-900">{opportunity.title}</h3>
@@ -343,9 +416,15 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                               </p>
                             </div>
                             
-                            <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
+                            <Button 
+                              className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpportunityClick(opportunity);
+                              }}
+                            >
                               <User className="mr-2 h-4 w-4" />
-                              Sign Up to Volunteer
+                              {isAuthenticated ? "View Details" : "Sign Up to Volunteer"}
                             </Button>
                           </div>
                         </div>
@@ -630,6 +709,12 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
         </div>
       </main>
       <Footer />
+      
+      <VolunteerOpportunityDialog
+        opportunity={selectedOpportunity}
+        isOpen={showOpportunityDialog}
+        onClose={() => setShowOpportunityDialog(false)}
+      />
     </div>
   );
 };

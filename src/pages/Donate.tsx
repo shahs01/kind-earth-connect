@@ -1,11 +1,79 @@
 
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Donate = () => {
+  const [selectedAmount, setSelectedAmount] = useState(100);
+  const [customAmount, setCustomAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const predefinedAmounts = [25, 50, 100, 250, 500, 1000];
+
+  const handleAmountSelect = (amount: number) => {
+    setSelectedAmount(amount);
+    setCustomAmount("");
+  };
+
+  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomAmount(value);
+    if (value) {
+      setSelectedAmount(parseInt(value) || 0);
+    }
+  };
+
+  const handleDonate = async () => {
+    const donationAmount = customAmount ? parseInt(customAmount) : selectedAmount;
+    
+    if (!donationAmount || donationAmount < 1) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid donation amount.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          amount: donationAmount * 100, // Convert to cents
+          currency: 'usd',
+          description: `Donation to Thryvance - $${donationAmount}`
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+        
+        toast({
+          title: "Redirecting to Payment",
+          description: "Opening secure payment page in a new tab.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error creating payment:", error);
+      toast({
+        title: "Payment Error",
+        description: error.message || "Failed to process donation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -17,14 +85,23 @@ const Donate = () => {
             makes a difference in the lives of those we serve.
           </p>
           
+          {/* Important Notice */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+            <p className="text-sm text-yellow-800">
+              <strong>Important:</strong> Donations made through this platform are not currently tax-deductible. 
+              We are working on obtaining the necessary certifications. Thank you for your understanding and support.
+            </p>
+          </div>
+          
           <div className="bg-white shadow-md rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4">Make a One-Time Donation</h2>
             <div className="grid grid-cols-3 gap-4 mb-6">
-              {[25, 50, 100, 250, 500, 1000].map((amount) => (
+              {predefinedAmounts.map((amount) => (
                 <Button 
                   key={amount}
-                  variant={amount === 100 ? "default" : "outline"}
-                  className={amount === 100 ? "bg-thryvance-green hover:bg-thryvance-green-dark" : ""}
+                  variant={selectedAmount === amount && !customAmount ? "default" : "outline"}
+                  className={selectedAmount === amount && !customAmount ? "bg-thryvance-green hover:bg-thryvance-green-dark" : ""}
+                  onClick={() => handleAmountSelect(amount)}
                 >
                   ${amount}
                 </Button>
@@ -41,13 +118,28 @@ const Donate = () => {
                   id="custom-amount"
                   min="1"
                   placeholder="Other amount"
-                  className="pl-8 w-full p-2 border border-gray-300 rounded-md"
+                  value={customAmount}
+                  onChange={handleCustomAmountChange}
+                  className="pl-8 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-thryvance-green focus:border-transparent"
                 />
               </div>
             </div>
-            <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark mt-4">
-              <Heart className="mr-2 h-4 w-4" />
-              Donate Now
+            <Button 
+              className="w-full bg-thryvance-green hover:bg-thryvance-green-dark mt-4"
+              onClick={handleDonate}
+              disabled={isProcessing || (!selectedAmount && !customAmount)}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Heart className="mr-2 h-4 w-4" />
+                  Donate ${customAmount || selectedAmount} Now
+                </>
+              )}
             </Button>
           </div>
           

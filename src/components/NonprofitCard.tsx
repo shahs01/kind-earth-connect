@@ -7,11 +7,15 @@ import { Nonprofit } from "@/hooks/useNonprofits";
 
 interface NonprofitCardProps {
   nonprofit: Nonprofit;
+  onClick?: () => void;
 }
 
-const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
+const NonprofitCard = ({ nonprofit, onClick }: NonprofitCardProps) => {
   return (
-    <Card className="h-full overflow-hidden hover:shadow-md transition-shadow">
+    <Card 
+      className={`h-full overflow-hidden hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3">
           <div className="h-12 w-12 mx-auto rounded-lg bg-thryvance-neutral flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -51,6 +55,7 @@ const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="text-thryvance-blue hover:underline truncate"
+                onClick={(e) => e.stopPropagation()}
               >
                 Website
               </a>
@@ -63,6 +68,7 @@ const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
               <a 
                 href={`tel:${nonprofit.phone_number}`} 
                 className="hover:underline truncate"
+                onClick={(e) => e.stopPropagation()}
               >
                 {nonprofit.phone_number}
               </a>
@@ -75,6 +81,7 @@ const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
               <a 
                 href={`mailto:${nonprofit.email}`} 
                 className="text-thryvance-blue hover:underline truncate"
+                onClick={(e) => e.stopPropagation()}
               >
                 {nonprofit.email}
               </a>
@@ -85,10 +92,25 @@ const NonprofitCard = ({ nonprofit }: NonprofitCardProps) => {
       
       <CardFooter className="pt-0 border-t">
         <div className="w-full flex gap-2">
-          <Button variant="ghost" className="flex-1 text-thryvance-green text-xs p-2">
+          <Button 
+            variant="ghost" 
+            className="flex-1 text-thryvance-green text-xs p-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClick) onClick();
+            }}
+          >
             Learn More
           </Button>
-          <Button className="flex-1 bg-thryvance-green hover:bg-thryvance-green-dark text-xs p-2">
+          <Button 
+            className="flex-1 bg-thryvance-green hover:bg-thryvance-green-dark text-xs p-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (nonprofit.email) {
+                window.location.href = `mailto:${nonprofit.email}`;
+              }
+            }}
+          >
             Contact
           </Button>
         </div>
