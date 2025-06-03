@@ -2,13 +2,17 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Heart, Loader2, Mail, DollarSign, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Donate = () => {
   const [selectedAmount, setSelectedAmount] = useState(100);
   const [customAmount, setCustomAmount] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -58,7 +62,16 @@ const Donate = () => {
     if (!donationAmount || donationAmount < 1) {
       toast({
         title: "Invalid Amount",
-        description: "Please enter a valid donation amount.",
+        description: "Please enter a valid donation amount of at least $1.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!donorEmail || !donorEmail.includes('@')) {
+      toast({
+        title: "Email Required",
+        description: "Please enter a valid email address for your donation receipt.",
         variant: "destructive"
       });
       return;
@@ -67,24 +80,29 @@ const Donate = () => {
     setIsProcessing(true);
 
     try {
+      console.log("Creating payment with amount:", donationAmount * 100);
+      
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           amount: donationAmount * 100, // Convert to cents
           currency: 'usd',
-          description: `Donation to Thryvance - $${donationAmount}`
+          description: `Donation to Thryvance - $${donationAmount}`,
+          donorEmail: donorEmail
         }
       });
 
-      if (error) throw error;
+      console.log("Payment response:", { data, error });
+
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
-        
-        toast({
-          title: "Redirecting to Payment",
-          description: "Opening secure payment page in a new tab.",
-        });
+        // Redirect to Stripe checkout in the same tab
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL received from payment processor");
       }
     } catch (error: any) {
       console.error("Error creating payment:", error);
@@ -103,68 +121,112 @@ const Donate = () => {
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Donate Online</h1>
-          <p className="text-lg text-gray-700 mb-8">
-            Your generous donation helps us support communities in need. Every contribution 
-            makes a difference in the lives of those we serve.
-          </p>
-          
-          {/* Important Notice */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
-            <p className="text-sm text-yellow-800">
-              <strong>Important:</strong> Donations made through this platform are not currently tax-deductible. 
-              We are working on obtaining the necessary certifications. Thank you for your understanding and support.
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Support Our Mission</h1>
+            <p className="text-lg text-gray-700">
+              Your generous donation helps us support communities in need. Every contribution 
+              makes a difference in the lives of those we serve.
             </p>
           </div>
           
-          <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Make a One-Time Donation</h2>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              {predefinedAmounts.map((amount) => (
-                <Button 
-                  key={amount}
-                  variant={selectedAmount === amount && !customAmount ? "default" : "outline"}
-                  className={selectedAmount === amount && !customAmount ? "bg-thryvance-green hover:bg-thryvance-green-dark" : ""}
-                  onClick={() => handleAmountSelect(amount)}
-                >
-                  ${amount}
-                </Button>
-              ))}
-            </div>
-            <div className="mb-4">
-              <label htmlFor="custom-amount" className="block text-sm font-medium text-gray-700 mb-1">
-                Custom Amount
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-500">$</span>
-                <input
-                  type="number"
-                  id="custom-amount"
-                  min="1"
-                  placeholder="Other amount"
-                  value={customAmount}
-                  onChange={handleCustomAmountChange}
-                  className="pl-8 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-thryvance-green focus:border-transparent"
-                />
+          {/* Important Notice */}
+          <Alert className="mb-8">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Important:</strong> Donations made through this platform are not currently tax-deductible. 
+              We are working on obtaining the necessary certifications. Thank you for your understanding and support.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="bg-white shadow-lg rounded-lg p-8 mb-8">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center">
+              <DollarSign className="mr-2 h-6 w-6 text-thryvance-green" />
+              Make a One-Time Donation
+            </h2>
+            
+            {/* Amount Selection */}
+            <div className="mb-6">
+              <Label className="text-base font-medium mb-3 block">Select Amount</Label>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {predefinedAmounts.map((amount) => (
+                  <Button 
+                    key={amount}
+                    variant={selectedAmount === amount && !customAmount ? "default" : "outline"}
+                    className={`h-12 text-lg font-semibold ${selectedAmount === amount && !customAmount ? "bg-thryvance-green hover:bg-thryvance-green-dark" : ""}`}
+                    onClick={() => handleAmountSelect(amount)}
+                  >
+                    ${amount}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="mb-4">
+                <Label htmlFor="custom-amount" className="block text-sm font-medium text-gray-700 mb-2">
+                  Custom Amount ($)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-gray-500 text-lg">$</span>
+                  <Input
+                    type="number"
+                    id="custom-amount"
+                    min="1"
+                    placeholder="Enter amount"
+                    value={customAmount}
+                    onChange={handleCustomAmountChange}
+                    className="pl-8 h-12 text-lg border-2 focus:border-thryvance-green"
+                  />
+                </div>
               </div>
             </div>
+
+            {/* Email Input */}
+            <div className="mb-6">
+              <Label htmlFor="donor-email" className="block text-sm font-medium text-gray-700 mb-2">
+                <Mail className="inline mr-2 h-4 w-4" />
+                Email Address (for donation receipt)
+              </Label>
+              <Input
+                type="email"
+                id="donor-email"
+                placeholder="your@email.com"
+                value={donorEmail}
+                onChange={(e) => setDonorEmail(e.target.value)}
+                className="h-12 text-lg border-2 focus:border-thryvance-green"
+                required
+              />
+            </div>
+
+            {/* Donation Summary */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <div className="flex justify-between items-center text-lg">
+                <span className="font-medium">Donation Amount:</span>
+                <span className="font-bold text-thryvance-green text-xl">
+                  ${customAmount || selectedAmount}
+                </span>
+              </div>
+            </div>
+
             <Button 
-              className="w-full bg-thryvance-green hover:bg-thryvance-green-dark mt-4"
+              className="w-full h-14 bg-thryvance-green hover:bg-thryvance-green-dark text-lg font-semibold"
               onClick={handleDonate}
-              disabled={isProcessing || (!selectedAmount && !customAmount)}
+              disabled={isProcessing || (!selectedAmount && !customAmount) || !donorEmail}
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Processing...
                 </>
               ) : (
                 <>
-                  <Heart className="mr-2 h-4 w-4" />
+                  <Heart className="mr-2 h-5 w-5" />
                   Donate ${customAmount || selectedAmount} Now
                 </>
               )}
             </Button>
+            
+            <p className="text-sm text-gray-600 text-center mt-4">
+              You will be redirected to our secure payment processor to complete your donation.
+            </p>
           </div>
           
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
