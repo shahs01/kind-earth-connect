@@ -1,20 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Briefcase, Handshake, Loader2 } from "lucide-react";
 import ResultCard from "./ResultCard";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-// Define an interface for profile data to help TypeScript
-interface ProfileData {
-  name?: string;
-  avatar?: string;
-  username?: string;
-}
 
 interface ResultsDisplayProps {
   activeTab: string;
@@ -22,7 +16,7 @@ interface ResultsDisplayProps {
   searchQuery: string;
   categoryFilter: string;
   locationFilter: string;
-  sortBy?: string; // Add sortBy prop
+  sortBy?: string;
 }
 
 const ResultsDisplay = ({
@@ -31,10 +25,11 @@ const ResultsDisplay = ({
   searchQuery,
   categoryFilter,
   locationFilter,
-  sortBy = "newest" // Default to newest
+  sortBy = "newest"
 }: ResultsDisplayProps) => {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
@@ -51,8 +46,6 @@ const ResultsDisplay = ({
         setIsLoading(true);
         console.log("Fetching search results with:", { searchQuery, categoryFilter, locationFilter, sortBy });
         
-        // Updated query to fetch posts first, then get profiles separately
-        // Exclude volunteer opportunities by filtering out posts with volunteer-specific markers
         let query = supabase
           .from('posts')
           .select('*')
@@ -161,86 +154,102 @@ const ResultsDisplay = ({
     }
   };
 
+  const handleConnect = (userId: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to connect with other users",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    
+    navigate(`/messages/${userId}`);
+    toast({
+      title: "Connection initiated",
+      description: "You can now message this user"
+    });
+  };
+
   const displayResults = () => {
     const itemsToShow = getItemsToShow();
     
     if (isLoading) {
       return (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mb-4" />
-          <p className="text-gray-600">Loading search results...</p>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+          <span className="ml-2">Loading results...</span>
         </div>
       );
     }
-    
+
     if (itemsToShow.length === 0) {
       return (
         <div className="text-center py-12">
           <Search className="h-12 w-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-700">No results found</h3>
           <p className="text-gray-500 mt-2">
-            {searchQuery || categoryFilter || locationFilter 
-              ? "Try adjusting your search filters" 
-              : "No posts have been created yet"}
+            Try adjusting your search criteria or browse all posts
           </p>
-          
-          {(searchQuery || categoryFilter || locationFilter) && (
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={handleClearFilters}
-            >
-              Clear filters
+          <div className="mt-4 space-x-2">
+            <Button onClick={handleClearFilters} variant="outline">
+              Clear Filters
             </Button>
-          )}
-          
-          {isAuthenticated && (
-            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-4">
-              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+            {!isAuthenticated && (
+              <Button asChild>
                 <Link to="/create-posting">Create a Post</Link>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       );
     }
-    
+
     return (
-      <div className="grid grid-cols-1 gap-6">
-        {itemsToShow.map(item => (
-          <ResultCard key={item.id} item={item} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {itemsToShow.map((item) => (
+          <ResultCard 
+            key={item.id} 
+            post={item} 
+            onConnect={handleConnect}
+          />
         ))}
       </div>
     );
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">
-          Search Results 
-          <span className="ml-2 text-sm font-normal text-gray-500">
-            ({posts.length} {posts.length === 1 ? 'result' : 'results'})
-          </span>
-        </h2>
-        
-        <TabsList>
-          <TabsTrigger value="all" className="flex items-center gap-1">
-            <Users className="h-4 w-4" /> All
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            All ({posts.length})
           </TabsTrigger>
-          <TabsTrigger value="offers" className="flex items-center gap-1">
-            <Briefcase className="h-4 w-4" /> Offers
+          <TabsTrigger value="offers" className="flex items-center gap-2">
+            <Handshake className="h-4 w-4" />
+            Offers ({offers.length})
           </TabsTrigger>
-          <TabsTrigger value="requests" className="flex items-center gap-1">
-            <Handshake className="h-4 w-4" /> Requests
+          <TabsTrigger value="requests" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            Requests ({requests.length})
           </TabsTrigger>
         </TabsList>
-      </div>
-      
-      <TabsContent value="all">{displayResults()}</TabsContent>
-      <TabsContent value="offers">{displayResults()}</TabsContent>
-      <TabsContent value="requests">{displayResults()}</TabsContent>
-    </Tabs>
+
+        <TabsContent value="all" className="mt-6">
+          {displayResults()}
+        </TabsContent>
+
+        <TabsContent value="offers" className="mt-6">
+          {displayResults()}
+        </TabsContent>
+
+        <TabsContent value="requests" className="mt-6">
+          {displayResults()}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

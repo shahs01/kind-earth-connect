@@ -1,248 +1,160 @@
+
 import React, { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, X, Send } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { useAuth } from "@/context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, MapPin, MessageSquare, Heart, User } from "lucide-react";
+import { User as UserType } from "@/types";
+import ProfileDialog from "@/components/ProfileDialog";
 
 interface ResultCardProps {
-  item: {
+  post: {
     id: string;
+    type: "offer" | "request";
     title: string;
-    category: string;
-    location: string;
     description: string;
-    postedBy: string;
-    postedDate: string;
-    userId?: string; // Add userId for messaging
+    location: string;
+    category: string;
+    createdAt: string;
+    photos?: string[];
+    user: {
+      id: string;
+      name: string;
+      avatar: string;
+    };
+    likes: number;
+    comments: number;
   };
+  onConnect?: (userId: string) => void;
 }
 
-const ResultCard = ({ item }: ResultCardProps) => {
-  const isOffer = item.id.startsWith('o');
-  const { isAuthenticated, user } = useAuth();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [messageContent, setMessageContent] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+const ResultCard = ({ post, onConnect }: ResultCardProps) => {
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   
-  const handleContact = () => {
-    if (!isAuthenticated) return;
-    
-    // If we have the user's ID, open the message dialog
-    if (item.userId) {
-      setMessageDialogOpen(true);
-    } else {
-      // Navigate to messages page as fallback
-      navigate('/messages');
+  // Create a User object for the ProfileDialog
+  const userForDialog: UserType = {
+    id: post.user.id,
+    name: post.user.name,
+    username: post.user.name.toLowerCase().replace(/\s+/g, ''),
+    email: '', // We don't have this in the post data
+    avatar: post.user.avatar,
+    bio: '',
+    location: post.location, // Use post location as user location
+    trustScore: 5.0, // Default trust score
+    helpOffered: 0, // We don't have this data here
+    helpReceived: 0, // We don't have this data here
+    verifiedStatus: false,
+    volunteerHours: 0,
+    trustBadges: [],
+    accountStatus: 'active',
+    createdAt: new Date() // We don't have the actual creation date
+  };
+
+  const handleUserClick = () => {
+    setShowProfileDialog(true);
+  };
+
+  const handleConnect = () => {
+    if (onConnect) {
+      onConnect(post.user.id);
     }
   };
-  
-  const sendMessage = async () => {
-    if (!item.userId || !messageContent.trim()) return;
-    
-    try {
-      setSendingMessage(true);
-      
-      if (!user) {
-        throw new Error("You must be logged in to send messages");
-      }
-      
-      // Add post title to the message
-      const messageWithContext = `Regarding: "${item.title}"\n\n${messageContent}`;
-      
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: item.userId,
-          content: messageWithContext
-        })
-        .select();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully!",
-      });
-      
-      // Close dialog and reset
-      setMessageDialogOpen(false);
-      setMessageContent("");
-      
-      // Navigate to messages
-      navigate('/messages');
-    } catch (err: any) {
-      console.error("Error sending message:", err);
-      toast({
-        title: "Error sending message",
-        description: err.message || "Could not send message. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setSendingMessage(false);
-    }
-  };
-  
+
   return (
     <>
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <Badge className={`${isOffer ? 'bg-thryvance-blue-light text-thryvance-blue' : 'bg-thryvance-green-light text-thryvance-green'}`}>
-              {isOffer ? 'Offering' : 'Request'}
-            </Badge>
-            <Badge variant="outline">{item.category}</Badge>
-          </div>
-          <CardTitle className="mt-2 text-xl">{item.title}</CardTitle>
-          <CardDescription className="flex items-center gap-1 mt-1">
-            <MapPin className="h-3 w-3" /> {item.location}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow">
-          <p className="text-gray-700">{item.description}</p>
-        </CardContent>
-        <CardFooter className="flex flex-col items-start border-t pt-4">
-          <div className="flex justify-between w-full text-sm text-gray-500">
-            <span>Posted by: {item.postedBy}</span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {new Date(item.postedDate).toLocaleDateString()}
-            </span>
-          </div>
-          <Button 
-            className="mt-3 w-full bg-thryvance-green hover:bg-thryvance-green-dark"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            View Details
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* Details Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex justify-between items-start">
-              <span>{item.title}</span>
-              <Badge className={`${isOffer ? 'bg-thryvance-blue-light text-thryvance-blue' : 'bg-thryvance-green-light text-thryvance-green'}`}>
-                {isOffer ? 'Offering' : 'Request'}
-              </Badge>
-            </DialogTitle>
-            <DialogDescription className="flex items-center gap-1 text-sm">
-              <MapPin className="h-3 w-3" /> {item.location}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <Badge variant="outline">{item.category}</Badge>
-            
-            <div>
-              <h4 className="text-sm font-semibold mb-1">Description</h4>
-              <p className="text-gray-700">{item.description}</p>
-            </div>
-            
-            <div className="flex justify-between items-center text-sm text-gray-500">
-              <span>Posted by: {item.postedBy}</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {new Date(item.postedDate).toLocaleDateString()}
-              </span>
-            </div>
-            
-            <div className="border-t pt-4 mt-4">
-              {!isAuthenticated ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-700">
-                    You need to log in to message this person or respond to this post.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button asChild className="w-full sm:w-auto">
-                      <Link to="/signup">Sign up</Link>
-                    </Button>
-                    <Button variant="outline" asChild className="w-full sm:w-auto">
-                      <Link to="/login">Log in</Link>
-                    </Button>
+      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Avatar 
+                className="h-10 w-10 cursor-pointer hover:opacity-80" 
+                onClick={handleUserClick}
+              >
+                <AvatarImage src={post.user.avatar} alt={post.user.name} />
+                <AvatarFallback>
+                  <User className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 
+                  className="font-semibold cursor-pointer hover:text-thryvance-green"
+                  onClick={handleUserClick}
+                >
+                  {post.user.name}
+                </h3>
+                <div className="flex items-center text-sm text-gray-500 space-x-4">
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {post.createdAt}
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {post.location}
                   </div>
                 </div>
-              ) : (
-                <Button 
-                  className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
-                  onClick={handleContact}
-                >
-                  Message {item.postedBy}
-                </Button>
-              )}
+              </div>
             </div>
+            <Badge 
+              variant="secondary" 
+              className={post.type === 'offer' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}
+            >
+              {post.type === 'offer' ? 'Offering Help' : 'Requesting Help'}
+            </Badge>
           </div>
-          
-          <DialogClose className="absolute top-4 right-4">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Message Dialog */}
-      {item.userId && (
-        <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Message to {item.postedBy}</DialogTitle>
-              <DialogDescription>
-                Regarding: {item.title}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <Textarea
-                placeholder="Write your message here..."
-                value={messageContent}
-                onChange={(e) => setMessageContent(e.target.value)}
-                className="min-h-[120px]"
-              />
+
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold mb-2">{post.title}</h2>
+            <p className="text-gray-600 text-sm mb-2">{post.description}</p>
+            <Badge variant="outline" className="text-xs">
+              {post.category}
+            </Badge>
+          </div>
+
+          {post.photos && post.photos.length > 0 && (
+            <div className="mb-4">
+              <div className="grid grid-cols-3 gap-2">
+                {post.photos.slice(0, 3).map((photo, index) => (
+                  <img
+                    key={index}
+                    src={photo}
+                    alt={`Post image ${index + 1}`}
+                    className="w-full h-20 object-cover rounded"
+                  />
+                ))}
+              </div>
             </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setMessageDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={sendMessage}
-                disabled={!messageContent.trim() || sendingMessage}
-                className="bg-thryvance-green hover:bg-thryvance-green-dark"
-              >
-                {sendingMessage ? (
-                  <>Sending...</>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Message
-                  </>
-                )}
-              </Button>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Heart className="h-4 w-4 mr-1" />
+                {post.likes}
+              </div>
+              <div className="flex items-center">
+                <MessageSquare className="h-4 w-4 mr-1" />
+                {post.comments}
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+            <Button 
+              onClick={handleConnect}
+              className="bg-thryvance-green hover:bg-thryvance-green-dark"
+              size="sm"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Connect
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ProfileDialog
+        user={userForDialog}
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+        onViewFullProfile={() => setShowProfileDialog(false)}
+      />
     </>
   );
 };

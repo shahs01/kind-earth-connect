@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Sprout, Image, X, Loader2 } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const categories = [
   "Home Repair",
@@ -25,6 +27,7 @@ const categories = [
 
 const RequestHelpForm = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { createPost, isLoading } = useProfileManagement();
   const [formData, setFormData] = useState({
     title: "",
@@ -69,7 +72,11 @@ const RequestHelpForm = () => {
     const fileList = e.target.files;
     
     if (!fileList || photos.length + fileList.length > 3) {
-      alert("You can only upload up to 3 photos");
+      toast({
+        title: "Upload limit reached",
+        description: "You can only upload up to 3 photos",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -101,6 +108,8 @@ const RequestHelpForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("Form submitted with data:", formData);
+    
     // Simple validation
     const newErrors: Record<string, string> = {};
     if (!formData.title.trim()) newErrors.title = "Title is required";
@@ -111,25 +120,53 @@ const RequestHelpForm = () => {
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      console.log("Validation errors:", newErrors);
       return;
     }
     
-    // Create the post in Supabase
-    const postData = {
-      title: formData.title,
-      description: formData.description,
-      category: formData.category,
-      location: formData.location,
-      timeframe: formData.timeframe,
-      type: "request" // This is a request help post
-    };
-    
-    console.log("Creating request post:", postData);
-    const newPost = await createPost(postData, photos);
-    
-    if (newPost) {
-      // Redirect to profile page to see their posts
-      navigate("/profile");
+    try {
+      // Create the post in Supabase
+      const postData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location,
+        timeframe: formData.timeframe,
+        type: "request" // This is a request help post
+      };
+      
+      console.log("Creating request post:", postData);
+      const newPost = await createPost(postData, photos);
+      
+      if (newPost) {
+        toast({
+          title: "Request submitted successfully!",
+          description: "Your help request has been posted to the community.",
+        });
+        
+        // Reset form
+        setFormData({
+          title: "",
+          description: "",
+          category: "",
+          location: "",
+          timeframe: "",
+        });
+        setPhotos([]);
+        setPhotoPreviewUrls([]);
+        
+        // Redirect to search page to see posts
+        navigate("/search-help");
+      } else {
+        throw new Error("Failed to create post");
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit your request. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   
