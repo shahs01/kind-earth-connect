@@ -45,10 +45,19 @@ const ResultCard = ({ post, onConnect }: ResultCardProps) => {
     helpOffered: 0, // We don't have this data here
     helpReceived: 0, // We don't have this data here
     verifiedStatus: false,
+    emailVerified: false,
+    loginAttempts: 0,
+    lastLoginAttempt: null,
     volunteerHours: 0,
     trustBadges: [],
-    accountStatus: 'active',
-    createdAt: new Date() // We don't have the actual creation date
+    createdAt: new Date(), // We don't have the actual creation date
+    reviewsGiven: [],
+    notificationPreferences: {
+      emailUpdates: true,
+      messageNotifications: true,
+      helpRequestAlerts: true,
+      marketingEmails: false
+    }
   };
 
   const handleUserClick = () => {
