@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,8 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { User as UserType } from "@/types";
+import ProfileDialog from "@/components/ProfileDialog";
 
 interface PostDetailDialogProps {
   post: {
@@ -31,11 +34,40 @@ interface PostDetailDialogProps {
 const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDetailDialogProps) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   if (!post) return null;
+
+  // Create a User object for the ProfileDialog
+  const userForDialog: UserType = {
+    id: post.user_id,
+    name: post.user.name,
+    username: post.user.name.toLowerCase().replace(/\s+/g, ''),
+    email: '', // We don't have this in the post data
+    avatar: post.user.avatar,
+    bio: '',
+    location: post.location || '', // Use post location as user location
+    trustScore: 5.0, // Default trust score
+    helpOffered: 0, // We don't have this data here
+    helpReceived: 0, // We don't have this data here
+    verifiedStatus: false,
+    emailVerified: false,
+    loginAttempts: 0,
+    lastLoginAttempt: null,
+    volunteerHours: 0,
+    trustBadges: [],
+    createdAt: new Date(), // We don't have the actual creation date
+    reviewsGiven: [],
+    notificationPreferences: {
+      emailUpdates: true,
+      messageNotifications: true,
+      helpRequestAlerts: true,
+      marketingEmails: false
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -89,6 +121,10 @@ const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDeta
     if (onMessageClick) {
       onMessageClick(post.user_id, post.user.name);
     }
+  };
+
+  const handleUserClick = () => {
+    setShowProfileDialog(true);
   };
 
   return (
@@ -188,10 +224,16 @@ const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDeta
                 <img
                   src={post.user.avatar}
                   alt={post.user.name}
-                  className="h-10 w-10 rounded-full"
+                  className="h-10 w-10 rounded-full cursor-pointer hover:opacity-80"
+                  onClick={handleUserClick}
                 />
                 <div>
-                  <p className="font-medium">{post.user.name}</p>
+                  <p 
+                    className="font-medium cursor-pointer hover:text-thryvance-green"
+                    onClick={handleUserClick}
+                  >
+                    {post.user.name}
+                  </p>
                   <p className="text-sm text-gray-500">Posted this {post.type}</p>
                 </div>
               </div>
@@ -271,6 +313,14 @@ const PostDetailDialog = ({ post, open, onOpenChange, onMessageClick }: PostDeta
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Profile Dialog */}
+      <ProfileDialog
+        user={userForDialog}
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+        onViewFullProfile={() => setShowProfileDialog(false)}
+      />
     </>
   );
 };
