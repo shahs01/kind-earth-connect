@@ -30,9 +30,9 @@ const Community = () => {
       <Navbar />
       
       <div className="bg-thryvance-blue-light py-6 md:py-10">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 text-center">
           <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3">Community</h1>
-          <p className="text-gray-700 max-w-3xl text-sm md:text-base">
+          <p className="text-gray-700 max-w-3xl mx-auto text-sm md:text-base">
             Connect with your community. Share offers of help or request assistance from neighbors and local organizations.
           </p>
         </div>

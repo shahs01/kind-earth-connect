@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import ScrollToTop from "@/components/ScrollToTop";
 
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -56,6 +57,7 @@ const ProfileRedirect = () => {
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/about" element={<About />} />

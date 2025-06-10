@@ -30,9 +30,9 @@ const SearchHelp = () => {
       <Navbar />
       
       <div className="bg-thryvance-blue-light py-10">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Search Help</h1>
-          <p className="text-gray-700 max-w-3xl">
+          <p className="text-gray-700 max-w-3xl mx-auto">
             Find offers of help or requests for assistance in our community. Filter by category, location, or search for specific skills or needs.
           </p>
         </div>
