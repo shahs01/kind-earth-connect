@@ -1,6 +1,6 @@
-
 import { Link } from "react-router-dom";
 import Logo from "./Logo";
+import { Instagram, Twitter } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -13,7 +13,24 @@ const Footer = () => {
               Building stronger communities through mutual support and kindness.
             </p>
             <div className="flex space-x-4">
-              {/* Social Media Icons would go here */}
+              <a 
+                href="https://www.instagram.com/thryvance.ca/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-thryvance-green transition-colors"
+                aria-label="Follow us on Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a 
+                href="https://x.com/thryvance" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-thryvance-green transition-colors"
+                aria-label="Follow us on Twitter"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
             </div>
           </div>
           
@@ -90,11 +107,6 @@ const Footer = () => {
               <li>
                 <Link to="/volunteer" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Volunteer
-                </Link>
-              </li>
-              <li>
-                <Link to="/sponsor-project" className="text-gray-600 hover:text-thryvance-green transition-colors">
-                  Sponsor a Project
                 </Link>
               </li>
               <li>

@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -32,7 +33,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Subscribe from "./pages/Subscribe";
 import PartnerWithUs from "./pages/PartnerWithUs";
-import SponsorProject from "./pages/SponsorProject";
 import MonthlyGiving from "./pages/MonthlyGiving";
 import DonateGoods from "./pages/DonateGoods";
 import Careers from "./pages/Careers";
@@ -85,7 +85,6 @@ function App() {
         <Route path="/search-help" element={<Navigate to="/community" replace />} />
         <Route path="/donate" element={<Donate />} />
         <Route path="/partner-with-us" element={<PartnerWithUs />} />
-        <Route path="/sponsor-project" element={<SponsorProject />} />
         <Route path="/monthly-giving" element={<MonthlyGiving />} />
         <Route path="/donate-goods" element={<DonateGoods />} />
         <Route path="/careers" element={<Careers />} />
