@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -69,7 +68,6 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
   const involvedItems = [
     { label: "Partner With Us", path: "/partner-with-us", icon: <Handshake className="mr-2 h-4 w-4" /> },
     { label: "Volunteer", path: "/volunteer", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
-    { label: "Sponsor a Project", path: "/sponsor-project", icon: <Heart className="mr-2 h-4 w-4" /> },
     { label: "Donate", path: "/donate", icon: <Heart className="mr-2 h-4 w-4" /> },
   ];
 
