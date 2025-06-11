@@ -192,11 +192,7 @@ const Contact = () => {
               </form>
             </div>
             
-            <div className="lg:col-span-2 bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="h-full bg-gray-200 flex items-center justify-center">
-                <p className="text-gray-500">[Map Placeholder]</p>
-              </div>
-            </div>
+            
           </div>
           
           <div className="bg-gray-50 rounded-lg p-6">
