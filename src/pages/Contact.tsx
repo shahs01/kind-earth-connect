@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,10 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, MapPin, Phone, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
 const Contact = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,25 +20,25 @@ const Contact = () => {
     subscribe: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {
-      name,
-      value,
-      type
-    } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value
     }));
   };
+
   const handleSelectChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
       subject: value
     }));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
       toast({
         title: "Missing required fields",
@@ -47,19 +47,17 @@ const Contact = () => {
       });
       return;
     }
+
     setIsSubmitting(true);
     console.log("Submitting contact form:", formData);
+
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('send-contact-email', {
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: formData
       });
-      console.log("Contact function response:", {
-        data,
-        error
-      });
+
+      console.log("Contact function response:", { data, error });
+
       if (error) {
         console.error("Supabase function error:", error);
         throw new Error(error.message || "Failed to send message");
@@ -95,14 +93,18 @@ const Contact = () => {
       setIsSubmitting(false);
     }
   };
-  return <div className="flex flex-col min-h-screen">
+
+  return (
+    <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Contact Us</h1>
-          <p className="text-lg text-gray-700 mb-8">
-            Have questions or feedback? We'd love to hear from you. Get in touch with our team.
-          </p>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Contact Us</h1>
+            <p className="text-lg text-gray-700">
+              Have questions or feedback? We'd love to hear from you. Get in touch with our team.
+            </p>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="bg-white shadow-md rounded-lg p-6">
@@ -115,8 +117,6 @@ const Contact = () => {
                 support@thryvance.org
               </a>
             </div>
-            
-            
             
             <div className="bg-white shadow-md rounded-lg p-6">
               <div className="flex gap-4">
@@ -140,13 +140,30 @@ const Contact = () => {
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Name *
                     </label>
-                    <Input id="name" name="name" placeholder="Your name" value={formData.name} onChange={handleChange} disabled={isSubmitting} required />
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      placeholder="Your name" 
+                      value={formData.name} 
+                      onChange={handleChange} 
+                      disabled={isSubmitting} 
+                      required 
+                    />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                       Email *
                     </label>
-                    <Input id="email" name="email" type="email" placeholder="your@email.com" value={formData.email} onChange={handleChange} disabled={isSubmitting} required />
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      placeholder="your@email.com" 
+                      value={formData.email} 
+                      onChange={handleChange} 
+                      disabled={isSubmitting} 
+                      required 
+                    />
                   </div>
                 </div>
                 
@@ -173,26 +190,49 @@ const Contact = () => {
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                     Message *
                   </label>
-                  <Textarea id="message" name="message" placeholder="How can we help you?" rows={5} value={formData.message} onChange={handleChange} disabled={isSubmitting} required />
+                  <Textarea 
+                    id="message" 
+                    name="message" 
+                    placeholder="How can we help you?" 
+                    rows={5} 
+                    value={formData.message} 
+                    onChange={handleChange} 
+                    disabled={isSubmitting} 
+                    required 
+                  />
                 </div>
                 
                 <div className="flex items-center">
-                  <input id="subscribe" name="subscribe" type="checkbox" className="h-4 w-4 text-thryvance-green border-gray-300 rounded" checked={formData.subscribe} onChange={handleChange} disabled={isSubmitting} />
+                  <input 
+                    id="subscribe" 
+                    name="subscribe" 
+                    type="checkbox" 
+                    className="h-4 w-4 text-thryvance-green border-gray-300 rounded" 
+                    checked={formData.subscribe} 
+                    onChange={handleChange} 
+                    disabled={isSubmitting} 
+                  />
                   <label htmlFor="subscribe" className="ml-2 block text-sm text-gray-700">
                     Subscribe to our newsletter
                   </label>
                 </div>
                 
-                <Button type="submit" className="bg-thryvance-green hover:bg-thryvance-green-dark" disabled={isSubmitting}>
-                  {isSubmitting ? <>
+                <Button 
+                  type="submit" 
+                  className="bg-thryvance-green hover:bg-thryvance-green-dark" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Sending...
-                    </> : 'Send Message'}
+                    </>
+                  ) : (
+                    'Send Message'
+                  )}
                 </Button>
               </form>
             </div>
-            
-            
           </div>
           
           <div className="bg-gray-50 rounded-lg p-6">
@@ -207,6 +247,8 @@ const Contact = () => {
         </div>
       </main>
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Contact;
