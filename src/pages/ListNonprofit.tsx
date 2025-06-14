@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const ListNonprofit = () => {
   const [name, setName] = useState("");
@@ -34,20 +36,38 @@ const ListNonprofit = () => {
     
     setSubmitting(true);
     
+    const formData = { name, email, phone, organization, message };
+    console.log("Submitting nonprofit listing request:", formData);
+
     try {
-      // Simulate submission delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Request submitted",
-        description: "We'll review your nonprofit listing request and get back to you soon.",
+      const { data, error } = await supabase.functions.invoke('send-nonprofit-listing-request-email', {
+        body: formData
       });
+
+      console.log("Nonprofit listing function response:", { data, error });
+
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw new Error(error.message || "Failed to send request");
+      }
+
+      if (data?.success) {
+        console.log("Nonprofit listing request email sent successfully");
+        toast({
+          title: "Request submitted!",
+          description: "We'll review your nonprofit listing request and get back to you soon.",
+        });
+        
+        navigate("/nonprofit-directory");
+      } else {
+        throw new Error(data?.error || "Failed to send request");
+      }
       
-      navigate("/nonprofit-directory");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error sending listing request:", error);
       toast({
         title: "Submission failed",
-        description: "There was a problem submitting your request. Please try again.",
+        description: error.message || "There was a problem submitting your request. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -83,6 +103,7 @@ const ListNonprofit = () => {
                         value={name} 
                         onChange={(e) => setName(e.target.value)} 
                         required 
+                        disabled={submitting}
                       />
                     </div>
                     
@@ -94,6 +115,7 @@ const ListNonprofit = () => {
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)} 
                         required 
+                        disabled={submitting}
                       />
                     </div>
                   </div>
@@ -105,6 +127,7 @@ const ListNonprofit = () => {
                         id="phone" 
                         value={phone} 
                         onChange={(e) => setPhone(e.target.value)} 
+                        disabled={submitting}
                       />
                     </div>
                     
@@ -115,6 +138,7 @@ const ListNonprofit = () => {
                         value={organization} 
                         onChange={(e) => setOrganization(e.target.value)} 
                         required 
+                        disabled={submitting}
                       />
                     </div>
                   </div>
@@ -127,6 +151,7 @@ const ListNonprofit = () => {
                       onChange={(e) => setMessage(e.target.value)} 
                       placeholder="Tell us about your organization's mission, services, and how you help the community..."
                       className="min-h-[150px]"
+                      disabled={submitting}
                     />
                   </div>
                   
@@ -134,7 +159,7 @@ const ListNonprofit = () => {
                     <Button type="submit" disabled={submitting}>
                       {submitting ? (
                         <>
-                          <span className="animate-spin mr-2">◌</span>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Submitting...
                         </>
                       ) : (
