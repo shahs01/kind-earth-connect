@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,6 +8,7 @@ import { Search, MapPin, Filter } from "lucide-react";
 import NonprofitCard from "@/components/NonprofitCard";
 import NonprofitDetailDialog from "@/components/NonprofitDetailDialog";
 import { useNonprofits, Nonprofit } from "@/hooks/useNonprofits";
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 
 const NonprofitDirectory = () => {
   const { fetchNonprofits, loading } = useNonprofits();
@@ -19,6 +19,8 @@ const NonprofitDirectory = () => {
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [selectedNonprofit, setSelectedNonprofit] = useState<Nonprofit | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const nonprofitsPerPage = 20;
 
   // Fetch nonprofits on component mount
   useEffect(() => {
@@ -56,6 +58,7 @@ const NonprofitDirectory = () => {
     }
 
     setFilteredNonprofits(filtered);
+    setCurrentPage(1);
   }, [nonprofits, searchTerm, selectedCategory, selectedLocation]);
 
   // Get unique categories and locations for filters
@@ -66,6 +69,12 @@ const NonprofitDirectory = () => {
     setSelectedNonprofit(nonprofit);
     setShowDetailDialog(true);
   };
+
+  // Pagination logic
+  const indexOfLastNonprofit = currentPage * nonprofitsPerPage;
+  const indexOfFirstNonprofit = indexOfLastNonprofit - nonprofitsPerPage;
+  const currentNonprofits = filteredNonprofits.slice(indexOfFirstNonprofit, indexOfLastNonprofit);
+  const totalPages = Math.ceil(filteredNonprofits.length / nonprofitsPerPage);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -130,7 +139,7 @@ const NonprofitDirectory = () => {
           {/* Results Summary */}
           <div className="mb-6">
             <p className="text-gray-600">
-              Showing {filteredNonprofits.length} of {nonprofits.length} nonprofits
+              Showing {currentNonprofits.length > 0 ? `${indexOfFirstNonprofit + 1}-${indexOfFirstNonprofit + currentNonprofits.length}` : 0} of {filteredNonprofits.length} nonprofits
             </p>
           </div>
 
@@ -140,7 +149,7 @@ const NonprofitDirectory = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-thryvance-green"></div>
               <span className="ml-2">Loading nonprofits...</span>
             </div>
-          ) : filteredNonprofits.length === 0 ? (
+          ) : currentNonprofits.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <MapPin className="h-12 w-12 mx-auto" />
@@ -155,13 +164,47 @@ const NonprofitDirectory = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredNonprofits.map(nonprofit => (
+              {currentNonprofits.map(nonprofit => (
                 <NonprofitCard 
                   key={nonprofit.id} 
                   nonprofit={nonprofit}
                   onClick={() => handleNonprofitClick(nonprofit)}
                 />
               ))}
+            </div>
+          )}
+          
+          {totalPages > 1 && (
+            <div className="mt-12 flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span className="px-4 py-2 text-sm font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
 
