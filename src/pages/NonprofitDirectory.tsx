@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -60,6 +61,11 @@ const NonprofitDirectory = () => {
     setFilteredNonprofits(filtered);
     setCurrentPage(1);
   }, [nonprofits, searchTerm, selectedCategory, selectedLocation]);
+
+  // Scroll to top on page change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
 
   // Get unique categories and locations for filters
   const categories = [...new Set(nonprofits.map(np => np.category))];
