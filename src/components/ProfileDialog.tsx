@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -250,7 +249,7 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                 {/* Right side content for full screen */}
                 <div className={`${isFullScreen ? 'flex-1' : 'w-full'} space-y-4`}>
                   {/* Help Stats */}
-                  {(user.helpOffered > 0 || user.helpReceived > 0) && (
+                  {(user.helpOffered > 0 || user.helpReceived > 0 || (user.volunteerHours && user.volunteerHours > 0) || reviews.length > 0) && (
                     <>
                       <Separator />
                       <div>
@@ -265,20 +264,16 @@ const ProfileDialog = ({ user, open, onOpenChange, onViewFullProfile, isFullScre
                             <p className="text-lg font-bold text-thryvance-blue-dark">{user.helpReceived}</p>
                             <p className="text-xs text-gray-600">Help Received</p>
                           </div>
-
-                          {isFullScreen && (
-                            <>
-                              <div className="bg-purple-100 p-3 rounded-lg text-center">
-                                <p className="text-lg font-bold text-purple-600">{user.volunteerHours || 0}</p>
-                                <p className="text-xs text-gray-600">Volunteer Hours</p>
-                              </div>
-                              
-                              <div className="bg-orange-100 p-3 rounded-lg text-center">
-                                <p className="text-lg font-bold text-orange-600">{reviews.length}</p>
-                                <p className="text-xs text-gray-600">Total Reviews</p>
-                              </div>
-                            </>
-                          )}
+                          
+                          <div className="bg-purple-100 p-3 rounded-lg text-center">
+                            <p className="text-lg font-bold text-purple-600">{user.volunteerHours || 0}</p>
+                            <p className="text-xs text-gray-600">Volunteer Hours</p>
+                          </div>
+                          
+                          <div className="bg-orange-100 p-3 rounded-lg text-center">
+                            <p className="text-lg font-bold text-orange-600">{reviews.length}</p>
+                            <p className="text-xs text-gray-600">Total Reviews</p>
+                          </div>
                         </div>
                       </div>
                     </>
