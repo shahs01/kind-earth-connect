@@ -31,11 +31,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const ResetPassword = () => {
-  const { resetPassword, user } = useAuth();
+  const { resetPassword, user, isLoading: authIsLoading } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState("verifying"); // 'verifying', 'valid', 'invalid'
+  const [showInvalid, setShowInvalid] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -47,20 +47,21 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    // This effect gives the Supabase client time to process the auth token from the URL.
-    // After a short delay, we check if a user session exists.
-    const verificationTimer = setTimeout(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          setVerificationStatus("valid");
-        } else {
-          setVerificationStatus("invalid");
-        }
-      });
-    }, 2500); // 2.5 second delay for verification
+    let timer: NodeJS.Timeout;
+    // If auth has finished loading and there's still no user,
+    // the link is invalid. We use a small delay to prevent a brief flash of the invalid message.
+    if (!authIsLoading && !user) {
+      timer = setTimeout(() => {
+        setShowInvalid(true);
+      }, 500);
+    }
+    // If loading finishes and we have a user, ensure the invalid message is hidden.
+    if (!authIsLoading && user) {
+        setShowInvalid(false);
+    }
 
-    return () => clearTimeout(verificationTimer);
-  }, []);
+    return () => clearTimeout(timer);
+  }, [authIsLoading, user]);
   
   const onSubmit = async (data: FormValues) => {
     // The user object from context should be available here if verification passed.
@@ -70,7 +71,7 @@ const ResetPassword = () => {
         description: "Your password reset session has expired. Please request a new link.",
         variant: "destructive",
       });
-      setVerificationStatus("invalid");
+      setShowInvalid(true);
       return;
     }
     
@@ -104,7 +105,7 @@ const ResetPassword = () => {
     }
   };
   
-  if (verificationStatus === "verifying") {
+  if (authIsLoading && !showInvalid) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -155,7 +156,7 @@ const ResetPassword = () => {
     );
   }
 
-  if (verificationStatus === "invalid") {
+  if (showInvalid) {
        return (
         <div className="min-h-screen flex flex-col">
           <Navbar />
@@ -191,98 +192,104 @@ const ResetPassword = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow py-12 bg-hero-pattern">
-        <div className="container mx-auto px-4">
-          <Card className="max-w-md mx-auto shadow-md">
-            <CardHeader className="text-center">
-              <ShieldAlert className="mx-auto h-12 w-12 text-thryvance-blue mb-2" />
-              <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-              <CardDescription>Choose a new password for your account</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Enter your new password"
-                              {...field}
-                              disabled={isSubmitting}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Confirm your new password"
-                              {...field}
-                              disabled={isSubmitting}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 mt-4">
-                      <p className="font-medium mb-1">Password requirements:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>At least 8 characters</li>
-                        <li>At least one uppercase letter (A-Z)</li>
-                        <li>At least one lowercase letter (a-z)</li>
-                        <li>At least one number (0-9)</li>
-                        <li>At least one special character (!@#$%^&*)</li>
-                      </ul>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full bg-thryvance-green hover:bg-thryvance-green-dark mt-4"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Resetting Password...
-                        </>
-                      ) : (
-                        "Reset Password"
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <Link
-                to="/forgot-password"
-                className="text-thryvance-blue hover:underline flex items-center gap-1"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Forgot Password
-              </Link>
-            </CardFooter>
-          </Card>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
+  // Render the form if auth has loaded, we have a user, and it's not the invalid state
+  if (!authIsLoading && user && !showInvalid) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow py-12 bg-hero-pattern">
+          <div className="container mx-auto px-4">
+            <Card className="max-w-md mx-auto shadow-md">
+              <CardHeader className="text-center">
+                <ShieldAlert className="mx-auto h-12 w-12 text-thryvance-blue mb-2" />
+                <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+                <CardDescription>Choose a new password for your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>New Password</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="Enter your new password"
+                                {...field}
+                                disabled={isSubmitting}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirm New Password</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder="Confirm your new password"
+                                {...field}
+                                disabled={isSubmitting}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 mt-4">
+                        <p className="font-medium mb-1">Password requirements:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>At least 8 characters</li>
+                          <li>At least one uppercase letter (A-Z)</li>
+                          <li>At least one lowercase letter (a-z)</li>
+                          <li>At least one number (0-9)</li>
+                          <li>At least one special character (!@#$%^&*)</li>
+                        </ul>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full bg-thryvance-green hover:bg-thryvance-green-dark mt-4"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Resetting Password...
+                          </>
+                        ) : (
+                          "Reset Password"
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Link
+                  to="/forgot-password"
+                  className="text-thryvance-blue hover:underline flex items-center gap-1"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Forgot Password
+                </Link>
+              </CardFooter>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Fallback for any edge cases, though it shouldn't be reached.
+  return null;
 };
 
 export default ResetPassword;
