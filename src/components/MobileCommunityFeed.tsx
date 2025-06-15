@@ -209,7 +209,8 @@ const MobileCommunityFeed = ({
         }
         
         if (postTypeFilter && postTypeFilter !== "all") {
-          query = query.eq('type', postTypeFilter);
+          const typeValue = postTypeFilter === 'offers' ? 'offer' : 'request';
+          query = query.eq('type', typeValue);
         }
 
         // Apply sorting
