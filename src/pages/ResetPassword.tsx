@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +30,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const ResetPassword = () => {
-  const { resetPassword, user, isLoading: authIsLoading } = useAuth();
+  const { resetPassword, session, isLoading: authIsLoading } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -48,24 +47,24 @@ const ResetPassword = () => {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    // If auth has finished loading and there's still no user,
+    // If auth has finished loading and there's still no session,
     // the link is invalid. We use a small delay to prevent a brief flash of the invalid message.
-    if (!authIsLoading && !user) {
+    if (!authIsLoading && !session) {
       timer = setTimeout(() => {
         setShowInvalid(true);
       }, 500);
     }
-    // If loading finishes and we have a user, ensure the invalid message is hidden.
-    if (!authIsLoading && user) {
+    // If loading finishes and we have a session, ensure the invalid message is hidden.
+    if (!authIsLoading && session) {
         setShowInvalid(false);
     }
 
     return () => clearTimeout(timer);
-  }, [authIsLoading, user]);
+  }, [authIsLoading, session]);
   
   const onSubmit = async (data: FormValues) => {
-    // The user object from context should be available here if verification passed.
-    if (!user) {
+    // The session object from context should be available here if verification passed.
+    if (!session?.user?.email) {
       toast({
         title: "Session Expired",
         description: "Your password reset session has expired. Please request a new link.",
@@ -79,7 +78,7 @@ const ResetPassword = () => {
     
     try {
       await resetPassword({
-        email: user.email,
+        email: session.user.email,
         token: "", // Not used by function, but required by type
         newPassword: data.password,
       });
@@ -192,8 +191,8 @@ const ResetPassword = () => {
     );
   }
 
-  // Render the form if auth has loaded, we have a user, and it's not the invalid state
-  if (!authIsLoading && user && !showInvalid) {
+  // Render the form if auth has loaded, we have a session, and it's not the invalid state
+  if (!authIsLoading && session && !showInvalid) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />

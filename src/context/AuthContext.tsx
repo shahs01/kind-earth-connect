@@ -34,15 +34,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     console.log("AuthContext: Subscribing to auth state changes");
-    
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setEmailVerified(!!session?.user?.email_confirmed_at);
-      console.log("AuthContext: Initial session loaded", session?.user?.email || 'no session');
-      if (!session) {
-        setIsLoading(false);
-      }
-    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
