@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -321,7 +320,6 @@ export const useAuthOperations = () => {
         description: "Your password has been updated. You can now log in with your new password.",
       });
       
-      navigate('/login');
     } catch (error: any) {
       let message = "Failed to reset password";
       if (error instanceof Error) {

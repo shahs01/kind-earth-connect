@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -32,18 +32,9 @@ type FormValues = z.infer<typeof formSchema>;
 const ResetPassword = () => {
   const { resetPassword, user, isLoading: authIsLoading } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const { toast } = useToast();
-  
-  useEffect(() => {
-    if (!authIsLoading && !user && !isSuccess) {
-      setIsError(true);
-      setErrorMessage("Invalid or expired password reset link. Please request a new one.");
-    }
-  }, [authIsLoading, user, isSuccess]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,7 +54,7 @@ const ResetPassword = () => {
       return;
     }
     
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
       await resetPassword({
@@ -79,14 +70,17 @@ const ResetPassword = () => {
         navigate('/login');
       }, 3000);
     } catch (error) {
-      let message = "Failed to reset password";
+      let message = "Failed to reset password. Please try again.";
       if (error instanceof Error) {
         message = error.message;
       }
-      setIsError(true);
-      setErrorMessage(message);
+      toast({
+          title: "Password reset failed",
+          description: message,
+          variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
@@ -105,6 +99,78 @@ const ResetPassword = () => {
     );
   }
 
+  if (isSuccess) {
+      return (
+        <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-grow py-12 bg-hero-pattern">
+                <div className="container mx-auto px-4">
+                    <Card className="max-w-md mx-auto shadow-md">
+                        <CardHeader className="text-center">
+                            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-2" />
+                            <CardTitle className="text-2xl">Password Reset Successful</CardTitle>
+                            <CardDescription>Your password has been reset successfully</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-4">
+                                <p className="text-gray-600 mb-2">
+                                    Your password has been updated. You will be redirected to the login page in a moment.
+                                </p>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-center">
+                            <Link
+                                to="/login"
+                                className="text-thryvance-blue hover:underline flex items-center gap-1"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                Go to Login
+                            </Link>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </main>
+            <Footer />
+        </div>
+    );
+  }
+
+  if (!user) {
+       return (
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-grow py-12 bg-hero-pattern">
+            <div className="container mx-auto px-4">
+              <Card className="max-w-md mx-auto shadow-md">
+                <CardHeader className="text-center">
+                  <XCircle className="mx-auto h-12 w-12 text-red-500 mb-2" />
+                  <CardTitle className="text-2xl">Problem with Reset Link</CardTitle>
+                  <CardDescription>This password reset link is invalid or has expired.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-4">
+                    <p className="text-gray-600">
+                      Please request a new password reset link from the "Forgot Password" page.
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-thryvance-blue hover:underline flex items-center gap-1"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Forgot Password
+                  </Link>
+                </CardFooter>
+              </Card>
+            </div>
+          </main>
+          <Footer />
+        </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -112,37 +178,11 @@ const ResetPassword = () => {
         <div className="container mx-auto px-4">
           <Card className="max-w-md mx-auto shadow-md">
             <CardHeader className="text-center">
-              {isSuccess && <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-2" />}
-              {isError && <XCircle className="mx-auto h-12 w-12 text-red-500 mb-2" />}
-              {!isSuccess && !isError && <ShieldAlert className="mx-auto h-12 w-12 text-thryvance-blue mb-2" />}
-              
-              <CardTitle className="text-2xl">
-                {isSuccess ? "Password Reset Successful" : "Reset Your Password"}
-              </CardTitle>
-              <CardDescription>
-                {isSuccess
-                  ? "Your password has been reset successfully"
-                  : isError 
-                    ? "There was a problem with your reset link"
-                    : "Choose a new password for your account"}
-              </CardDescription>
+              <ShieldAlert className="mx-auto h-12 w-12 text-thryvance-blue mb-2" />
+              <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+              <CardDescription>Choose a new password for your account</CardDescription>
             </CardHeader>
-            
             <CardContent>
-              {isSuccess ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-600 mb-2">
-                    Your password has been updated. You will be redirected to the login page in a moment.
-                  </p>
-                </div>
-              ) : isError ? (
-                <div className="text-center py-4">
-                  <p className="text-red-500 mb-4">{errorMessage}</p>
-                  <p className="text-gray-600">
-                    Please try requesting a new password reset link.
-                  </p>
-                </div>
-              ) : (
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField
@@ -156,14 +196,13 @@ const ResetPassword = () => {
                               type="password"
                               placeholder="Enter your new password"
                               {...field}
-                              disabled={isLoading}
+                              disabled={isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
                     <FormField
                       control={form.control}
                       name="confirmPassword"
@@ -175,14 +214,13 @@ const ResetPassword = () => {
                               type="password"
                               placeholder="Confirm your new password"
                               {...field}
-                              disabled={isLoading}
+                              disabled={isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
                     <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 mt-4">
                       <p className="font-medium mb-1">Password requirements:</p>
                       <ul className="list-disc list-inside space-y-1">
@@ -193,13 +231,12 @@ const ResetPassword = () => {
                         <li>At least one special character (!@#$%^&*)</li>
                       </ul>
                     </div>
-                    
                     <Button
                       type="submit"
                       className="w-full bg-thryvance-green hover:bg-thryvance-green-dark mt-4"
-                      disabled={isLoading}
+                      disabled={isSubmitting}
                     >
-                      {isLoading ? (
+                      {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           Resetting Password...
@@ -210,16 +247,14 @@ const ResetPassword = () => {
                     </Button>
                   </form>
                 </Form>
-              )}
             </CardContent>
-            
             <CardFooter className="flex justify-center">
-              <Link 
-                to={isSuccess ? "/login" : "/forgot-password"} 
+              <Link
+                to="/forgot-password"
                 className="text-thryvance-blue hover:underline flex items-center gap-1"
               >
                 <ArrowLeft className="h-4 w-4" />
-                {isSuccess ? "Go to Login" : "Back to Forgot Password"}
+                Back to Forgot Password
               </Link>
             </CardFooter>
           </Card>
@@ -231,4 +266,3 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
-
