@@ -14,7 +14,7 @@ export default function AdminPosts() {
   const { mutate: updateStatus, isPending: isUpdating } = useUpdatePostStatus();
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
 
-  function handleStatusChange(postId: string, newStatus: string) {
+  function handleStatusChange(postId: string, newStatus: Post["status"]) {
     updateStatus({ postId, newStatus });
   }
 

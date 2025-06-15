@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdminCheck } from "@/hooks/useAdmin";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import MobileUserMenu from "./MobileUserMenu";
@@ -29,20 +29,15 @@ interface MobileMenuProps {
 
 const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
   const { isAuthenticated, user } = useAuth();
-  const { checkIfAdmin } = useAdmin();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { data: isAdmin } = useAdminCheck();
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (user) {
-        const adminStatus = await checkIfAdmin();
-        setIsAdmin(adminStatus);
-      }
+      
     };
     
-    checkAdminStatus();
-  }, [user, checkIfAdmin]);
+  }, []);
 
   const handleLinkClick = () => {
     toggleMenu();
