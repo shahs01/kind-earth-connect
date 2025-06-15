@@ -1,35 +1,16 @@
 
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
-import { useEffect, useState } from "react";
+import { useAdminCheck } from "@/hooks/useAdmin";
 import { Loader2, Shield } from "lucide-react";
 
 const AdminProtectedRoute = () => {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
-  const { checkIfAdmin } = useAdmin();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [checking, setChecking] = useState(true);
+  const { data: isAdmin, isLoading: isAdminLoading } = useAdminCheck();
   const location = useLocation();
 
-  useEffect(() => {
-    const verifyAdminAccess = async () => {
-      if (!authLoading && isAuthenticated && user) {
-        setChecking(true);
-        const adminStatus = await checkIfAdmin();
-        setIsAdmin(adminStatus);
-        setChecking(false);
-      } else if (!authLoading && !isAuthenticated) {
-        setIsAdmin(false);
-        setChecking(false);
-      }
-    };
-
-    verifyAdminAccess();
-  }, [user, isAuthenticated, authLoading, checkIfAdmin]);
-
   // Show loading while checking auth or admin status
-  if (authLoading || checking) {
+  if (authLoading || isAdminLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-red-50">
         <div className="text-center">

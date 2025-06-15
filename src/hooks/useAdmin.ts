@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useToast } from "@/hooks/use-toast";
-import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { Post, User } from "@/types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface AdminStats {
   totalUsers: number;
@@ -64,35 +65,27 @@ export interface SiteContentItem {
   updated_by?: string;
 }
 
-export function useAdmin() {
-  const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { toast } = useToast();
-  
-  const checkIfAdmin = async () => {
-    try {
+// --- Queries ---
+
+export const useAdminCheck = () => {
+  return useQuery({
+    queryKey: ['adminCheck'],
+    queryFn: async () => {
       const { data, error } = await supabase.rpc('is_admin');
-      
       if (error) throw error;
-      
-      setIsAdmin(data || false);
-      return data;
-    } catch (error: any) {
-      console.error("Error checking admin status:", error);
-      return false;
-    }
-  };
-  
-  const fetchStats = async (): Promise<AdminStats> => {
-    setLoading(true);
-    try {
+      return data || false;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useAdminStats = () => {
+  return useQuery<AdminStats>({
+    queryKey: ['adminStats'],
+    queryFn: async () => {
       const { data, error } = await supabase.rpc('get_platform_stats');
-      
       if (error) throw error;
-      
-      // Type assertion for the JSON response
       const statsData = data as any;
-      
       return {
         totalUsers: statsData.total_users || 0,
         activePosts: statsData.active_posts || 0,
@@ -104,99 +97,78 @@ export function useAdmin() {
         usersThisMonth: statsData.users_this_month || 0,
         postsThisMonth: statsData.posts_this_month || 0
       };
-    } catch (error: any) {
-      toast({
-        title: "Error fetching admin stats",
-        description: error.message,
-        variant: "destructive",
-      });
-      return {
-        totalUsers: 0,
-        totalPosts: 0,
-        totalHelpRequests: 0,
-        totalHelpOffers: 0,
-        activeUsers: 0,
-        activePosts: 0,
-        totalMessages: 0,
-        usersThisMonth: 0,
-        postsThisMonth: 0
-      };
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const fetchUsers = async (page = 1, pageSize = 10): Promise<User[]> => {
-    setLoading(true);
-    try {
+    },
+  });
+};
+
+export const useAdminUsers = (page: number, pageSize: number) => {
+  return useQuery({
+    queryKey: ['adminUsers', page, pageSize],
+    queryFn: async () => {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .range(from, to)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       return data.map(profile => ({
+        ...profile,
         id: profile.id,
         username: profile.username || '',
         email: profile.email || '',
         name: profile.name || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
         avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
-        trustScore: profile.trust_score || 0,
-        helpOffered: profile.help_offered || 0,
-        helpReceived: profile.help_received || 0,
-        volunteerHours: profile.volunteer_hours || 0,
         createdAt: new Date(profile.created_at || Date.now()),
-        verifiedStatus: profile.verified_status || false,
-        emailVerified: true,
-        trustBadges: profile.trust_badges || [],
-        loginAttempts: 0,
-        lastLoginAttempt: null
-      }));
-    } catch (error: any) {
-      toast({
-        title: "Error fetching users",
-        description: error.message,
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const fetchUserRoles = async (): Promise<UserRole[]> => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('*');
-      
+      })) as (User & { account_status?: string })[];
+    },
+  });
+};
+
+export const useAdminUserRoles = () => {
+  return useQuery({
+    queryKey: ['adminUserRoles'],
+    queryFn: async (): Promise<UserRole[]> => {
+      const { data, error } = await supabase.from('user_roles').select('*');
       if (error) throw error;
-      
       return data as UserRole[];
-    } catch (error: any) {
-      toast({
-        title: "Error fetching user roles",
-        description: error.message,
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const setUserRole = async (userId: string, role: 'user' | 'admin') => {
-    setLoading(true);
-    try {
-      const { data: existingRole, error: checkError } = await supabase
+    },
+  });
+};
+
+export const useAdminPosts = () => {
+    return useQuery({
+        queryKey: ['adminPosts'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('posts')
+                .select(`*, profiles:user_id (username, name, avatar)`)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            return data?.map((post: any) => ({
+                ...post,
+                user: post.profiles || { username: 'unknown', name: 'Unknown User', avatar: '' }
+            })) as Post[];
+        }
+    })
+};
+
+
+// --- Mutations ---
+
+export const useSetUserRole = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, role }: { userId: string, role: 'user' | 'admin' }) => {
+        const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('*')
         .eq('user_id', userId)
@@ -219,35 +191,29 @@ export function useAdmin() {
         if (error) throw error;
       }
       
-      // Log the action
       await supabase.rpc('log_admin_action', {
         action_text: `Changed user role to ${role}`,
         target_type_param: 'user',
         target_id_param: userId,
         details_param: { new_role: role, old_role: existingRole?.role || 'user' }
       });
-      
-      toast({
-        title: "Role updated",
-        description: `User role set to ${role}`,
-      });
-      
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error updating role",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: "Role updated", description: `User role set to ${variables.role}` });
+      queryClient.invalidateQueries({ queryKey: ['adminUserRoles'] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating role", description: error.message, variant: "destructive" });
+    },
+  });
+};
 
-  const updateUserStatus = async (userId: string, status: 'active' | 'banned' | 'suspended') => {
-    setLoading(true);
-    try {
+export const useUpdateUserStatus = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, status }: { userId: string, status: 'active' | 'banned' | 'suspended' }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ account_status: status })
@@ -255,270 +221,57 @@ export function useAdmin() {
       
       if (error) throw error;
       
-      // Log the action
       await supabase.rpc('log_admin_action', {
         action_text: `Changed user status to ${status}`,
         target_type_param: 'user',
         target_id_param: userId,
         details_param: { new_status: status }
       });
-      
-      toast({
-        title: "User status updated",
-        description: `User account ${status}`,
-      });
-      
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error updating user status",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: "User status updated", description: `User account ${variables.status}` });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating user status", description: error.message, variant: "destructive" });
+    },
+  });
+};
 
-  const fetchSiteSettings = async (): Promise<SiteSetting[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
-        .order('key');
-      
-      if (error) throw error;
-      
-      return data as SiteSetting[];
-    } catch (error: any) {
-      toast({
-        title: "Error fetching site settings",
-        description: error.message,
-        variant: "destructive",
-      });
-      return [];
-    }
-  };
+export const useUpdatePostStatus = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
 
-  const updateSiteSetting = async (key: string, value: any, description?: string) => {
-    try {
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({
-          key,
-          value,
-          description,
-          updated_by: (await supabase.auth.getUser()).data.user?.id,
-          updated_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
-      
-      // Log the action
-      await supabase.rpc('log_admin_action', {
-        action_text: `Updated site setting: ${key}`,
-        target_type_param: 'setting',
-        target_id_param: key,
-        details_param: { new_value: value, description }
-      });
-      
-      toast({
-        title: "Setting updated",
-        description: `${key} has been updated`,
-      });
-      
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error updating setting",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
+    return useMutation({
+        mutationFn: async ({ postId, newStatus }: { postId: string, newStatus: string }) => {
+            const { error } = await supabase.from('posts').update({ status: newStatus }).eq('id', postId);
+            if (error) throw error;
+        },
+        onSuccess: (_, variables) => {
+            toast({ title: "Status updated", description: `Post status changed to ${variables.newStatus}` });
+            queryClient.invalidateQueries({ queryKey: ['adminPosts'] });
+        },
+        onError: (error: any) => {
+            toast({ title: "Error updating status", description: error.message, variant: "destructive" });
+        }
+    });
+};
 
-  const fetchAuditLogs = async (page = 1, pageSize = 20): Promise<AuditLog[]> => {
-    try {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .range(from, to)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data as AuditLog[];
-    } catch (error: any) {
-      toast({
-        title: "Error fetching audit logs",
-        description: error.message,
-        variant: "destructive",
-      });
-      return [];
-    }
-  };
+export const useDeletePost = () => {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
 
-  const fetchTeamMembers = async (): Promise<TeamMember[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('*')
-        .order('order_position');
-      
-      if (error) throw error;
-      return data as TeamMember[];
-    } catch (error: any) {
-      toast({
-        title: "Error fetching team members",
-        description: error.message,
-        variant: "destructive",
-      });
-      return [];
-    }
-  };
-
-  const createTeamMember = async (teamMember: Omit<TeamMember, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .insert([teamMember])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Team member created",
-        description: "The team member has been added successfully",
-      });
-      
-      return data;
-    } catch (error: any) {
-      toast({
-        title: "Error creating team member",
-        description: error.message,
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
-  const updateTeamMember = async (id: string, updates: Partial<TeamMember>) => {
-    try {
-      const { error } = await supabase
-        .from('team_members')
-        .update(updates)
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Team member updated",
-        description: "The team member has been updated successfully",
-      });
-      
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error updating team member",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const deleteTeamMember = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('team_members')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Team member deleted",
-        description: "The team member has been removed successfully",
-      });
-      
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error deleting team member",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const fetchSiteContent = async (): Promise<SiteContentItem[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('site_content')
-        .select('*')
-        .order('section_key');
-      
-      if (error) throw error;
-      return data as SiteContentItem[];
-    } catch (error: any) {
-      toast({
-        title: "Error fetching site content",
-        description: error.message,
-        variant: "destructive",
-      });
-      return [];
-    }
-  };
-
-  const updateSiteContent = async (id: string, updates: Partial<SiteContentItem>) => {
-    try {
-      const { error } = await supabase
-        .from('site_content')
-        .update(updates)
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Content updated",
-        description: "The site content has been updated successfully",
-      });
-      
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Error updating content",
-        description: error.message,
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-  
-  return {
-    loading,
-    isAdmin,
-    checkIfAdmin,
-    fetchStats,
-    fetchUsers,
-    fetchUserRoles,
-    setUserRole,
-    updateUserStatus,
-    fetchSiteSettings,
-    updateSiteSetting,
-    fetchAuditLogs,
-    fetchTeamMembers,
-    createTeamMember,
-    updateTeamMember,
-    deleteTeamMember,
-    fetchSiteContent,
-    updateSiteContent
-  };
-}
+    return useMutation({
+        mutationFn: async (postId: string) => {
+            const { error } = await supabase.from('posts').delete().eq('id', postId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            toast({ title: "Post deleted", description: "The post has been permanently deleted" });
+            queryClient.invalidateQueries({ queryKey: ['adminPosts'] });
+        },
+        onError: (error: any) => {
+            toast({ title: "Error deleting post", description: error.message, variant: "destructive" });
+        }
+    });
+};

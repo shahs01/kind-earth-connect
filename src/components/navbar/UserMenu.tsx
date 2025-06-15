@@ -1,7 +1,6 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,24 +24,12 @@ import {
   Shield
 } from "lucide-react";
 import NotificationIndicator from "../NotificationIndicator";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdminCheck } from "@/hooks/useAdmin";
 
 const UserMenu = () => {
   const { user, logout } = useAuth();
-  const { checkIfAdmin } = useAdmin();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { data: isAdmin } = useAdminCheck();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user) {
-        const adminStatus = await checkIfAdmin();
-        setIsAdmin(adminStatus);
-      }
-    };
-    
-    checkAdminStatus();
-  }, [user, checkIfAdmin]);
 
   const handleSignOut = async () => {
     await logout();

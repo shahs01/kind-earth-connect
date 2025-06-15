@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
 import { Route, Routes, Link, useLocation } from "react-router-dom";
-import { useAdmin, AdminStats as AdminStatsType } from "@/hooks/useAdmin";
+import { useAdminStats } from "@/hooks/useAdmin";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,50 +15,22 @@ import AdminTeamMembers from "@/components/admin/AdminTeamMembers";
 import AdminSiteContent from "@/components/admin/AdminSiteContent";
 
 const AdminDashboard = () => {
-  const { isAdmin, loading, checkIfAdmin, fetchStats } = useAdmin();
-  const [checking, setChecking] = useState(true);
-  const [stats, setStats] = useState<AdminStatsType>({
-    totalUsers: 0,
-    totalPosts: 0,
-    totalHelpRequests: 0,
-    totalHelpOffers: 0,
-    activeUsers: 0,
-    activePosts: 0,
-    totalMessages: 0,
-    usersThisMonth: 0,
-    postsThisMonth: 0
-  });
+  const { data: stats, isLoading: isLoadingStats } = useAdminStats();
   const location = useLocation();
-  
-  useEffect(() => {
-    const init = async () => {
-      setChecking(true);
-      const isUserAdmin = await checkIfAdmin();
-      
-      if (isUserAdmin) {
-        const adminStats = await fetchStats();
-        setStats(adminStats);
-      }
-      
-      setChecking(false);
-    };
-    
-    init();
-  }, []);
-  
-  if (checking) {
+
+  if (isLoadingStats) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow py-8 bg-red-50 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-          <span className="ml-2">Checking admin access...</span>
+          <span className="ml-2">Loading Admin Data...</span>
         </main>
         <Footer />
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen flex flex-col bg-red-50">
       <Navbar />
@@ -85,7 +56,7 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="flex items-center">
                   <Users className="h-8 w-8 text-red-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats.totalUsers}</span>
+                  <span className="text-3xl font-bold">{stats?.totalUsers || 0}</span>
                 </div>
               </CardContent>
             </Card>
@@ -97,7 +68,7 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="flex items-center">
                   <MessageSquare className="h-8 w-8 text-orange-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats.totalPosts}</span>
+                  <span className="text-3xl font-bold">{stats?.totalPosts || 0}</span>
                 </div>
               </CardContent>
             </Card>
@@ -109,7 +80,7 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="flex items-center">
                   <HelpCircle className="h-8 w-8 text-blue-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats.totalHelpRequests}</span>
+                  <span className="text-3xl font-bold">{stats?.totalHelpRequests || 0}</span>
                 </div>
               </CardContent>
             </Card>
@@ -121,7 +92,7 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="flex items-center">
                   <HelpCircle className="h-8 w-8 text-green-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats.totalHelpOffers}</span>
+                  <span className="text-3xl font-bold">{stats?.totalHelpOffers || 0}</span>
                 </div>
               </CardContent>
             </Card>

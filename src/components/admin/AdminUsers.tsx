@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from "react";
-import { useAdmin, UserRole } from "@/hooks/useAdmin";
+import { useEffect, useState, useMemo } from "react";
+import { useAdminUsers, useAdminUserRoles, useSetUserRole, useUpdateUserStatus } from "@/hooks/useAdmin";
 import { User } from "@/types";
 import {
   Table,
@@ -31,55 +31,28 @@ interface UserWithRole extends User {
 }
 
 const AdminUsers = () => {
-  const { loading, fetchUsers, fetchUserRoles, setUserRole, updateUserStatus } = useAdmin();
-  const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
-  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   
-  useEffect(() => {
-    loadData();
-  }, [page]);
+  const { data: users = [], isLoading: isLoadingUsers } = useAdminUsers(page, pageSize);
+  const { data: roles = [], isLoading: isLoadingRoles } = useAdminUserRoles();
+  const { mutate: setUserRole, isPending: isUpdatingRole } = useSetUserRole();
+  const { mutate: updateUserStatus, isPending: isUpdatingStatus } = useUpdateUserStatus();
   
-  const loadData = async () => {
-    const fetchedUsers = await fetchUsers(page, pageSize);
-    setUsers(fetchedUsers);
-    
-    const roles = await fetchUserRoles();
+  const userRoles = useMemo(() => {
     const roleMap: Record<string, string> = {};
     roles.forEach(role => {
       roleMap[role.user_id] = role.role;
     });
-    setUserRoles(roleMap);
-  };
-  
-  const handleSetRole = async (userId: string, role: 'user' | 'admin') => {
-    setUpdatingRole(userId);
-    const success = await setUserRole(userId, role);
-    
-    if (success) {
-      setUserRoles(prev => ({
-        ...prev,
-        [userId]: role
-      }));
-    }
-    
-    setUpdatingRole(null);
+    return roleMap;
+  }, [roles]);
+
+  const handleSetRole = (userId: string, role: 'user' | 'admin') => {
+    setUserRole({ userId, role });
   };
 
-  const handleSetStatus = async (userId: string, status: 'active' | 'banned' | 'suspended') => {
-    setUpdatingStatus(userId);
-    const success = await updateUserStatus(userId, status);
-    
-    if (success) {
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, account_status: status } : user
-      ));
-    }
-    
-    setUpdatingStatus(null);
+  const handleSetStatus = (userId: string, status: 'active' | 'banned' | 'suspended') => {
+    updateUserStatus({ userId, status });
   };
 
   const getStatusBadge = (status?: string) => {
@@ -102,6 +75,8 @@ const AdminUsers = () => {
     }
   };
   
+  const loading = isLoadingUsers || isLoadingRoles;
+
   return (
     <Card>
       <CardHeader>
@@ -131,7 +106,7 @@ const AdminUsers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {users.map((user: UserWithRole) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
@@ -157,18 +132,18 @@ const AdminUsers = () => {
                           {userRoles[user.id] || 'user'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{format(user.createdAt, 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{format(new Date(user.createdAt), 'MMM d, yyyy')}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              disabled={updatingRole === user.id || updatingStatus === user.id}
+                              disabled={isUpdatingRole || isUpdatingStatus}
                             >
-                              {(updatingRole === user.id || updatingStatus === user.id) ? (
+                              {(isUpdatingRole || isUpdatingStatus) && (
                                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                              ) : null}
+                              )}
                               Manage
                             </Button>
                           </DropdownMenuTrigger>
@@ -176,13 +151,13 @@ const AdminUsers = () => {
                             <DropdownMenuLabel>Change Role</DropdownMenuLabel>
                             <DropdownMenuItem
                               onClick={() => handleSetRole(user.id, 'user')}
-                              className={userRoles[user.id] === 'user' ? 'bg-gray-100' : ''}
+                              disabled={userRoles[user.id] === 'user' || !userRoles[user.id]}
                             >
                               Set as User
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleSetRole(user.id, 'admin')}
-                              className={userRoles[user.id] === 'admin' ? 'bg-gray-100' : ''}
+                              disabled={userRoles[user.id] === 'admin'}
                             >
                               Set as Admin
                             </DropdownMenuItem>
@@ -191,21 +166,21 @@ const AdminUsers = () => {
                             <DropdownMenuLabel>Account Status</DropdownMenuLabel>
                             <DropdownMenuItem
                               onClick={() => handleSetStatus(user.id, 'active')}
-                              className={user.account_status === 'active' ? 'bg-gray-100' : ''}
+                              disabled={!user.account_status || user.account_status === 'active'}
                             >
                               <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
                               Activate
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleSetStatus(user.id, 'suspended')}
-                              className={user.account_status === 'suspended' ? 'bg-gray-100' : ''}
+                              disabled={user.account_status === 'suspended'}
                             >
                               <AlertTriangle className="h-4 w-4 mr-2 text-yellow-600" />
                               Suspend
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleSetStatus(user.id, 'banned')}
-                              className={user.account_status === 'banned' ? 'bg-gray-100' : ''}
+                              disabled={user.account_status === 'banned'}
                             >
                               <Ban className="h-4 w-4 mr-2 text-red-600" />
                               Ban

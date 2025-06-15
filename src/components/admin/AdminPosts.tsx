@@ -1,141 +1,27 @@
 
-import { useState, useEffect } from "react";
+import { useAdminPosts, useUpdatePostStatus, useDeletePost } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Trash2, CheckCircle, XCircle, Calendar, Clock, User, MapPin } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Trash2, CheckCircle, XCircle, Calendar, User, MapPin } from "lucide-react";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface Post {
-  id: string;
-  title: string;
-  description?: string;
-  type: string;
-  category?: string;
-  location?: string;
-  status?: string;
-  created_at: string;
-  user_id: string;
-  user?: {
-    username: string;
-    name: string;
-    avatar: string;
-  };
-}
+import { Post } from "@/types";
 
 export default function AdminPosts() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    loadPosts();
-  }, []);
-  
-  async function loadPosts() {
-    try {
-      setLoading(true);
-      
-      // Get all posts with user details
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            name,
-            avatar
-          )
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Transform the data to match the Post interface
-      const formattedPosts: Post[] = data?.map((post: any) => ({
-        ...post,
-        user: post.profiles || { username: 'unknown', name: 'Unknown User', avatar: '' }
-      })) || [];
-      
-      setPosts(formattedPosts);
-    } catch (error: any) {
-      console.error("Error loading posts:", error);
-      toast({
-        title: "Error loading posts",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const { data: posts = [], isLoading: loading } = useAdminPosts();
+  const { mutate: updateStatus, isPending: isUpdating } = useUpdatePostStatus();
+  const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
+
+  function handleStatusChange(postId: string, newStatus: string) {
+    updateStatus({ postId, newStatus });
   }
-  
-  async function handleStatusChange(postId: string, newStatus: string) {
-    try {
-      setUpdatingId(postId);
-      
-      const { error } = await supabase
-        .from('posts')
-        .update({ status: newStatus })
-        .eq('id', postId);
-      
-      if (error) throw error;
-      
-      // Update local state
-      setPosts(prev => prev.map(post => 
-        post.id === postId ? { ...post, status: newStatus } : post
-      ));
-      
-      toast({
-        title: "Status updated",
-        description: `Post status changed to ${newStatus}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error updating status",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUpdatingId(null);
-    }
+
+  function handleDeletePost(postId: string) {
+    deletePost(postId);
   }
-  
-  async function handleDeletePost(postId: string) {
-    try {
-      setDeletingId(postId);
-      
-      const { error } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId);
-      
-      if (error) throw error;
-      
-      // Remove from local state
-      setPosts(prev => prev.filter(post => post.id !== postId));
-      
-      toast({
-        title: "Post deleted",
-        description: "The post has been permanently deleted",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error deleting post",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingId(null);
-    }
-  }
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -143,7 +29,7 @@ export default function AdminPosts() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col">
@@ -164,7 +50,7 @@ export default function AdminPosts() {
             <TabsContent key={tab} value={tab} className="space-y-4">
               {posts
                 .filter(post => tab === 'all' || post.status === tab)
-                .map(post => (
+                .map((post: Post) => (
                   <Card key={post.id} className="overflow-hidden">
                     <CardHeader className="pb-3">
                       <div className="flex justify-between">
@@ -237,9 +123,9 @@ export default function AdminPosts() {
                             variant="outline"
                             className="text-green-600"
                             onClick={() => handleStatusChange(post.id, 'active')}
-                            disabled={updatingId === post.id}
+                            disabled={isUpdating}
                           >
-                            {updatingId === post.id ? (
+                            {isUpdating ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <>
@@ -256,9 +142,9 @@ export default function AdminPosts() {
                             variant="outline"
                             className="text-amber-600"
                             onClick={() => handleStatusChange(post.id, 'rejected')}
-                            disabled={updatingId === post.id}
+                            disabled={isUpdating}
                           >
-                            {updatingId === post.id ? (
+                            {isUpdating ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <>
@@ -274,9 +160,9 @@ export default function AdminPosts() {
                           variant="outline"
                           className="text-red-600"
                           onClick={() => handleDeletePost(post.id)}
-                          disabled={deletingId === post.id}
+                          disabled={isDeleting}
                         >
-                          {deletingId === post.id ? (
+                          {isDeleting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <>
