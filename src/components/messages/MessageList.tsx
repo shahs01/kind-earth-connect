@@ -38,7 +38,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
   // Always scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [messages.length]);
 
