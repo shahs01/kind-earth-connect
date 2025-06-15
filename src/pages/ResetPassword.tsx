@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   password: z.string()
@@ -30,10 +31,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const ResetPassword = () => {
-  const { resetPassword, user, isLoading: authIsLoading } = useAuth();
+  const { resetPassword, user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("verifying"); // 'verifying', 'valid', 'invalid'
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -43,14 +45,32 @@ const ResetPassword = () => {
       confirmPassword: "",
     },
   });
+
+  useEffect(() => {
+    // This effect gives the Supabase client time to process the auth token from the URL.
+    // After a short delay, we check if a user session exists.
+    const verificationTimer = setTimeout(() => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setVerificationStatus("valid");
+        } else {
+          setVerificationStatus("invalid");
+        }
+      });
+    }, 2500); // 2.5 second delay for verification
+
+    return () => clearTimeout(verificationTimer);
+  }, []);
   
   const onSubmit = async (data: FormValues) => {
+    // The user object from context should be available here if verification passed.
     if (!user) {
       toast({
         title: "Session Expired",
         description: "Your password reset session has expired. Please request a new link.",
         variant: "destructive",
       });
+      setVerificationStatus("invalid");
       return;
     }
     
@@ -84,7 +104,7 @@ const ResetPassword = () => {
     }
   };
   
-  if (authIsLoading) {
+  if (verificationStatus === "verifying") {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -135,7 +155,7 @@ const ResetPassword = () => {
     );
   }
 
-  if (!user) {
+  if (verificationStatus === "invalid") {
        return (
         <div className="min-h-screen flex flex-col">
           <Navbar />
