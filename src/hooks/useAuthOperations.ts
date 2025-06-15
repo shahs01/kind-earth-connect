@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,18 @@ export const useAuthOperations = () => {
       });
       
       if (error) throw error;
+
+      if (data.user && !data.user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Email not verified",
+          description: "Please verify your email before logging in. You can request a new verification link.",
+          variant: "destructive",
+        });
+        navigate('/verify-email');
+        // We throw an error to prevent the login flow from continuing
+        throw new Error("Email not verified");
+      }
       
       toast({
         title: "Login successful!",
@@ -37,11 +50,13 @@ export const useAuthOperations = () => {
         message = error.message;
       }
       
-      toast({
-        title: "Login failed",
-        description: message,
-        variant: "destructive"
-      });
+      if (message !== "Email not verified") {
+        toast({
+          title: "Login failed",
+          description: message,
+          variant: "destructive"
+        });
+      }
       
       throw error;
     } finally {

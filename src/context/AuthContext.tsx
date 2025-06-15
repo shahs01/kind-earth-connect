@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setEmailVerified(!!session?.user?.email_confirmed_at);
       console.log("AuthContext: Initial session loaded", session?.user?.email || 'no session');
       if (!session) {
         setIsLoading(false);
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       (_event, session) => {
         console.log("AuthContext: Auth state changed", _event, session?.user?.email || 'no user');
         setSession(session);
+        setEmailVerified(!!session?.user?.email_confirmed_at);
       }
     );
 
@@ -66,7 +68,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             if (profile) {
               console.log("AuthContext: Profile found", profile);
               setUser(profile);
-              setEmailVerified(true);
             } else {
               console.log("AuthContext: No profile found, retrying after delay...");
               setTimeout(() => {
@@ -74,7 +75,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                   if (retryProfile) {
                     console.log("AuthContext: Profile found on retry", retryProfile);
                     setUser(retryProfile);
-                    setEmailVerified(true);
                   } else {
                     console.error("AuthContext: Failed to create or fetch user profile after retry.");
                     logout();
@@ -123,7 +123,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
     
     await signUp(userData);
-    setEmailVerified(true);
   };
 
   const handleChangePassword = async (currentPassword: string, newPassword: string) => {

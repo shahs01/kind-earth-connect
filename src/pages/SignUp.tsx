@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import BasicInfoForm from "@/components/BasicInfoForm";
@@ -45,10 +44,10 @@ const SignUp = () => {
       
       toast({
         title: "Account created!",
-        description: "Your account has been created successfully."
+        description: "Please check your email to verify your account."
       });
       
-      navigate('/');
+      navigate('/verify-email');
     } catch (error) {
       console.error("Signup error:", error);
       toast({
@@ -66,9 +65,6 @@ const SignUp = () => {
       <Navbar />
       <main className="flex-grow py-12 bg-hero-pattern">
         <div className="container mx-auto px-4">
-          <div className="max-w-md mx-auto mb-4 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm">
-            <strong>Note:</strong> Email verification is currently disabled. You'll be able to log in immediately after signing up.
-          </div>
           
           {currentStep === 'basic' && (
             <BasicInfoForm onNextStep={handleBasicInfoComplete} />
