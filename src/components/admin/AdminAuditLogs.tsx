@@ -1,6 +1,5 @@
-
-import { useEffect, useState } from "react";
-import { useAdmin, AuditLog } from "@/hooks/useAdmin";
+import { useState } from "react";
+import { useAdminAuditLogs, AuditLog } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,22 +7,9 @@ import { Loader2, FileText, User, Settings, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 
 const AdminAuditLogs = () => {
-  const { fetchAuditLogs } = useAdmin();
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 20;
-
-  useEffect(() => {
-    loadLogs();
-  }, [page]);
-
-  const loadLogs = async () => {
-    setLoading(true);
-    const fetchedLogs = await fetchAuditLogs(page, pageSize);
-    setLogs(fetchedLogs);
-    setLoading(false);
-  };
+  const { data: logs = [], isLoading } = useAdminAuditLogs(page, pageSize);
 
   const getTargetIcon = (targetType: string) => {
     switch (targetType) {
@@ -51,7 +37,7 @@ const AdminAuditLogs = () => {
     }
   };
 
-  if (loading && logs.length === 0) {
+  if (isLoading && logs.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
@@ -122,7 +108,7 @@ const AdminAuditLogs = () => {
               <Button
                 variant="outline"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
+                disabled={page === 1 || isLoading}
               >
                 Previous
               </Button>
@@ -132,7 +118,7 @@ const AdminAuditLogs = () => {
               <Button
                 variant="outline"
                 onClick={() => setPage((p) => p + 1)}
-                disabled={logs.length < pageSize || loading}
+                disabled={logs.length < pageSize || isLoading}
               >
                 Next
               </Button>

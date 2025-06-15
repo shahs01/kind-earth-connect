@@ -59,7 +59,7 @@ export default function AdminPosts() {
                           <CardDescription className="flex items-center mt-1 space-x-4">
                             <span className="flex items-center">
                               <Calendar className="h-4 w-4 mr-1" />
-                              {format(new Date(post.created_at), 'MMM d, yyyy')}
+                              {format(new Date(post.createdAt), 'MMM d, yyyy')}
                             </span>
                             <span className="flex items-center">
                               <User className="h-4 w-4 mr-1" />

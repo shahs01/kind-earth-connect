@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Post, User } from "@/types";
@@ -117,13 +116,26 @@ export const useAdminUsers = (page: number, pageSize: number) => {
       if (error) throw error;
 
       return data.map(profile => ({
-        ...profile,
         id: profile.id,
         username: profile.username || '',
-        email: profile.email || '',
         name: profile.name || '',
+        email: profile.email || '',
         avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
+        bio: profile.bio || '',
+        location: profile.location || '',
         createdAt: new Date(profile.created_at || Date.now()),
+        trustScore: profile.trust_score || 0,
+        helpOffered: profile.help_offered || 0,
+        helpReceived: profile.help_received || 0,
+        verifiedStatus: profile.verified_status || false,
+        emailVerified: false, // not in profiles table
+        loginAttempts: 0, // not in profiles table
+        lastLoginAttempt: null, // not in profiles table
+        trustBadges: profile.trust_badges || [],
+        volunteerHours: profile.volunteer_hours || 0,
+        reviewsGiven: [],
+        notificationPreferences: { emailUpdates: true, messageNotifications: true, helpRequestAlerts: true, marketingEmails: false },
+        account_status: profile.account_status || 'active',
       })) as (User & { account_status?: string })[];
     },
   });
@@ -153,10 +165,39 @@ export const useAdminPosts = () => {
 
             return data?.map((post: any) => ({
                 ...post,
+                createdAt: new Date(post.created_at),
                 user: post.profiles || { username: 'unknown', name: 'Unknown User', avatar: '' }
             })) as Post[];
         }
     })
+};
+
+export const useAdminAuditLogs = (page: number, pageSize: number) => {
+  return useQuery({
+    queryKey: ['adminAuditLogs', page, pageSize],
+    queryFn: async (): Promise<AuditLog[]> => {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .range(from, to)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as AuditLog[];
+    },
+  });
+};
+
+export const useAdminSiteSettings = () => {
+  return useQuery({
+    queryKey: ['adminSiteSettings'],
+    queryFn: async (): Promise<SiteSetting[]> => {
+      const { data, error } = await supabase.from('site_settings').select('*');
+      if (error) throw error;
+      return data as SiteSetting[];
+    },
+  });
 };
 
 
@@ -238,12 +279,41 @@ export const useUpdateUserStatus = () => {
   });
 };
 
+export const useUpdateSiteSetting = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ key, value }: { key: string, value: any }) => {
+      const { data: userResponse } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('site_settings')
+        .update({ value, updated_by: userResponse.user?.id })
+        .eq('key', key);
+      if (error) throw error;
+      
+      await supabase.rpc('log_admin_action', {
+        action_text: `Updated site setting: ${key}`,
+        target_type_param: 'setting',
+        target_id_param: key,
+        details_param: { new_value: value }
+      });
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: 'Setting updated', description: `Setting "${variables.key}" has been saved.` });
+      queryClient.invalidateQueries({ queryKey: ['adminSiteSettings'] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error updating setting', description: error.message, variant: 'destructive' });
+    },
+  });
+};
+
 export const useUpdatePostStatus = () => {
     const queryClient = useQueryClient();
     const { toast } = useToast();
 
     return useMutation({
-        mutationFn: async ({ postId, newStatus }: { postId: string, newStatus: string }) => {
+        mutationFn: async ({ postId, newStatus }: { postId: string, newStatus: "active" | "completed" | "archived" | "deleted" | "pending" | "rejected" }) => {
             const { error } = await supabase.from('posts').update({ status: newStatus }).eq('id', postId);
             if (error) throw error;
         },

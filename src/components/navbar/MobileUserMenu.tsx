@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdminCheck } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { 
   User, 
@@ -17,7 +17,6 @@ import {
   ChevronUp
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useEffect } from "react";
 
 interface MobileUserMenuProps {
   handleLinkClick: () => void;
@@ -25,20 +24,8 @@ interface MobileUserMenuProps {
 
 const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
   const { user, logout } = useAuth();
-  const { checkIfAdmin } = useAdmin();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { data: isAdmin } = useAdminCheck();
   const [isExpanded, setIsExpanded] = useState(false);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user) {
-        const adminStatus = await checkIfAdmin();
-        setIsAdmin(adminStatus);
-      }
-    };
-    
-    checkAdminStatus();
-  }, [user, checkIfAdmin]);
 
   const handleSignOut = async () => {
     await logout();
@@ -122,6 +109,17 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
             <Settings className="mr-3 h-4 w-4" />
             Settings
           </Link>
+          
+          {isAdmin && (
+            <Link
+              to="/admin/dashboard"
+              className="flex items-center py-2 px-3 rounded-md text-orange-600 hover:bg-gray-100 transition-colors"
+              onClick={handleLinkClick}
+            >
+              <Shield className="mr-3 h-4 w-4" />
+              Admin Panel
+            </Link>
+          )}
 
           <Separator className="my-2" />
           <Button

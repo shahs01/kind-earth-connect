@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string; // Added username field
@@ -38,7 +37,7 @@ export interface Post {
   userId: string;
   user?: User; // Added user property that references the User who created the post
   createdAt: Date;
-  status: "active" | "completed" | "archived" | "deleted";
+  status: "active" | "completed" | "archived" | "deleted" | "pending" | "rejected";
 }
 
 // Updated interface for reviews to include toUserId field

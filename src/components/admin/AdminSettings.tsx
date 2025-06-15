@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useAdmin, SiteSetting } from "@/hooks/useAdmin";
+import { SiteSetting, useAdminSiteSettings, useUpdateSiteSetting } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,39 +9,28 @@ import { Loader2, Settings, Save } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 const AdminSettings = () => {
-  const { fetchSiteSettings, updateSiteSetting, loading } = useAdmin();
-  const [settings, setSettings] = useState<SiteSetting[]>([]);
-  const [saving, setSaving] = useState<string | null>(null);
+  const { data: settings = [], isLoading } = useAdminSiteSettings();
+  const { mutate: updateSetting } = useUpdateSiteSetting();
+  const [savingKey, setSavingKey] = useState<string | null>(null);
   const [localValues, setLocalValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    const fetchedSettings = await fetchSiteSettings();
-    setSettings(fetchedSettings);
-    
-    // Initialize local values
-    const values: Record<string, any> = {};
-    fetchedSettings.forEach(setting => {
-      values[setting.key] = setting.value;
-    });
-    setLocalValues(values);
-  };
+    if (settings.length > 0) {
+        const values: Record<string, any> = {};
+        settings.forEach(setting => {
+            values[setting.key] = setting.value;
+        });
+        setLocalValues(values);
+    }
+  }, [settings]);
 
   const handleSave = async (key: string) => {
-    setSaving(key);
-    const setting = settings.find(s => s.key === key);
-    const success = await updateSiteSetting(key, localValues[key], setting?.description);
-    
-    if (success) {
-      setSettings(prev => prev.map(s => 
-        s.key === key ? { ...s, value: localValues[key] } : s
-      ));
-    }
-    
-    setSaving(null);
+    setSavingKey(key);
+    updateSetting({ key, value: localValues[key] }, {
+      onSettled: () => {
+        setSavingKey(null);
+      }
+    });
   };
 
   const renderSettingInput = (setting: SiteSetting) => {
@@ -99,7 +87,7 @@ const AdminSettings = () => {
       .replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  if (loading && settings.length === 0) {
+  if (isLoading && settings.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
@@ -125,9 +113,9 @@ const AdminSettings = () => {
               <Button
                 size="sm"
                 onClick={() => handleSave(setting.key)}
-                disabled={saving === setting.key}
+                disabled={savingKey === setting.key}
               >
-                {saving === setting.key ? (
+                {savingKey === setting.key ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
                 ) : (
                   <Save className="h-4 w-4 mr-1" />
