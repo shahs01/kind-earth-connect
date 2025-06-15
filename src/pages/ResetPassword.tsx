@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -30,31 +30,20 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const ResetPassword = () => {
-  const { resetPassword } = useAuth();
+  const { resetPassword, user, isLoading: authIsLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [email, setEmail] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Extract token and email from URL
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const emailParam = queryParams.get('email');
-    const tokenParam = queryParams.get('token');
-    
-    if (!emailParam || !tokenParam) {
+    if (!authIsLoading && !user && !isSuccess) {
       setIsError(true);
-      setErrorMessage("Invalid or missing reset link parameters");
-    } else {
-      setEmail(emailParam);
-      setToken(tokenParam);
+      setErrorMessage("Invalid or expired password reset link. Please request a new one.");
     }
-  }, [location]);
+  }, [authIsLoading, user, isSuccess]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -65,9 +54,12 @@ const ResetPassword = () => {
   });
   
   const onSubmit = async (data: FormValues) => {
-    if (!email || !token) {
-      setIsError(true);
-      setErrorMessage("Missing required reset information");
+    if (!user) {
+      toast({
+        title: "Session Expired",
+        description: "Your password reset session has expired. Please request a new link.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -75,8 +67,8 @@ const ResetPassword = () => {
     
     try {
       await resetPassword({
-        email,
-        token,
+        email: user.email,
+        token: "", // Not used by function, but required by type
         newPassword: data.password,
       });
       
@@ -98,6 +90,21 @@ const ResetPassword = () => {
     }
   };
   
+  if (authIsLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center bg-hero-pattern">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+            <span className="mt-2 text-gray-600">Verifying reset link...</span>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -224,3 +231,4 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+
