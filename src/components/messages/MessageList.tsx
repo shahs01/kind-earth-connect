@@ -34,13 +34,6 @@ const MessageSkeleton: React.FC = () => (
 const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUserId }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Always scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [messages.length]);
 
   // Memoize grouped messages to prevent unnecessary recalculations
   const messagesByDate = useMemo((): GroupedMessages => {
