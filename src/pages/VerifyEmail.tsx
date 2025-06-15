@@ -9,11 +9,21 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 
+const COOLDOWN_SECONDS = 60;
+
 const VerifyEmail = () => {
   const { user, emailVerified, sendEmailVerification, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   useEffect(() => {
     if (!isLoading && emailVerified) {
@@ -26,6 +36,7 @@ const VerifyEmail = () => {
   }, [emailVerified, navigate, toast, isLoading]);
 
   const handleResendVerification = async () => {
+    if (cooldown > 0) return;
     setIsResending(true);
     try {
       await sendEmailVerification();
@@ -33,6 +44,7 @@ const VerifyEmail = () => {
         title: "Verification Email Sent",
         description: "A new verification link has been sent to your email address.",
       });
+      setCooldown(COOLDOWN_SECONDS);
     } catch (error) {
       toast({
         title: "Error",
@@ -104,8 +116,8 @@ const VerifyEmail = () => {
             </CardHeader>
             
             <CardContent>
-              <p className="text-center mb-4 text-gray-600">
-                If you haven't received the email, please check your spam folder or click the button below to resend it.
+              <p className="text-center mb-4 text-sm text-muted-foreground">
+                It might take a few minutes for the email to arrive. Please also check your spam or junk folder before resending.
               </p>
             </CardContent>
             
@@ -113,13 +125,15 @@ const VerifyEmail = () => {
               <Button 
                 onClick={handleResendVerification}
                 className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
-                disabled={isResending}
+                disabled={isResending || cooldown > 0}
               >
                 {isResending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Resending...
                   </>
+                ) : cooldown > 0 ? (
+                  `Resend in ${cooldown}s`
                 ) : (
                   "Resend Verification Email"
                 )}
