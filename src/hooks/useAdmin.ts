@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Post, User } from "@/types";
@@ -158,10 +159,13 @@ export const useAdminPosts = () => {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('posts')
-                .select(`*, profiles:user_id (username, name, avatar)`)
+                .select(`*, profiles(username, name, avatar)`)
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error fetching admin posts:", error);
+                throw error;
+            }
 
             return data?.map((post: any) => ({
                 ...post,

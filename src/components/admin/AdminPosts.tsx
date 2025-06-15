@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Post } from "@/types";
 
 export default function AdminPosts() {
-  const { data: posts = [], isLoading: loading } = useAdminPosts();
+  const { data: posts = [], isLoading: loading, isError, error } = useAdminPosts();
   const { mutate: updateStatus, isPending: isUpdating } = useUpdatePostStatus();
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
 
@@ -26,6 +26,18 @@ export default function AdminPosts() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 p-4 text-center bg-red-50 rounded-lg">
+        <h3 className="text-xl font-semibold text-red-600">Error Loading Posts</h3>
+        <p className="text-muted-foreground mt-2">
+          There was a problem fetching the posts from the server.
+        </p>
+        <p className="text-xs text-gray-500 mt-4 font-mono">{error.message}</p>
       </div>
     );
   }
