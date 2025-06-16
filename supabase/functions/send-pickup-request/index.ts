@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     }: PickupRequest = await req.json();
 
     const emailResponse = await resend.emails.send({
-      from: "Thryvance <onboarding@resend.dev>",
+      from: "shezashahzad28@gmail.com",
       to: ["thryvance.ca@gmail.com"],
       subject: "New Donation Pickup Request",
       html: `
