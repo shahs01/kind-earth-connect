@@ -39,35 +39,54 @@ const handler = async (req: Request): Promise<Response> => {
     }: PickupRequest = await req.json();
 
     const emailResponse = await resend.emails.send({
-      from: "shezashahzad28@gmail.com",
+      from: "Thryvance Pickup <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
+      reply_to: email,
       subject: "New Donation Pickup Request",
       html: `
-        <h1>New Donation Pickup Request</h1>
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h2>Contact Information</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+            New Donation Pickup Request
+          </h1>
           
-          <h2>Pickup Details</h2>
-          <p><strong>Address:</strong> ${address}</p>
-          <p><strong>Preferred Date:</strong> ${preferredDate}</p>
-          <p><strong>Preferred Time:</strong> ${preferredTime}</p>
+          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e40af; margin-top: 0;">Contact Information</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+            <p><strong>Phone:</strong> ${phone}</p>
+          </div>
           
-          <h2>Items to Donate</h2>
-          <p>${itemsDescription}</p>
+          <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e40af; margin-top: 0;">Pickup Details</h2>
+            <p><strong>Address:</strong> ${address}</p>
+            <p><strong>Preferred Date:</strong> ${preferredDate}</p>
+            <p><strong>Preferred Time:</strong> ${preferredTime}</p>
+          </div>
+          
+          <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #1e40af; margin-top: 0;">Items to Donate</h2>
+            <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #fbbf24;">
+              ${itemsDescription.replace(/\n/g, '<br>')}
+            </div>
+          </div>
           
           ${additionalDetails ? `
-            <h2>Additional Details</h2>
-            <p>${additionalDetails}</p>
+            <div style="background-color: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h2 style="color: #1e40af; margin-top: 0;">Additional Details</h2>
+              <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #6366f1;">
+                ${additionalDetails.replace(/\n/g, '<br>')}
+              </div>
+            </div>
           ` : ''}
           
-          <hr style="margin: 20px 0;">
-          <p style="color: #666; font-size: 14px;">
-            This request was submitted through the Thryvance donation platform.
-            Please contact the donor within 24 hours to confirm the pickup.
-          </p>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="color: #64748b; font-size: 14px; margin: 0;">
+              This pickup request was submitted through the Thryvance donation platform at ${new Date().toLocaleString()}
+            </p>
+            <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">
+              Please contact ${name} within 24 hours to confirm the pickup
+            </p>
+          </div>
         </div>
       `,
     });
