@@ -5,17 +5,17 @@ const features = [
   {
     icon: <Heart className="w-8 h-8 text-thryvance-green" />,
     title: "Offer Help",
-    description: "Share your skills, time, or resources with those in need. From home repairs to mentorship, every act of kindness matters."
+    description: "Share free items, skills, or time to support someone in your neighborhood — whether it's groceries, clothing, home help, or kindness."
   },
   {
     icon: <Users className="w-8 h-8 text-thryvance-blue" />,
     title: "Request Support",
-    description: "Don't hesitate to ask for help when you need it. Our community is ready to support you through challenges big and small."
+    description: "Ask for what you need, big or small. Our caring community is here to support you without judgment or cost."
   },
   {
     icon: <Search className="w-8 h-8 text-thryvance-green-dark" />,
     title: "Find Local Resources",
-    description: "Discover nonprofits and community organizations in your area that offer specialized support and services."
+    description: "Discover nonprofits, shelters, food banks, and support services near you."
   }
 ];
 

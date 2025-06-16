@@ -16,27 +16,30 @@ const HeroSection = () => {
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 break-words">
-              Connecting <span className="text-thryvance-green">Kindness</span> in Your Community
+              Get Help. Give Help. <span className="text-thryvance-green">Right Here</span> in Your Community.
             </h1>
             
             <p className="text-lg md:text-xl text-gray-600">
-              Thryvance connects those who need help with those who can give it. 
-              Join our community of neighbors helping neighbors.
+              Thryvance is a free platform to give or get help — from food and housing to local nonprofits and volunteer support. 
+              Built for neighbors helping neighbors.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark text-white font-medium px-6 md:px-8 py-4 md:py-6 h-auto text-sm md:text-base">
-                <Link to="/offer-help">Offer Help</Link>
-              </Button>
-              <Button asChild variant="outline" className="border-thryvance-blue text-thryvance-blue hover:bg-thryvance-blue-light px-6 md:px-8 py-4 md:py-6 h-auto text-sm md:text-base">
-                <Link to="/request-help">Request Help</Link>
-              </Button>
-              <Button asChild className="bg-thryvance-green-light text-thryvance-green border border-thryvance-green hover:bg-thryvance-green-light/80 px-6 md:px-8 py-4 md:py-6 h-auto text-sm md:text-base">
-                <Link to="/community" className="flex items-center gap-2">
-                  <Search className="h-4 md:h-5 w-4 md:w-5" />
-                  <span>Search Community</span>
-                </Link>
-              </Button>
+            <div className="pt-4">
+              <p className="text-base font-medium text-gray-700 mb-4">What would you like to do?</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark text-white font-medium px-6 md:px-8 py-4 md:py-6 h-auto text-sm md:text-base">
+                  <Link to="/offer-help">🤲 Offer Help</Link>
+                </Button>
+                <Button asChild variant="outline" className="border-thryvance-blue text-thryvance-blue hover:bg-thryvance-blue-light px-6 md:px-8 py-4 md:py-6 h-auto text-sm md:text-base">
+                  <Link to="/request-help">🆘 Request Help</Link>
+                </Button>
+                <Button asChild className="bg-thryvance-green-light text-thryvance-green border border-thryvance-green hover:bg-thryvance-green-light/80 px-6 md:px-8 py-4 md:py-6 h-auto text-sm md:text-base">
+                  <Link to="/community" className="flex items-center gap-2">
+                    <Search className="h-4 md:h-5 w-4 md:w-5" />
+                    <span>🔍 Browse Community</span>
+                  </Link>
+                </Button>
+              </div>
             </div>
             
             <div className="flex items-center gap-4 pt-4">
@@ -47,9 +50,14 @@ const HeroSection = () => {
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-gray-600">
-                Join <span className="font-semibold">1,234+</span> community members
-              </p>
+              <div>
+                <p className="text-sm md:text-base font-semibold text-gray-700">
+                  Join <span className="text-thryvance-green">1,234+</span> community members
+                </p>
+                <p className="text-xs md:text-sm text-gray-600">
+                  Trusted by people all across your region
+                </p>
+              </div>
             </div>
           </div>
           
