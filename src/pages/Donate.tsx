@@ -358,16 +358,12 @@ const Donate = () => {
                 <p className="text-gray-600">Make a recurring impact with regular contributions.</p>
               </li>
               <li>
-                <a href="/sponsor-project" className="text-thryvance-green hover:underline font-medium">
-                  Sponsor a community project
-                </a>
-                <p className="text-gray-600">Fund specific initiatives that align with your values.</p>
-              </li>
-              <li>
-                <a href="/donate-goods" className="text-thryvance-green hover:underline font-medium">
-                  Donate goods or services
-                </a>
-                <p className="text-gray-600">Contribute resources, expertise, or products.</p>
+                <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark text-white">
+                  <a href="/donate-goods">
+                    Donate goods
+                  </a>
+                </Button>
+                <p className="text-gray-600 mt-2">Contribute resources and items to help those in need.</p>
               </li>
             </ul>
           </div>

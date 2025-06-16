@@ -1,17 +1,44 @@
 
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Box, ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Box, Calendar, Clock, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const DonateGoods = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    preferredDate: "",
+    preferredTime: "",
+    itemsDescription: "",
+    additionalDetails: ""
+  });
+  const { toast } = useToast();
+
   const neededItems = [
     { 
       category: "Clothing & Personal Items", 
@@ -28,54 +55,218 @@ const DonateGoods = () => {
     { 
       category: "Office & School", 
       items: ["Laptops and computers", "Office furniture", "School supplies", "Books", "Art supplies"] 
-    },
-    { 
-      category: "Professional Services", 
-      items: ["Legal consultation", "Financial advising", "Career coaching", "Mental health services", "Medical care"] 
     }
   ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.preferredDate || !formData.preferredTime || !formData.itemsDescription) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-pickup-request', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          preferredDate: formData.preferredDate,
+          preferredTime: formData.preferredTime,
+          itemsDescription: formData.itemsDescription,
+          additionalDetails: formData.additionalDetails
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: "Pickup Request Submitted",
+        description: "Thank you! We'll contact you within 24 hours to confirm your pickup.",
+      });
+
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        preferredDate: "",
+        preferredTime: "",
+        itemsDescription: "",
+        additionalDetails: ""
+      });
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error submitting pickup request:", error);
+      toast({
+        title: "Submission Error",
+        description: "Failed to submit pickup request. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Donate Goods & Services</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Donate Goods</h1>
           <p className="text-lg text-gray-700 mb-8">
-            Your donation of goods or professional services can make a meaningful impact 
-            in our community. We connect donated items and services to those who need them most.
+            Your donation of goods can make a meaningful impact in our community. 
+            We connect donated items to those who need them most.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white shadow-md rounded-lg p-6">
-              <Box className="h-12 w-12 text-thryvance-green mb-4" />
-              <h2 className="text-xl font-semibold mb-3">Donate Goods</h2>
-              <p className="text-gray-700 mb-4">
-                Donate new or gently used items to help individuals and families in need.
-              </p>
-              <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
-                Schedule a Drop-off
-              </Button>
-            </div>
+          <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+            <Box className="h-12 w-12 text-thryvance-green mb-4" />
+            <h2 className="text-xl font-semibold mb-3">Donate Goods</h2>
+            <p className="text-gray-700 mb-4">
+              Donate new or gently used items to help individuals and families in need.
+            </p>
             
-            <div className="bg-white shadow-md rounded-lg p-6">
-              <div className="h-12 w-12 text-thryvance-green mb-4 flex items-center justify-center">
-                <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold mb-3">Offer Professional Services</h2>
-              <p className="text-gray-700 mb-4">
-                Share your expertise and professional skills to support our community members.
-              </p>
-              <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
-                Register as a Service Provider
-              </Button>
-            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-thryvance-green hover:bg-thryvance-green-dark">
+                  Schedule a Pick-up
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Schedule a Pick-up</DialogTitle>
+                  <DialogDescription>
+                    Please fill out the form below and we'll contact you to arrange a pickup time.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Full Name *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="address">Pickup Address *</Label>
+                    <Textarea
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Please include full address with postal code"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="preferredDate">Preferred Date *</Label>
+                    <Input
+                      id="preferredDate"
+                      name="preferredDate"
+                      type="date"
+                      value={formData.preferredDate}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="preferredTime">Preferred Time *</Label>
+                    <Input
+                      id="preferredTime"
+                      name="preferredTime"
+                      type="time"
+                      value={formData.preferredTime}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="itemsDescription">Items to Donate *</Label>
+                    <Textarea
+                      id="itemsDescription"
+                      name="itemsDescription"
+                      value={formData.itemsDescription}
+                      onChange={handleInputChange}
+                      placeholder="Please describe the items you'd like to donate"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="additionalDetails">Additional Details</Label>
+                    <Textarea
+                      id="additionalDetails"
+                      name="additionalDetails"
+                      value={formData.additionalDetails}
+                      onChange={handleInputChange}
+                      placeholder="Any special instructions or additional information"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-thryvance-green hover:bg-thryvance-green-dark"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Pickup Request"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           
           <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Currently Needed Items & Services</h2>
+            <h2 className="text-xl font-semibold mb-4">Currently Needed Items</h2>
             <Accordion type="single" collapsible className="w-full">
               {neededItems.map((category, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
@@ -98,24 +289,17 @@ const DonateGoods = () => {
             <h2 className="text-xl font-semibold mb-4">Donation Information</h2>
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-gray-900">Drop-off Locations</h3>
-                <p className="text-gray-700">
-                  Main Center: 123 Community Ave, Mon-Fri 9am-5pm, Sat 10am-2pm<br />
-                  North Side Hub: 456 Helper Street, Tue-Thu 10am-6pm
-                </p>
-              </div>
-              <div>
                 <h3 className="font-medium text-gray-900">Pick-up Service</h3>
                 <p className="text-gray-700">
-                  For larger items, we offer a free pick-up service within city limits.
-                  Schedule at least 48 hours in advance.
+                  We offer a free pick-up service within city limits.
+                  Schedule at least 48 hours in advance using the form above.
                 </p>
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">Tax Deductions</h3>
                 <p className="text-gray-700">
-                  All donations of goods and services may be tax-deductible.
-                  We provide receipts for all donations.
+                  Donations of goods are not currently tax-deductible. 
+                  We are working on obtaining the necessary certifications.
                 </p>
               </div>
             </div>
