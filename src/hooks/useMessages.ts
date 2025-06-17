@@ -1,191 +1,196 @@
-
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "./use-toast";
-import { User } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useConversationStates } from "./useConversationStates";
 
 export interface Message {
   id: string;
   sender_id: string;
   receiver_id: string;
   content: string;
-  read: boolean;
   created_at: string;
-  sender?: User;
-  receiver?: User;
+  read?: boolean;
+  sender?: {
+    id: string;
+    username?: string;
+    email?: string;
+    name?: string;
+    avatar?: string;
+    bio?: string;
+    location?: string;
+    trustScore?: number;
+    helpOffered?: number;
+    helpReceived?: number;
+    volunteerHours?: number;
+    createdAt: Date;
+    verifiedStatus: boolean;
+    emailVerified: boolean;
+    trustBadges: string[];
+    loginAttempts: number;
+    lastLoginAttempt: Date | null;
+  };
 }
 
 export interface Conversation {
-  user: User;
-  lastMessage: Message;
-  unreadCount: number;
+  user: {
+    id: string;
+    username?: string;
+    name?: string;
+    avatar?: string;
+  };
+  lastMessage?: {
+    content: string;
+    created_at: string;
+  };
+  unreadCount?: number;
+  isArchived?: boolean;
 }
 
 export function useMessages() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { getConversationState } = useConversationStates();
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [sending, setSending] = useState(false);
+  const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([]);
   const [connectionError, setConnectionError] = useState(false);
-  const { toast } = useToast();
-  
   const channelRef = useRef<any>(null);
 
   // Fetch conversations for the current user
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (showArchived: boolean = false) => {
+    if (!user?.id) return;
+    
     setLoading(true);
     setConnectionError(false);
     
     try {
       console.log("Fetching conversations...");
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error("Authentication error:", authError);
-        setConnectionError(true);
-        return [];
-      }
-
-      // Get all messages involving the current user
+      // Get all messages for this user
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
-
+        
       if (messagesError) {
-        console.error("Error fetching messages:", messagesError);
-        setConnectionError(true);
         throw messagesError;
       }
-
-      console.log("Fetched messages:", messagesData?.length || 0);
-
+      
+      console.log(`Fetched ${messagesData?.length || 0} messages`);
+      
       if (!messagesData || messagesData.length === 0) {
         setConversations([]);
-        return [];
+        setArchivedConversations([]);
+        return;
       }
-
-      // Group messages by conversation partners
+      
+      // Group messages by conversation (other user)
       const conversationMap = new Map<string, {
-        userId: string;
         lastMessage: Message;
         unreadCount: number;
       }>();
-
-      for (const message of messagesData) {
-        const otherUserId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
-        if (!otherUserId) continue;
-
+      
+      messagesData.forEach(message => {
+        const otherUserId = message.sender_id === user.id 
+          ? message.receiver_id 
+          : message.sender_id;
+          
         const existing = conversationMap.get(otherUserId);
         
         if (!existing || new Date(message.created_at) > new Date(existing.lastMessage.created_at)) {
-          const unreadCount = existing?.unreadCount || 0;
-          const shouldIncrement = message.sender_id === otherUserId && !message.read;
-          
           conversationMap.set(otherUserId, {
-            userId: otherUserId,
             lastMessage: message as Message,
-            unreadCount: shouldIncrement ? unreadCount + 1 : unreadCount,
+            unreadCount: existing ? existing.unreadCount : 0
           });
-        } else if (existing && message.sender_id === otherUserId && !message.read) {
-          existing.unreadCount += 1;
         }
-      }
-
-      // Fetch user profiles for all conversation partners
+        
+        // Count unread messages where user is receiver
+        if (message.receiver_id === user.id && !message.read) {
+          const current = conversationMap.get(otherUserId);
+          if (current) {
+            current.unreadCount += 1;
+          }
+        }
+      });
+      
+      // Fetch user profiles and conversation states for all conversation partners
       const userIds = Array.from(conversationMap.keys());
-      console.log("Fetching profiles for users:", userIds);
-
+      
       if (userIds.length === 0) {
         setConversations([]);
-        return [];
+        setArchivedConversations([]);
+        return;
       }
-
+      
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .in('id', userIds);
-
+        
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
-        // Continue without profiles rather than failing completely
       }
-
-      // Create conversations array
-      const formattedConversations: Conversation[] = [];
-
-      for (const [userId, convData] of conversationMap.entries()) {
+      
+      // Create conversation objects with state filtering
+      const activeConversationsData: Conversation[] = [];
+      const archivedConversationsData: Conversation[] = [];
+      
+      for (const [userId, data] of conversationMap.entries()) {
         const profile = (profilesData || []).find(p => p.id === userId);
         
-        if (!profile) {
-          console.warn("No profile found for user:", userId);
-          // Create a placeholder user object
-          const placeholderUser: User = {
-            id: userId,
-            username: '',
-            email: '',
-            name: 'Unknown User',
-            avatar: `https://ui-avatars.com/api/?name=Unknown`,
-            bio: '',
-            location: '',
-            trustScore: 0,
-            helpOffered: 0,
-            helpReceived: 0,
-            volunteerHours: 0,
-            createdAt: new Date(),
-            verifiedStatus: false,
-            emailVerified: false,
-            trustBadges: [],
-            loginAttempts: 0,
-            lastLoginAttempt: null
+        if (profile) {
+          // Check conversation state
+          const conversationState = await getConversationState(userId);
+          
+          // Skip deleted conversations
+          if (conversationState?.is_deleted) {
+            continue;
+          }
+          
+          const conversation: Conversation = {
+            user: {
+              id: profile.id,
+              name: profile.name || '',
+              username: profile.username || '',
+              avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`
+            },
+            lastMessage: data.lastMessage,
+            unreadCount: data.unreadCount,
+            isArchived: conversationState?.is_archived || false
           };
           
-          formattedConversations.push({
-            user: placeholderUser,
-            lastMessage: convData.lastMessage,
-            unreadCount: convData.unreadCount,
-          });
-          continue;
+          // Separate archived and active conversations
+          if (conversationState?.is_archived) {
+            archivedConversationsData.push(conversation);
+          } else {
+            activeConversationsData.push(conversation);
+          }
         }
-
-        const otherUser: User = {
-          id: profile.id,
-          username: profile.username || '',
-          email: profile.email || '',
-          name: profile.name || '',
-          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
-          bio: profile.bio || '',
-          location: profile.location || '',
-          trustScore: profile.trust_score || 0,
-          helpOffered: profile.help_offered || 0,
-          helpReceived: profile.help_received || 0,
-          volunteerHours: profile.volunteer_hours || 0,
-          createdAt: new Date(profile.created_at || Date.now()),
-          verifiedStatus: profile.verified_status || false,
-          emailVerified: true,
-          trustBadges: profile.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        };
-
-        formattedConversations.push({
-          user: otherUser,
-          lastMessage: convData.lastMessage,
-          unreadCount: convData.unreadCount,
-        });
       }
-
+      
       // Sort by most recent message
-      formattedConversations.sort((a, b) => 
-        new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
-      );
-
-      console.log("Formatted conversations:", formattedConversations);
-      setConversations(formattedConversations);
-      return formattedConversations;
-
+      const sortConversations = (convs: Conversation[]) => 
+        convs.sort((a, b) => {
+          const aTime = a.lastMessage?.created_at ? new Date(a.lastMessage.created_at).getTime() : 0;
+          const bTime = b.lastMessage?.created_at ? new Date(b.lastMessage.created_at).getTime() : 0;
+          return bTime - aTime;
+        });
+      
+      sortConversations(activeConversationsData);
+      sortConversations(archivedConversationsData);
+      
+      console.log(`Created ${activeConversationsData.length} active and ${archivedConversationsData.length} archived conversations`);
+      
+      if (showArchived) {
+        setArchivedConversations(archivedConversationsData);
+      } else {
+        setConversations(activeConversationsData);
+        setArchivedConversations(archivedConversationsData);
+      }
     } catch (error) {
       console.error("Error fetching conversations:", error);
       setConnectionError(true);
@@ -194,100 +199,58 @@ export function useMessages() {
         description: "Failed to load conversations",
         variant: "destructive"
       });
-      return [];
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [user?.id, toast, getConversationState]);
 
   // Load conversation messages for a specific user
   const loadConversation = useCallback(async (userId: string) => {
+    if (!user?.id) return [];
+    
     setLoading(true);
     setConnectionError(false);
     
     try {
-      console.log("Loading conversation with user:", userId);
+      console.log(`Loading conversation with user ${userId}`);
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error("Authentication error:", authError);
-        setConnectionError(true);
-        throw new Error("Not authenticated");
+      // Check if conversation is deleted for current user
+      const conversationState = await getConversationState(userId);
+      if (conversationState?.is_deleted) {
+        console.log("Conversation is deleted for current user");
+        setMessages([]);
+        return [];
       }
-
-      // Fetch messages
-      const { data: messagesData, error: messagesError } = await supabase
+      
+      // Fetch messages between current user and selected user
+      const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`)
+        .or(
+          `and(sender_id.eq.${user.id},receiver_id.eq.${userId}),` +
+          `and(sender_id.eq.${userId},receiver_id.eq.${user.id})`
+        )
         .order('created_at', { ascending: true });
-
-      if (messagesError) {
-        console.error("Error fetching messages:", messagesError);
-        setConnectionError(true);
-        throw messagesError;
+        
+      if (error) throw error;
+      
+      console.log(`Fetched ${data?.length || 0} messages for conversation`);
+      
+      // Fetch profiles for messages if needed
+      const messagesWithProfiles = await addProfilesToMessages(data as Message[]);
+      setMessages(messagesWithProfiles);
+      
+      // Mark unread messages as read
+      const unreadMessages = data?.filter(msg => 
+        msg.receiver_id === user.id && !msg.read
+      ) || [];
+      
+      if (unreadMessages.length > 0) {
+        console.log(`Marking ${unreadMessages.length} messages as read`);
+        await markMessagesAsRead(unreadMessages.map(msg => msg.id));
       }
-
-      // Fetch profiles
-      const userIds = [user.id, userId];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-      }
-
-      // Create a map of profiles
-      const profilesMap = new Map();
-      (profilesData || []).forEach(profile => {
-        profilesMap.set(profile.id, {
-          id: profile.id,
-          username: profile.username || '',
-          email: profile.email || '',
-          name: profile.name || '',
-          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
-          bio: profile.bio || '',
-          location: profile.location || '',
-          trustScore: profile.trust_score || 0,
-          helpOffered: profile.help_offered || 0,
-          helpReceived: profile.help_received || 0,
-          volunteerHours: profile.volunteer_hours || 0,
-          createdAt: new Date(profile.created_at || Date.now()),
-          verifiedStatus: profile.verified_status || false,
-          emailVerified: true,
-          trustBadges: profile.trust_badges || [],
-          loginAttempts: 0,
-          lastLoginAttempt: null
-        });
-      });
-
-      // Process messages with profile data
-      const processedMessages = (messagesData || []).map(message => ({
-        ...message,
-        sender: profilesMap.get(message.sender_id),
-        receiver: profilesMap.get(message.receiver_id)
-      }));
-
-      console.log("Loaded messages:", processedMessages.length);
-      setMessages(processedMessages);
-
-      // Mark messages as read
-      const { error: readError } = await supabase
-        .from('messages')
-        .update({ read: true })
-        .eq('sender_id', userId)
-        .eq('receiver_id', user.id)
-        .eq('read', false);
-
-      if (readError) {
-        console.error("Error marking messages as read:", readError);
-      }
-
-      return processedMessages;
-
+      
+      return messagesWithProfiles;
     } catch (error) {
       console.error("Error loading conversation:", error);
       setConnectionError(true);
@@ -295,21 +258,18 @@ export function useMessages() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id, getConversationState]);
 
   // Send a message
   const sendMessage = useCallback(async (receiverId: string, content: string) => {
-    if (!content.trim()) return;
+    if (!user?.id || !content.trim()) {
+      return;
+    }
 
     setSending(true);
-    
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log("Sending message to", receiverId);
       
-      if (authError || !user) {
-        throw new Error("Not authenticated");
-      }
-
       const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -328,38 +288,126 @@ export function useMessages() {
 
       console.log("Message sent successfully:", data);
       
-      // Refresh conversations to update the list
-      fetchConversations();
+      // Add message to local state with profile
+      const messageWithProfile = {
+        ...data,
+        sender: {
+          id: user.id,
+          username: user.username || '',
+          email: user.email || '',
+          name: user.name || '',
+          avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || '')}`,
+          bio: user.bio || '',
+          location: user.location || '',
+          trustScore: user.trustScore || 0,
+          helpOffered: user.helpOffered || 0,
+          helpReceived: user.helpReceived || 0,
+          volunteerHours: user.volunteerHours || 0,
+          createdAt: user.createdAt || new Date(),
+          verifiedStatus: user.verifiedStatus || false,
+          emailVerified: user.emailVerified || true,
+          trustBadges: user.trustBadges || [],
+          loginAttempts: user.loginAttempts || 0,
+          lastLoginAttempt: user.lastLoginAttempt || null
+        }
+      };
+      
+      setMessages(prev => [...prev, messageWithProfile]);
       
     } catch (error) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
       throw error;
     } finally {
       setSending(false);
     }
-  }, [toast, fetchConversations]);
+  }, [user]);
 
   // Clear local messages
   const clearLocalMessages = useCallback(() => {
     setMessages([]);
   }, []);
 
+  // Add profiles to messages
+  const addProfilesToMessages = useCallback(async (messages: Message[]): Promise<Message[]> => {
+    if (!messages || messages.length === 0) return [];
+    
+    try {
+      const userIds = Array.from(new Set([
+        ...messages.map(msg => msg.sender_id),
+        ...messages.map(msg => msg.receiver_id)
+      ]));
+      
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds);
+        
+      const profileMap = new Map();
+      (profiles || []).forEach(profile => {
+        profileMap.set(profile.id, {
+          id: profile.id,
+          username: profile.username || '',
+          email: profile.email || '',
+          name: profile.name || '',
+          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || '')}`,
+          bio: profile.bio || '',
+          location: profile.location || '',
+          trustScore: profile.trust_score || 0,
+          helpOffered: profile.help_offered || 0,
+          helpReceived: profile.help_received || 0,
+          volunteerHours: profile.volunteer_hours || 0,
+          createdAt: new Date(profile.created_at || Date.now()),
+          verifiedStatus: profile.verified_status || false,
+          emailVerified: true,
+          trustBadges: profile.trust_badges || [],
+          loginAttempts: 0,
+          lastLoginAttempt: null
+        });
+      });
+      
+      return messages.map(message => {
+        const senderProfile = profileMap.get(message.sender_id);
+        
+        return {
+          ...message,
+          sender: senderProfile
+        };
+      });
+    } catch (error) {
+      console.error("Error adding profiles to messages:", error);
+      return messages;
+    }
+  }, []);
+
+  // Mark messages as read
+  const markMessagesAsRead = useCallback(async (messageIds: string[]) => {
+    if (!messageIds || messageIds.length === 0) return;
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .in('id', messageIds);
+        
+      if (error) {
+        console.error("Error marking messages as read:", error);
+      }
+    } catch (error) {
+      console.error("Failed to mark messages as read:", error);
+    }
+  }, []);
+
   return {
     loading,
+    sending,
     messages,
     conversations,
-    sending,
+    archivedConversations,
     connectionError,
     setConnectionError,
     fetchConversations,
     loadConversation,
     sendMessage,
-    clearLocalMessages,
-    setMessages
+    clearLocalMessages
   };
 }

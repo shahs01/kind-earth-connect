@@ -1,7 +1,7 @@
 
 import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useMessageActions } from "@/hooks/useMessageActions";
+import { useConversationStates } from "@/hooks/useConversationStates";
 import { NavigateFunction } from "react-router-dom";
 
 interface UseConversationActionsProps {
@@ -18,7 +18,7 @@ export function useConversationActions({
   navigate
 }: UseConversationActionsProps) {
   const { toast } = useToast();
-  const { deleteConversation } = useMessageActions();
+  const { deleteConversation, archiveConversation } = useConversationStates();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   
@@ -37,22 +37,19 @@ export function useConversationActions({
     setIsDeleting(true);
     
     try {
-      console.log(`Deleting conversation between ${currentUserId} and ${userId}`);
+      console.log(`Deleting conversation with ${userId} for user ${currentUserId}`);
       
       // Optimistic update - clear messages immediately
       clearMessages();
       
-      await deleteConversation(userId);
+      const success = await deleteConversation(userId);
       
-      toast({
-        title: "Conversation deleted",
-        description: "The conversation has been successfully deleted.",
-      });
+      if (success) {
+        // Navigate back to messages root after deletion
+        navigate('/messages');
+      }
       
-      // Navigate back to messages root after deletion
-      navigate('/messages');
-      
-      return true;
+      return success;
     } catch (error) {
       console.error("Failed to delete conversation:", error);
       toast({
@@ -66,21 +63,32 @@ export function useConversationActions({
     }
   }, [userId, currentUserId, deleteConversation, clearMessages, toast, navigate, isDeleting]);
 
-  // Handle archiving conversation (for now just hide it from view)
   const handleArchiveConversation = useCallback(async () => {
+    if (!userId || !currentUserId) {
+      toast({
+        title: "Error",
+        description: "Cannot archive conversation: missing user information",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
     if (isArchiving) return false;
     
     setIsArchiving(true);
     
     try {
-      // For now, just show a success message
-      // In the future, this could mark conversations as archived in the database
-      toast({
-        title: "Conversation archived",
-        description: "The conversation has been archived.",
-      });
+      console.log(`Archiving conversation with ${userId} for user ${currentUserId}`);
       
-      return true;
+      const success = await archiveConversation(userId);
+      
+      if (success) {
+        // Clear messages and navigate back to messages root
+        clearMessages();
+        navigate('/messages');
+      }
+      
+      return success;
     } catch (error) {
       console.error("Failed to archive conversation:", error);
       toast({
@@ -92,7 +100,7 @@ export function useConversationActions({
     } finally {
       setIsArchiving(false);
     }
-  }, [toast, isArchiving]);
+  }, [userId, currentUserId, archiveConversation, clearMessages, toast, navigate, isArchiving]);
 
   return {
     handleDeleteConversation,

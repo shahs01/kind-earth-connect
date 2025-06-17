@@ -3,9 +3,10 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, User, Flag, Trash2, Archive } from "lucide-react";
+import { MoreVertical, User, Flag, Trash2, Archive, Inbox } from "lucide-react";
 import HelpInteractionButton from "./HelpInteractionButton";
 import { useParams } from "react-router-dom";
+import { useConversationStates } from "@/hooks/useConversationStates";
 
 interface ConversationHeaderProps {
   otherUser: any;
@@ -25,6 +26,30 @@ const ConversationHeader = ({
   onArchiveConversation
 }: ConversationHeaderProps) => {
   const { userId } = useParams<{ userId: string }>();
+  const { unarchiveConversation } = useConversationStates();
+  const [isArchived, setIsArchived] = React.useState(false);
+
+  // Check if conversation is archived
+  React.useEffect(() => {
+    const checkArchiveStatus = async () => {
+      if (userId) {
+        const { getConversationState } = require("@/hooks/useConversationStates");
+        const state = await getConversationState(userId);
+        setIsArchived(state?.is_archived || false);
+      }
+    };
+    
+    checkArchiveStatus();
+  }, [userId]);
+
+  const handleUnarchive = async () => {
+    if (userId) {
+      await unarchiveConversation(userId);
+      setIsArchived(false);
+      // Refresh the page to update the conversation list
+      window.location.reload();
+    }
+  };
 
   if (loading || !otherUser) {
     return (
@@ -53,6 +78,11 @@ const ConversationHeader = ({
           <h2 className="font-medium text-gray-900">{otherUser.name}</h2>
           <p className="text-sm text-gray-500">@{otherUser.username}</p>
         </div>
+        {isArchived && (
+          <div className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+            Archived
+          </div>
+        )}
       </div>
       
       <div className="flex items-center space-x-2">
@@ -86,10 +116,17 @@ const ConversationHeader = ({
               <Flag className="mr-2 h-4 w-4" />
               Report User
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onArchiveConversation}>
-              <Archive className="mr-2 h-4 w-4" />
-              Archive Conversation
-            </DropdownMenuItem>
+            {isArchived ? (
+              <DropdownMenuItem onClick={handleUnarchive}>
+                <Inbox className="mr-2 h-4 w-4" />
+                Unarchive Conversation
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={onArchiveConversation}>
+                <Archive className="mr-2 h-4 w-4" />
+                Archive Conversation
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onDeleteConversation} className="text-red-600">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Conversation

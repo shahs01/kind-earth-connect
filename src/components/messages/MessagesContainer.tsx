@@ -1,24 +1,25 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route, useParams } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import ConversationsList from "./ConversationsList";
 import MessageConversation from "./MessageConversation";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Archive, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const MessagesContainer = () => {
   const { userId } = useParams();
   const { user } = useAuth();
-  const { loading, conversations, fetchConversations } = useMessages();
+  const { loading, conversations, archivedConversations, fetchConversations } = useMessages();
+  const [showArchived, setShowArchived] = useState(false);
 
   // Fetch conversations when component mounts
   React.useEffect(() => {
     if (user) {
-      fetchConversations();
+      fetchConversations(showArchived);
     }
-  }, [user, fetchConversations]);
+  }, [user, fetchConversations, showArchived]);
 
   if (!user) {
     return (
@@ -33,6 +34,12 @@ const MessagesContainer = () => {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
+  const toggleArchived = () => {
+    setShowArchived(!showArchived);
+  };
+
+  const currentConversations = showArchived ? archivedConversations : conversations;
+
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[80vh] flex">
@@ -41,7 +48,29 @@ const MessagesContainer = () => {
           {!userId ? (
             <>
               <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Messages</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {showArchived ? 'Archived Messages' : 'Messages'}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleArchived}
+                    className="flex items-center gap-2"
+                  >
+                    {showArchived ? (
+                      <>
+                        <Inbox className="h-4 w-4" />
+                        Inbox
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="h-4 w-4" />
+                        Archived
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               
               <div className="flex-1 overflow-y-auto">
@@ -51,8 +80,9 @@ const MessagesContainer = () => {
                   </div>
                 ) : (
                   <ConversationsList 
-                    conversations={conversations}
+                    conversations={currentConversations}
                     selectedUserId={userId}
+                    showArchived={showArchived}
                     onSelectConversation={(userId) => {
                       window.history.pushState({}, '', `/messages/${userId}`);
                       window.dispatchEvent(new PopStateEvent('popstate'));
@@ -89,7 +119,29 @@ const MessagesContainer = () => {
           {/* Left Sidebar - Conversations List */}
           <div className="w-1/3 border-r border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Messages</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {showArchived ? 'Archived Messages' : 'Messages'}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleArchived}
+                  className="flex items-center gap-2"
+                >
+                  {showArchived ? (
+                    <>
+                      <Inbox className="h-4 w-4" />
+                      Inbox
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4" />
+                      Archived
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto">
@@ -99,8 +151,9 @@ const MessagesContainer = () => {
                 </div>
               ) : (
                 <ConversationsList 
-                  conversations={conversations}
+                  conversations={currentConversations}
                   selectedUserId={userId}
+                  showArchived={showArchived}
                   onSelectConversation={(userId) => {
                     window.history.pushState({}, '', `/messages/${userId}`);
                     window.dispatchEvent(new PopStateEvent('popstate'));

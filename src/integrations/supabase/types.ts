@@ -466,6 +466,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_conversation_states: {
+        Row: {
+          created_at: string
+          id: string
+          is_archived: boolean
+          is_deleted: boolean
+          last_message_read_at: string | null
+          other_user_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          is_deleted?: boolean
+          last_message_read_at?: string | null
+          other_user_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          is_deleted?: boolean
+          last_message_read_at?: string | null
+          other_user_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
