@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -198,7 +197,6 @@ const MessageConversation = () => {
               loginAttempts: 0,
               lastLoginAttempt: null
             } : undefined,
-            receiver: undefined // This can be undefined as it's not always needed
           };
 
           setMessages(prev => {
@@ -304,7 +302,7 @@ const MessageConversation = () => {
         verifiedStatus: user.verifiedStatus || false,
         emailVerified: user.emailVerified || true,
         trustBadges: user.trustBadges || [],
-        loginAttempts: user.loginAttempts || 0,
+        loginAttempts: 0,
         lastLoginAttempt: user.lastLoginAttempt || null
       }
     };
