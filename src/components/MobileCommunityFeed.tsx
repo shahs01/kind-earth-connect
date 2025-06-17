@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -32,6 +31,8 @@ interface Post {
   created_at: string;
   likes: number;
   comments: number;
+  isFavorited?: boolean;
+  favoriteId?: string | null;
 }
 
 interface MobileCommunityFeedProps {
@@ -68,9 +69,74 @@ const MobileCommunityFeed = ({
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [messageLoading, setMessageLoading] = useState<string | null>(null);
+  const [favoritingPost, setFavoritingPost] = useState<string | null>(null);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Function to check if a post is favorited by the current user
+  const checkFavoriteStatus = useCallback(async (post: Post, currentUserId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUserId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error checking favorite status:", error);
+        return { ...post, isFavorited: false, favoriteId: null };
+      }
+      
+      return { 
+        ...post, 
+        isFavorited: !!data, 
+        favoriteId: data?.id || null 
+      };
+    } catch (err) {
+      console.error("Error in checkFavoriteStatus:", err);
+      return { ...post, isFavorited: false, favoriteId: null };
+    }
+  }, []);
+
+  // Function to add a post to favorites
+  const addToFavorites = useCallback(async (postId: string, userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .insert({
+          post_id: postId,
+          user_id: userId
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      
+      return data.id;
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      throw error;
+    }
+  }, []);
+  
+  // Function to remove a post from favorites
+  const removeFromFavorites = useCallback(async (favoriteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('id', favoriteId);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      throw error;
+    }
+  }, []);
 
   const handleMessageClick = useCallback(async (postUserId: string, userName?: string) => {
     if (!isAuthenticated) {
@@ -188,6 +254,58 @@ const MobileCommunityFeed = ({
     }
   }, [isAuthenticated, user, toast, navigate]);
 
+  const handleToggleFavorite = async (post: Post, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the detail dialog
+    
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required", 
+        description: "Please log in to favorite posts"
+      });
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    
+    setFavoritingPost(post.id);
+    
+    try {
+      if (post.isFavorited && post.favoriteId) {
+        // Remove from favorites
+        await removeFromFavorites(post.favoriteId);
+        
+        // Update local state
+        setPosts(prevPosts => prevPosts.map(p => 
+          p.id === post.id ? { ...p, isFavorited: false, favoriteId: null } : p
+        ));
+        
+        toast({ title: "Removed from favorites" });
+      } else {
+        if (!user) {
+          throw new Error("User not authenticated");
+        }
+        
+        // Add to favorites
+        const favoriteId = await addToFavorites(post.id, user.id);
+        
+        // Update local state
+        setPosts(prevPosts => prevPosts.map(p => 
+          p.id === post.id ? { ...p, isFavorited: true, favoriteId } : p
+        ));
+        
+        toast({ title: "Added to favorites" });
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast({ 
+        title: "Error", 
+        description: "Failed to update favorites", 
+        variant: "destructive" 
+      });
+    } finally {
+      setFavoritingPost(null);
+    }
+  };
+
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -232,7 +350,7 @@ const MobileCommunityFeed = ({
               .eq('id', post.user_id)
               .single();
               
-            return {
+            const formattedPost: Post = {
               id: post.id,
               type: post.type,
               title: post.title,
@@ -250,6 +368,13 @@ const MobileCommunityFeed = ({
               likes: 0,
               comments: 0
             };
+
+            // Check if user is logged in to get favorite status
+            if (user) {
+              return await checkFavoriteStatus(formattedPost, user.id);
+            }
+            
+            return formattedPost;
           }));
           
           setPosts(postsWithProfiles);
@@ -270,7 +395,7 @@ const MobileCommunityFeed = ({
     };
     
     fetchPosts();
-  }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast]);
+  }, [searchQuery, locationFilter, postTypeFilter, sortBy, toast, user, checkFavoriteStatus]);
 
   const handlePostClick = (post: Post) => {
     console.log("Post clicked:", post);
@@ -412,8 +537,19 @@ const MobileCommunityFeed = ({
                   )}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-1 text-xs text-gray-600">
-                        <Heart className="h-3 w-3" /> {post.likes}
+                      <button 
+                        className={`flex items-center gap-1 text-xs ${
+                          post.isFavorited ? 'text-rose-500' : 'text-gray-600'
+                        }`}
+                        onClick={(e) => handleToggleFavorite(post, e)}
+                        disabled={favoritingPost === post.id}
+                      >
+                        {favoritingPost === post.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Heart className={`h-3 w-3 ${post.isFavorited ? 'fill-current' : ''}`} />
+                        )}
+                        {post.likes}
                       </button>
                       <button className="flex items-center gap-1 text-xs text-gray-600">
                         <MessageSquare className="h-3 w-3" /> {post.comments}
