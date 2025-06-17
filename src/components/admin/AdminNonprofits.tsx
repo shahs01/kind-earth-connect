@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useNonprofits, Nonprofit } from "@/hooks/useNonprofits";
 import { Loader2, Plus, Edit, Trash2, Eye, EyeOff, Building, Globe, Phone, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import LogoUpload from "@/components/LogoUpload";
 
 const categories = [
   "Food Assistance",
@@ -250,11 +250,10 @@ const AdminNonprofits = () => {
                 </div>
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Logo URL</label>
-                <Input
-                  value={formData.logo}
-                  onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                  placeholder="https://example.com/logo.jpg"
+                <label className="text-sm font-medium">Logo</label>
+                <LogoUpload
+                  currentLogo={formData.logo}
+                  onLogoUpdate={(logoUrl) => setFormData({ ...formData, logo: logoUrl })}
                 />
               </div>
               <div className="grid gap-2">
@@ -503,11 +502,10 @@ const AdminNonprofits = () => {
                 </div>
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-medium">Logo URL</label>
-                <Input
-                  value={formData.logo}
-                  onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                  placeholder="https://example.com/logo.jpg"
+                <label className="text-sm font-medium">Logo</label>
+                <LogoUpload
+                  currentLogo={formData.logo}
+                  onLogoUpdate={(logoUrl) => setFormData({ ...formData, logo: logoUrl })}
                 />
               </div>
               <div className="grid gap-2">
