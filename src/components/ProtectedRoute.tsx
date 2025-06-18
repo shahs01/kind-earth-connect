@@ -24,8 +24,7 @@ const ProtectedRoute = ({
   });
 
   // Show loading indicator while authentication state is being determined
-  // Only show loading if we're actually still loading and don't have a session
-  if (isLoading && !session) {
+  if (isLoading) {
     console.log("ProtectedRoute: Showing loading state");
     return (
       <div className="flex justify-center items-center h-screen">
@@ -35,7 +34,7 @@ const ProtectedRoute = ({
     );
   }
 
-  // If not authenticated (no session), redirect to login
+  // If not authenticated, redirect to login
   if (!isAuthenticated || !session) {
     console.log("ProtectedRoute: Redirecting to login - no authentication");
     return <Navigate to={redirectPath} state={{ from: location }} replace />;

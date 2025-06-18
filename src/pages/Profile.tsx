@@ -25,7 +25,7 @@ const EmptyState = ({ message }: { message: string }) => (
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user, emailVerified } = useAuth();
+  const { user, emailVerified, isLoading: authLoading } = useAuth();
   const { fetchUserProfile } = useAuthProfile();
   const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,31 +72,22 @@ const Profile = () => {
       }
     };
     
-    if (userId) {
+    if (userId && user && !authLoading) {
       loadProfileData();
     }
-  }, [userId, user, fetchUserProfile]);
+  }, [userId, user, fetchUserProfile, authLoading]);
 
   const handleReviewSubmitted = () => {
     setReviewsRefreshTrigger(prev => prev + 1);
   };
-  
-  // Ensure we have a user before proceeding
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
-      </div>
-    );
-  }
   
   // Handle missing userId
   if (!userId) {
     return <Navigate to="/404" />;
   }
   
-  // Show loading state while profile is loading
-  if (isLoading) {
+  // Show loading state while auth or profile is loading
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
