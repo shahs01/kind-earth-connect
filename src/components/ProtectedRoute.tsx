@@ -12,11 +12,21 @@ const ProtectedRoute = ({
   redirectPath = "/login",
   requireVerified = false
 }: ProtectedRouteProps) => {
-  const { user, isLoading, emailVerified, isAuthenticated } = useAuth();
+  const { user, isLoading, emailVerified, isAuthenticated, session } = useAuth();
   const location = useLocation();
 
+  console.log("ProtectedRoute: Auth state check", {
+    isLoading,
+    isAuthenticated,
+    hasSession: !!session,
+    hasUser: !!user,
+    currentPath: location.pathname
+  });
+
   // Show loading indicator while authentication state is being determined
-  if (isLoading) {
+  // Only show loading if we're actually still loading and don't have a session
+  if (isLoading && !session) {
+    console.log("ProtectedRoute: Showing loading state");
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
@@ -25,17 +35,20 @@ const ProtectedRoute = ({
     );
   }
 
-  // If not authenticated, redirect to login with current location for redirect back
-  if (!user || !isAuthenticated) {
+  // If not authenticated (no session), redirect to login
+  if (!isAuthenticated || !session) {
+    console.log("ProtectedRoute: Redirecting to login - no authentication");
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
-  // Email verification check
+  // Email verification check (only if required)
   if (requireVerified && !emailVerified) {
+    console.log("ProtectedRoute: Redirecting to email verification");
     return <Navigate to="/verify-email" state={{ from: location }} replace />;
   }
 
   // User is authenticated and meets verification requirements
+  console.log("ProtectedRoute: Access granted");
   return <Outlet />;
 };
 
