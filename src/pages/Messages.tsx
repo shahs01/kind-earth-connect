@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
-import MessagesLayout from "@/components/messages/MessagesLayout";
+import MessagesContainer from "@/components/messages/MessagesContainer";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -53,12 +53,18 @@ const Messages = () => {
       </div>
     );
   }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    navigate('/login');
+    return null;
+  }
   
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow bg-gray-50 py-2 md:py-8">
-        <MessagesLayout />
+        <MessagesContainer />
       </main>
       <div className="hidden md:block">
         <Footer />

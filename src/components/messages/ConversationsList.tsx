@@ -76,8 +76,10 @@ const ConversationsList = ({
         await archiveConversation(userId);
       }
       
-      // Refresh conversations after state change
-      window.location.reload();
+      // Trigger a page refresh to update the conversations
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error("Error toggling archive state:", error);
     }
