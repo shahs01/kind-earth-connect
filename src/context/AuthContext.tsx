@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthContextType, AuthProviderProps } from "./AuthTypes";
 import { User, SignUpData } from "@/types";
@@ -128,7 +129,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     isLoading: isLoading || authOpLoading,
-    isAuthenticated: !!user && !!session,
+    isAuthenticated: !!session, // Fix: Base authentication on session, not user profile
     emailVerified,
     login: handleLogin,
     signInWithProvider: handleSignInWithProvider,
