@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -13,6 +13,7 @@ const Messages = () => {
   const location = useLocation();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
   
   useEffect(() => {
     // Update document title
@@ -36,8 +37,15 @@ const Messages = () => {
     }
   }, [location, toast, navigate]);
 
+  // Track when auth checking is complete
+  useEffect(() => {
+    if (!isLoading) {
+      setHasCheckedAuth(true);
+    }
+  }, [isLoading]);
+
   // Show loading state while authentication is being determined
-  if (isLoading) {
+  if (isLoading || !hasCheckedAuth) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -54,9 +62,9 @@ const Messages = () => {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    navigate('/login');
+  // Only redirect to login after auth has been fully checked
+  if (hasCheckedAuth && !isAuthenticated) {
+    navigate('/login', { replace: true });
     return null;
   }
   
