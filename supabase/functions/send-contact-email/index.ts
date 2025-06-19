@@ -78,47 +78,78 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Sending email via Resend...");
+    console.log("Sending contact email via Resend to thryvance.ca@gmail.com...");
     
     const emailResponse = await resend.emails.send({
       from: "Thryvance Contact <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
       reply_to: email,
-      subject: `Contact Form: ${subject}`,
+      subject: `Contact Form Submission: ${subject}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
-            New Contact Form Submission
-          </h1>
-          
-          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #1e40af; margin-top: 0;">Contact Information</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Wants Newsletter:</strong> ${subscribe ? 'Yes' : 'No'}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+          <div style="background: linear-gradient(135deg, #10b981, #3b82f6); padding: 20px; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px; text-align: center;">
+              New Contact Form Submission
+            </h1>
           </div>
           
-          <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #1e40af; margin-top: 0;">Message</h2>
-            <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #10b981;">
-              ${message.replace(/\n/g, '<br>')}
+          <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #10b981;">
+              <h2 style="color: #374151; margin: 0 0 15px 0; font-size: 18px;">Contact Information</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 120px;">Name:</td>
+                  <td style="padding: 8px 0; color: #374151;">${name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Email:</td>
+                  <td style="padding: 8px 0;"><a href="mailto:${email}" style="color: #10b981; text-decoration: none;">${email}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Subject:</td>
+                  <td style="padding: 8px 0; color: #374151;">${subject}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Newsletter:</td>
+                  <td style="padding: 8px 0; color: #374151;">${subscribe ? 'Yes, wants to subscribe' : 'No'}</td>
+                </tr>
+              </table>
             </div>
-          </div>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
-            <p style="color: #64748b; font-size: 14px; margin: 0;">
-              This email was sent from the Thryvance contact form at ${new Date().toLocaleString()}
-            </p>
-            <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">
-              Reply directly to this email to contact ${name}
-            </p>
+            
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+              <h2 style="color: #374151; margin: 0 0 15px 0; font-size: 18px;">Message</h2>
+              <div style="background-color: white; padding: 15px; border-radius: 6px; border: 1px solid #d1d5db; line-height: 1.6; color: #374151;">
+                ${message.replace(/\n/g, '<br>')}
+              </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0;">
+                📧 Reply directly to this email to contact ${name}
+              </p>
+              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                Submitted on ${new Date().toLocaleString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZoneName: 'short'
+                })}
+              </p>
+            </div>
           </div>
         </div>
       `,
     });
 
-    console.log("Email sent successfully. Response:", JSON.stringify(emailResponse, null, 2));
+    console.log("Contact email sent successfully. Response:", JSON.stringify(emailResponse, null, 2));
+
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      throw new Error(`Email service error: ${emailResponse.error.message || 'Unknown error'}`);
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -136,7 +167,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Failed to send email",
+        error: error.message || "Failed to send contact email",
         success: false 
       }),
       {
