@@ -12,19 +12,17 @@ const ProtectedRoute = ({
   redirectPath = "/login",
   requireVerified = false
 }: ProtectedRouteProps) => {
-  const { user, isLoading, emailVerified, session } = useAuth();
+  const { session, isLoading, emailVerified } = useAuth();
   const location = useLocation();
 
   console.log("ProtectedRoute: Auth state check", {
     isLoading,
     hasSession: !!session,
-    hasUser: !!user,
     currentPath: location.pathname
   });
 
   // Show loading indicator while authentication state is being determined
-  // Only show loading if we don't have a session yet and we're still loading
-  if (isLoading && !session) {
+  if (isLoading) {
     console.log("ProtectedRoute: Showing loading state");
     return (
       <div className="flex justify-center items-center h-screen">
@@ -35,7 +33,7 @@ const ProtectedRoute = ({
   }
 
   // If not authenticated (no session), redirect to login
-  if (!session) {
+  if (!session || !session.user) {
     console.log("ProtectedRoute: Redirecting to login - no session");
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }

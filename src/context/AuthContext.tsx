@@ -16,7 +16,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const { toast } = useToast();
 
   const { fetchUserProfile, updateProfile, deleteAccount: deleteUserAccount } = useAuthProfile();
@@ -38,62 +37,76 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     console.log("AuthContext: Initializing authentication state");
     
+    let mounted = true;
+    
     const initAuth = async () => {
       try {
-        // Set up auth state change listener FIRST
+        // Get current session first
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("AuthContext: Error getting session:", error);
+          if (mounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        console.log("AuthContext: Initial session check", currentSession?.user?.email || 'no session');
+        
+        if (currentSession && mounted) {
+          setSession(currentSession);
+          setEmailVerified(!!currentSession.user?.email_confirmed_at);
+          
+          // Fetch user profile
+          try {
+            const profile = await fetchUserProfile(currentSession.user.id);
+            if (profile && mounted) {
+              console.log("AuthContext: Profile loaded", profile);
+              setUser(profile);
+            }
+          } catch (error) {
+            console.error("AuthContext: Error fetching user profile:", error);
+            if (mounted) {
+              setUser(null);
+            }
+          }
+        }
+
+        if (mounted) {
+          setIsLoading(false);
+        }
+
+        // Set up auth state change listener after initial setup
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
+            if (!mounted) return;
+            
             console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no user');
             
             setSession(newSession);
             setEmailVerified(!!newSession?.user?.email_confirmed_at);
             
             if (newSession?.user) {
-              // Fetch user profile after session is established
               try {
                 const profile = await fetchUserProfile(newSession.user.id);
-                if (profile) {
-                  console.log("AuthContext: Profile loaded", profile);
+                if (profile && mounted) {
+                  console.log("AuthContext: Profile loaded on auth change", profile);
                   setUser(profile);
-                } else {
-                  console.log("AuthContext: No profile found for user");
+                } else if (mounted) {
                   setUser(null);
                 }
               } catch (error) {
-                console.error("AuthContext: Error fetching user profile:", error);
-                setUser(null);
+                console.error("AuthContext: Error fetching user profile on auth change:", error);
+                if (mounted) {
+                  setUser(null);
+                }
               }
-            } else {
+            } else if (mounted) {
               setUser(null);
             }
-            
-            // Always set loading to false after handling auth state change
-            setIsLoading(false);
           }
         );
-
-        // Get current session after setting up listener
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("AuthContext: Error getting session:", error);
-          setIsLoading(false);
-        } else {
-          console.log("AuthContext: Initial session check", currentSession?.user?.email || 'no session');
-          
-          if (currentSession) {
-            // Session exists, the onAuthStateChange will handle the rest
-            setSession(currentSession);
-            setEmailVerified(!!currentSession.user?.email_confirmed_at);
-          } else {
-            // No session, clear everything and stop loading
-            setSession(null);
-            setUser(null);
-            setIsLoading(false);
-          }
-        }
-
-        setIsInitialized(true);
 
         // Cleanup function
         return () => {
@@ -102,8 +115,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         };
       } catch (error) {
         console.error("AuthContext: Error during initialization:", error);
-        setIsLoading(false);
-        setIsInitialized(true);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -111,6 +125,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Return cleanup function
     return () => {
+      mounted = false;
       if (cleanup instanceof Promise) {
         cleanup.then(cleanupFn => cleanupFn?.());
       }
@@ -151,7 +166,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     isLoading: isLoading || authOpLoading,
-    isAuthenticated: !!session, // Simple check - if we have a session, user is authenticated
+    isAuthenticated: !!session && !!session.user, 
     emailVerified,
     login: handleLogin,
     signInWithProvider: handleSignInWithProvider,
