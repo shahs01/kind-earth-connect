@@ -40,7 +40,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     const initAuth = async () => {
       try {
-        // Get current session first
+        // Set up auth state change listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no user');
+            
+            setSession(newSession);
+            setEmailVerified(!!newSession?.user?.email_confirmed_at);
+            
+            if (newSession?.user) {
+              // Fetch user profile after session is established
+              try {
+                const profile = await fetchUserProfile(newSession.user.id);
+                if (profile) {
+                  console.log("AuthContext: Profile loaded", profile);
+                  setUser(profile);
+                } else {
+                  console.log("AuthContext: No profile found for user");
+                  setUser(null);
+                }
+              } catch (error) {
+                console.error("AuthContext: Error fetching user profile:", error);
+                setUser(null);
+              }
+            } else {
+              setUser(null);
+            }
+            
+            // Always set loading to false after handling auth state change
+            setIsLoading(false);
+          }
+        );
+
+        // Get current session after setting up listener
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -50,110 +82,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.log("AuthContext: Initial session check", currentSession?.user?.email || 'no session');
           
           if (currentSession) {
+            // Session exists, the onAuthStateChange will handle the rest
             setSession(currentSession);
             setEmailVerified(!!currentSession.user?.email_confirmed_at);
-            // Don't set loading to false yet - wait for profile fetch
           } else {
+            // No session, clear everything and stop loading
             setSession(null);
             setUser(null);
             setIsLoading(false);
           }
         }
+
+        setIsInitialized(true);
+
+        // Cleanup function
+        return () => {
+          console.log("AuthContext: Unsubscribing from auth state changes");
+          subscription?.unsubscribe();
+        };
       } catch (error) {
         console.error("AuthContext: Error during initialization:", error);
         setIsLoading(false);
-      } finally {
         setIsInitialized(true);
       }
     };
 
-    initAuth();
-  }, []);
-
-  // Set up auth state change listener
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    console.log("AuthContext: Subscribing to auth state changes");
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no user');
-        
-        if (newSession) {
-          setSession(newSession);
-          setEmailVerified(!!newSession.user?.email_confirmed_at);
-        } else {
-          setSession(null);
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      console.log("AuthContext: Unsubscribing from auth state changes");
-      subscription?.unsubscribe();
-    };
-  }, [isInitialized]);
-
-  // Handle user profile fetching when session changes
-  useEffect(() => {
-    if (!session) {
-      console.log("AuthContext: No session, clearing user data.");
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
-    // If we already have the user for this session, don't refetch
-    if (user && user.id === session.user.id) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Fetch user profile
-    console.log(`AuthContext: Session found for ${session.user.email}, fetching profile.`);
+    const cleanup = initAuth();
     
-    const fetchProfile = async () => {
-      try {
-        const profile = await fetchUserProfile(session.user.id);
-        if (profile) {
-          console.log("AuthContext: Profile found", profile);
-          setUser(profile);
-        } else {
-          console.log("AuthContext: No profile found, retrying after delay...");
-          // Retry after a short delay
-          setTimeout(async () => {
-            try {
-              const retryProfile = await fetchUserProfile(session.user.id);
-              if (retryProfile) {
-                console.log("AuthContext: Profile found on retry", retryProfile);
-                setUser(retryProfile);
-              } else {
-                console.error("AuthContext: Failed to create or fetch user profile after retry.");
-                // Don't logout automatically - let user stay authenticated but without profile
-                setUser(null);
-              }
-            } catch (retryError) {
-              console.error("AuthContext: Error on profile retry:", retryError);
-              setUser(null);
-            } finally {
-              setIsLoading(false);
-            }
-          }, 1500);
-          return; // Don't set loading to false yet
-        }
-      } catch (error) {
-        console.error("AuthContext: Error fetching user profile:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+    // Return cleanup function
+    return () => {
+      if (cleanup instanceof Promise) {
+        cleanup.then(cleanupFn => cleanupFn?.());
       }
     };
-
-    fetchProfile();
-  }, [session, fetchUserProfile]);
+  }, [fetchUserProfile]);
 
   const sendEmailVerification = async () => {
     await sendVerificationEmail(user);
@@ -189,7 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     isLoading: isLoading || authOpLoading,
-    isAuthenticated: !!session && !isLoading, // Only consider authenticated when we have session AND not loading
+    isAuthenticated: !!session, // Simple check - if we have a session, user is authenticated
     emailVerified,
     login: handleLogin,
     signInWithProvider: handleSignInWithProvider,
