@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -53,17 +52,17 @@ const Contact = () => {
     console.log("Submitting contact form:", formData);
 
     try {
-      const { data, error } = await supabase.functions.invoke('send-partnership-email', {
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: {
           name: formData.name,
           email: formData.email,
           subject: formData.subject,
           message: formData.message,
-          newsletter: formData.subscribe
+          subscribe: formData.subscribe
         }
       });
 
-      console.log("Partnership function response:", { data, error });
+      console.log("Contact function response:", { data, error });
 
       if (error) {
         console.error("Supabase function error:", error);
