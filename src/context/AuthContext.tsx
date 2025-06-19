@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const { toast } = useToast();
 
   const { fetchUserProfile, updateProfile, deleteAccount: deleteUserAccount } = useAuthProfile();
@@ -37,8 +38,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     console.log("AuthContext: Initializing authentication state");
     
-    let mounted = true;
-    
     const initAuth = async () => {
       try {
         // Get current session first
@@ -46,91 +45,115 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         if (error) {
           console.error("AuthContext: Error getting session:", error);
-          if (mounted) {
+          setIsLoading(false);
+        } else {
+          console.log("AuthContext: Initial session check", currentSession?.user?.email || 'no session');
+          
+          if (currentSession) {
+            setSession(currentSession);
+            setEmailVerified(!!currentSession.user?.email_confirmed_at);
+            // Don't set loading to false yet - wait for profile fetch
+          } else {
+            setSession(null);
+            setUser(null);
             setIsLoading(false);
           }
-          return;
         }
-
-        console.log("AuthContext: Initial session check", currentSession?.user?.email || 'no session');
-        
-        if (currentSession && mounted) {
-          setSession(currentSession);
-          setEmailVerified(!!currentSession.user?.email_confirmed_at);
-          
-          // Fetch user profile
-          try {
-            const profile = await fetchUserProfile(currentSession.user.id);
-            if (profile && mounted) {
-              console.log("AuthContext: Profile loaded", profile);
-              setUser(profile);
-            }
-          } catch (error) {
-            console.error("AuthContext: Error fetching user profile:", error);
-            if (mounted) {
-              setUser(null);
-            }
-          }
-        }
-
-        if (mounted) {
-          setIsLoading(false);
-        }
-
-        // Set up auth state change listener after initial setup
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
-            if (!mounted) return;
-            
-            console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no user');
-            
-            setSession(newSession);
-            setEmailVerified(!!newSession?.user?.email_confirmed_at);
-            
-            if (newSession?.user) {
-              try {
-                const profile = await fetchUserProfile(newSession.user.id);
-                if (profile && mounted) {
-                  console.log("AuthContext: Profile loaded on auth change", profile);
-                  setUser(profile);
-                } else if (mounted) {
-                  setUser(null);
-                }
-              } catch (error) {
-                console.error("AuthContext: Error fetching user profile on auth change:", error);
-                if (mounted) {
-                  setUser(null);
-                }
-              }
-            } else if (mounted) {
-              setUser(null);
-            }
-          }
-        );
-
-        // Cleanup function
-        return () => {
-          console.log("AuthContext: Unsubscribing from auth state changes");
-          subscription?.unsubscribe();
-        };
       } catch (error) {
         console.error("AuthContext: Error during initialization:", error);
-        if (mounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
+      } finally {
+        setIsInitialized(true);
       }
     };
 
-    const cleanup = initAuth();
-    
-    // Return cleanup function
+    initAuth();
+  }, []);
+
+  // Set up auth state change listener
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    console.log("AuthContext: Subscribing to auth state changes");
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no user');
+        
+        if (newSession) {
+          setSession(newSession);
+          setEmailVerified(!!newSession.user?.email_confirmed_at);
+        } else {
+          setSession(null);
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
     return () => {
-      mounted = false;
-      if (cleanup instanceof Promise) {
-        cleanup.then(cleanupFn => cleanupFn?.());
+      console.log("AuthContext: Unsubscribing from auth state changes");
+      subscription?.unsubscribe();
+    };
+  }, [isInitialized]);
+
+  // Handle user profile fetching when session changes
+  useEffect(() => {
+    if (!session) {
+      console.log("AuthContext: No session, clearing user data.");
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // If we already have the user for this session, don't refetch
+    if (user && user.id === session.user.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Fetch user profile
+    console.log(`AuthContext: Session found for ${session.user.email}, fetching profile.`);
+    
+    const fetchProfile = async () => {
+      try {
+        const profile = await fetchUserProfile(session.user.id);
+        if (profile) {
+          console.log("AuthContext: Profile found", profile);
+          setUser(profile);
+        } else {
+          console.log("AuthContext: No profile found, retrying after delay...");
+          // Retry after a short delay
+          setTimeout(async () => {
+            try {
+              const retryProfile = await fetchUserProfile(session.user.id);
+              if (retryProfile) {
+                console.log("AuthContext: Profile found on retry", retryProfile);
+                setUser(retryProfile);
+              } else {
+                console.error("AuthContext: Failed to create or fetch user profile after retry.");
+                // Don't logout automatically - let user stay authenticated but without profile
+                setUser(null);
+              }
+            } catch (retryError) {
+              console.error("AuthContext: Error on profile retry:", retryError);
+              setUser(null);
+            } finally {
+              setIsLoading(false);
+            }
+          }, 1500);
+          return; // Don't set loading to false yet
+        }
+      } catch (error) {
+        console.error("AuthContext: Error fetching user profile:", error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
     };
-  }, [fetchUserProfile]);
+
+    fetchProfile();
+  }, [session, fetchUserProfile]);
 
   const sendEmailVerification = async () => {
     await sendVerificationEmail(user);
@@ -166,7 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     isLoading: isLoading || authOpLoading,
-    isAuthenticated: !!session && !!session.user, 
+    isAuthenticated: !!session && !isLoading, // Only consider authenticated when we have session AND not loading
     emailVerified,
     login: handleLogin,
     signInWithProvider: handleSignInWithProvider,

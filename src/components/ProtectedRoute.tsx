@@ -12,12 +12,14 @@ const ProtectedRoute = ({
   redirectPath = "/login",
   requireVerified = false
 }: ProtectedRouteProps) => {
-  const { session, isLoading, emailVerified } = useAuth();
+  const { user, isLoading, emailVerified, isAuthenticated, session } = useAuth();
   const location = useLocation();
 
   console.log("ProtectedRoute: Auth state check", {
     isLoading,
+    isAuthenticated,
     hasSession: !!session,
+    hasUser: !!user,
     currentPath: location.pathname
   });
 
@@ -32,9 +34,9 @@ const ProtectedRoute = ({
     );
   }
 
-  // If not authenticated (no session), redirect to login
-  if (!session || !session.user) {
-    console.log("ProtectedRoute: Redirecting to login - no session");
+  // If not authenticated, redirect to login
+  if (!isAuthenticated || !session) {
+    console.log("ProtectedRoute: Redirecting to login - no authentication");
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
@@ -44,7 +46,7 @@ const ProtectedRoute = ({
     return <Navigate to="/verify-email" state={{ from: location }} replace />;
   }
 
-  // User has a session - they're authenticated
+  // User is authenticated and meets verification requirements
   console.log("ProtectedRoute: Access granted");
   return <Outlet />;
 };
