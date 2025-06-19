@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthContextType, AuthProviderProps } from "./AuthTypes";
 import { User, SignUpData } from "@/types";
@@ -16,7 +15,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [authInitialized, setAuthInitialized] = useState<boolean>(false);
   const { toast } = useToast();
 
   const { fetchUserProfile, updateProfile, deleteAccount: deleteUserAccount } = useAuthProfile();
@@ -40,65 +39,66 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     const initAuth = async () => {
       try {
-        // Get current session first
+        // Set up auth state listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no session');
+            
+            setSession(newSession);
+            setEmailVerified(!!newSession?.user?.email_confirmed_at);
+            
+            if (!newSession) {
+              setUser(null);
+              setIsLoading(false);
+            }
+            
+            // Mark auth as initialized after first state change
+            if (!authInitialized) {
+              setAuthInitialized(true);
+            }
+          }
+        );
+
+        // Get current session
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("AuthContext: Error getting session:", error);
-          setIsLoading(false);
         } else {
           console.log("AuthContext: Initial session check", currentSession?.user?.email || 'no session');
           
           if (currentSession) {
             setSession(currentSession);
             setEmailVerified(!!currentSession.user?.email_confirmed_at);
-            // Don't set loading to false yet - wait for profile fetch
           } else {
             setSession(null);
             setUser(null);
             setIsLoading(false);
           }
         }
+        
+        setAuthInitialized(true);
+        
+        // Store subscription for cleanup
+        return subscription;
       } catch (error) {
         console.error("AuthContext: Error during initialization:", error);
         setIsLoading(false);
-      } finally {
-        setIsInitialized(true);
+        setAuthInitialized(true);
       }
     };
 
-    initAuth();
-  }, []);
-
-  // Set up auth state change listener
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    console.log("AuthContext: Subscribing to auth state changes");
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("AuthContext: Auth state changed", event, newSession?.user?.email || 'no user');
-        
-        if (newSession) {
-          setSession(newSession);
-          setEmailVerified(!!newSession.user?.email_confirmed_at);
-        } else {
-          setSession(null);
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
+    const subscription = initAuth();
+    
     return () => {
-      console.log("AuthContext: Unsubscribing from auth state changes");
-      subscription?.unsubscribe();
+      subscription?.then(sub => sub?.unsubscribe());
     };
-  }, [isInitialized]);
+  }, []);
 
   // Handle user profile fetching when session changes
   useEffect(() => {
+    if (!authInitialized) return;
+    
     if (!session) {
       console.log("AuthContext: No session, clearing user data.");
       setUser(null);
@@ -153,7 +153,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     fetchProfile();
-  }, [session, fetchUserProfile]);
+  }, [session, authInitialized, fetchUserProfile]);
 
   const sendEmailVerification = async () => {
     await sendVerificationEmail(user);
@@ -189,7 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     isLoading: isLoading || authOpLoading,
-    isAuthenticated: !!session && !isLoading, // Only consider authenticated when we have session AND not loading
+    isAuthenticated: !!session && authInitialized, // Only authenticated when we have session AND auth is initialized
     emailVerified,
     login: handleLogin,
     signInWithProvider: handleSignInWithProvider,

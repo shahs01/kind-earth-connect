@@ -35,7 +35,7 @@ const ProtectedRoute = ({
   }
 
   // If not authenticated, redirect to login
-  if (!isAuthenticated || !session) {
+  if (!isAuthenticated) {
     console.log("ProtectedRoute: Redirecting to login - no authentication");
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
