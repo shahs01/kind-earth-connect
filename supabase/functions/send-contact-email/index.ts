@@ -78,11 +78,11 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log("Sending contact email via Resend to thryvance.ca@gmail.com...");
+    console.log("Sending contact email via Resend to thryvance.ga@gmail.com...");
     
     const emailResponse = await resend.emails.send({
       from: "Thryvance Contact <noreply@thryvance.ca>",
-      to: ["thryvance.ca@gmail.com"],
+      to: ["thryvance.ga@gmail.com"],
       reply_to: email,
       subject: `Contact Form Submission: ${subject}`,
       html: `
