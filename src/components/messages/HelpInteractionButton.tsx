@@ -16,6 +16,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   const { markAsHelped, removeHelpInteraction, getHelpInteractions, loading } = useHelpInteractions();
   const [hasMarked, setHasMarked] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Don't show if user is trying to mark themselves
   if (!user || user.id === helperId) {
@@ -25,7 +26,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   // Check if user has already marked this helper
   useEffect(() => {
     const checkExistingInteraction = async () => {
-      if (!user) return;
+      if (!user || !helperId) return;
       
       setIsChecking(true);
       try {
@@ -38,6 +39,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
         setHasMarked(hasInteraction);
       } catch (error) {
         console.error('Error checking help interaction:', error);
+        setHasMarked(false);
       } finally {
         setIsChecking(false);
       }
@@ -47,8 +49,9 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   }, [helperId, conversationId, user, getHelpInteractions]);
 
   const handleToggleHelp = async () => {
-    if (loading) return; // Prevent double clicks
+    if (loading || isProcessing) return; // Prevent double clicks
     
+    setIsProcessing(true);
     try {
       if (hasMarked) {
         // Remove the help interaction
@@ -65,6 +68,8 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
       }
     } catch (error) {
       console.error('Error toggling help interaction:', error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -86,7 +91,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   return (
     <Button
       onClick={handleToggleHelp}
-      disabled={loading}
+      disabled={loading || isProcessing}
       size="sm"
       variant="ghost"
       className={`${
@@ -95,7 +100,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
           : "text-thryvance-green hover:text-thryvance-green-dark hover:bg-green-50"
       } ${className}`}
     >
-      {loading ? (
+      {(loading || isProcessing) ? (
         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
       ) : (
         <Heart className={`h-4 w-4 mr-1 ${hasMarked ? 'fill-current' : ''}`} />
