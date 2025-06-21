@@ -74,17 +74,20 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
           description: "Please log in to record help",
           variant: "destructive"
         });
+        setLoading(false);
         return;
       }
 
       if (isHelpRecorded) {
-        // Remove help recording
+        // Remove help recording - use a single filter with AND conditions
         const { error } = await supabase
           .from('help_interactions')
           .delete()
-          .eq('helper_id', helperId)
-          .eq('helped_by_id', currentUser.user.id)
-          .eq('conversation_id', conversationId);
+          .match({
+            helper_id: helperId,
+            helped_by_id: currentUser.user.id,
+            conversation_id: conversationId
+          });
 
         if (error) {
           console.error("Error removing help recording:", error);
@@ -93,10 +96,11 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
             description: "Failed to remove help recording",
             variant: "destructive"
           });
+          setLoading(false);
           return;
         }
 
-        // Immediately update state after successful deletion
+        console.log("Successfully removed help recording");
         setIsHelpRecorded(false);
         toast({
           title: "Help recording removed",
@@ -119,10 +123,11 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
             description: "Failed to record help",
             variant: "destructive"
           });
+          setLoading(false);
           return;
         }
 
-        // Immediately update state after successful insertion
+        console.log("Successfully recorded help");
         setIsHelpRecorded(true);
         toast({
           title: "Help recorded",
