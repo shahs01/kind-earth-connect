@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -6,6 +5,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Values from "./pages/Values";
+import OurImpact from "./pages/OurImpact";
 import Community from "./pages/Community";
 import Volunteer from "./pages/Volunteer";
 import SafetyTips from "./pages/SafetyTips";
@@ -62,6 +62,7 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/about" element={<About />} />
         <Route path="/values" element={<Values />} />
+        <Route path="/our-impact" element={<OurImpact />} />
         <Route path="/safety-tips" element={<SafetyTips />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />

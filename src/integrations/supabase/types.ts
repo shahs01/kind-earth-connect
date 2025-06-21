@@ -69,6 +69,42 @@ export type Database = {
         }
         Relationships: []
       }
+      covered_locations: {
+        Row: {
+          city_name: string
+          coordinates: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          post_count: number | null
+          region: string
+          updated_at: string
+          user_count: number | null
+        }
+        Insert: {
+          city_name: string
+          coordinates?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          post_count?: number | null
+          region: string
+          updated_at?: string
+          user_count?: number | null
+        }
+        Update: {
+          city_name?: string
+          coordinates?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          post_count?: number | null
+          region?: string
+          updated_at?: string
+          user_count?: number | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -119,6 +155,72 @@ export type Database = {
           helped_by_id?: string
           helper_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      impact_metrics: {
+        Row: {
+          description: string | null
+          display_name: string
+          id: string
+          metric_key: string
+          metric_value: number
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          display_name: string
+          id?: string
+          metric_key: string
+          metric_value?: number
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          display_name?: string
+          id?: string
+          metric_key?: string
+          metric_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      impact_photos: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          order_position: number | null
+          photo_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_position?: number | null
+          photo_url: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_position?: number | null
+          photo_url?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -578,6 +680,10 @@ export type Database = {
           target_id_param?: string
           details_param?: Json
         }
+        Returns: undefined
+      }
+      update_impact_metrics: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }

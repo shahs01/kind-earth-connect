@@ -19,6 +19,9 @@ const AboutUsDropdown = () => {
           <Link to="/about" className="w-full">About Thryvance</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
+          <Link to="/our-impact" className="w-full">Our Impact</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/values" className="w-full">Our Values</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

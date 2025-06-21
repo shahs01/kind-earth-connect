@@ -1,205 +1,90 @@
-import { Route, Routes, Link, useLocation } from "react-router-dom";
-import { useAdminStats } from "@/hooks/useAdmin";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, Users, MessageSquare, HelpCircle, Settings, BarChart, Shield, FileText, Building, UserCheck, Edit3 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminStats from "@/components/admin/AdminStats";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPosts from "@/components/admin/AdminPosts";
-import AdminSettings from "@/components/admin/AdminSettings";
-import AdminStatsPage from "@/components/admin/AdminStats";
-import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 import AdminNonprofits from "@/components/admin/AdminNonprofits";
 import AdminTeamMembers from "@/components/admin/AdminTeamMembers";
 import AdminSiteContent from "@/components/admin/AdminSiteContent";
+import AdminSettings from "@/components/admin/AdminSettings";
+import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
+import AdminImpact from "@/components/admin/AdminImpact";
 
 const AdminDashboard = () => {
-  const { data: stats, isLoading: isLoadingStats } = useAdminStats();
-  const location = useLocation();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("overview");
+  const navigate = useNavigate();
 
-  if (isLoadingStats) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow py-8 bg-red-50 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-          <span className="ml-2">Loading Admin Data...</span>
-        </main>
-        <Footer />
-      </div>
-    );
+  useEffect(() => {
+    if (!user || user.role !== "admin") {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  if (!user || user.role !== "admin") {
+    return null;
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return <AdminStats />;
+      case "users":
+        return <AdminUsers />;
+      case "posts":
+        return <AdminPosts />;
+      case "nonprofits":
+        return <AdminNonprofits />;
+      case "team":
+        return <AdminTeamMembers />;
+      case "impact":
+        return <AdminImpact />;
+      case "content":
+        return <AdminSiteContent />;
+      case "settings":
+        return <AdminSettings />;
+      case "audit":
+        return <AdminAuditLogs />;
+      default:
+        return <AdminStats />;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-red-50">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow py-8">
-        <div className="container mx-auto px-4">
-          {/* Admin Header with distinctive styling */}
-          <div className="bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg p-6 mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-8 w-8" />
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      
+      <div className="flex-grow bg-gray-50">
+        <div className="container mx-auto px-4 py-6">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600">Manage and monitor the Thryvance platform</p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="posts">Posts</TabsTrigger>
+              <TabsTrigger value="nonprofits">Nonprofits</TabsTrigger>
+              <TabsTrigger value="team">Team</TabsTrigger>
+              <TabsTrigger value="impact">Impact</TabsTrigger>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="audit">Audit</TabsTrigger>
+            </TabsList>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              {renderTabContent()}
             </div>
-            <p className="text-red-100">
-              Administrative controls and platform management
-            </p>
-          </div>
-          
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium text-gray-500">Total Users</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <Users className="h-8 w-8 text-red-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats?.totalUsers || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium text-gray-500">Total Posts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <MessageSquare className="h-8 w-8 text-orange-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats?.totalPosts || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium text-gray-500">Help Requests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <HelpCircle className="h-8 w-8 text-blue-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats?.totalHelpRequests || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium text-gray-500">Help Offers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <HelpCircle className="h-8 w-8 text-green-600 mr-3" />
-                  <span className="text-3xl font-bold">{stats?.totalHelpOffers || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Navigation */}
-          <Card className="mb-8 border-red-200">
-            <CardHeader>
-              <CardTitle className="text-red-800">Admin Controls</CardTitle>
-              <CardDescription>Manage users, content, nonprofits, and platform settings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <Button asChild variant={location.pathname.includes('/users') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/users">
-                    <Users className="mr-2 h-4 w-4" />
-                    Manage Users
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/posts') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/posts">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Manage Posts
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/nonprofits') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/nonprofits">
-                    <Building className="mr-2 h-4 w-4" />
-                    Manage Nonprofits
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/team') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/team">
-                    <UserCheck className="mr-2 h-4 w-4" />
-                    Team Members
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/content') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/content">
-                    <Edit3 className="mr-2 h-4 w-4" />
-                    Site Content
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/settings') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Site Settings
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/stats') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/stats">
-                    <BarChart className="mr-2 h-4 w-4" />
-                    Analytics
-                  </Link>
-                </Button>
-                <Button asChild variant={location.pathname.includes('/audit') ? 'default' : 'outline'}>
-                  <Link to="/admin/dashboard/audit">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Audit Logs
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Route Content */}
-          <Routes>
-            <Route path="/" element={
-              <div className="text-center py-12">
-                <Shield className="h-16 w-16 text-red-600 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-red-800 mb-2">Welcome to Admin Dashboard</h3>
-                <p className="text-gray-600 mb-6">Select an option above to manage your application</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-                  <Card className="p-4 hover:shadow-md transition-shadow">
-                    <Users className="h-8 w-8 text-blue-600 mb-2" />
-                    <h4 className="font-semibold">User Management</h4>
-                    <p className="text-sm text-gray-600">Manage user accounts, roles, and permissions</p>
-                  </Card>
-                  <Card className="p-4 hover:shadow-md transition-shadow">
-                    <MessageSquare className="h-8 w-8 text-green-600 mb-2" />
-                    <h4 className="font-semibold">Content Moderation</h4>
-                    <p className="text-sm text-gray-600">Review and manage user posts and content</p>
-                  </Card>
-                  <Card className="p-4 hover:shadow-md transition-shadow">
-                    <Building className="h-8 w-8 text-orange-600 mb-2" />
-                    <h4 className="font-semibold">Nonprofit Management</h4>
-                    <p className="text-sm text-gray-600">Add, edit, and manage nonprofit organizations</p>
-                  </Card>
-                  <Card className="p-4 hover:shadow-md transition-shadow">
-                    <UserCheck className="h-8 w-8 text-purple-600 mb-2" />
-                    <h4 className="font-semibold">Team Management</h4>
-                    <p className="text-sm text-gray-600">Manage team members and site content</p>
-                  </Card>
-                </div>
-              </div>
-            } />
-            <Route path="/users" element={<AdminUsers />} />
-            <Route path="/posts" element={<AdminPosts />} />
-            <Route path="/nonprofits" element={<AdminNonprofits />} />
-            <Route path="/team" element={<AdminTeamMembers />} />
-            <Route path="/content" element={<AdminSiteContent />} />
-            <Route path="/settings" element={<AdminSettings />} />
-            <Route path="/stats" element={<AdminStatsPage />} />
-            <Route path="/audit" element={<AdminAuditLogs />} />
-          </Routes>
+          </Tabs>
         </div>
-      </main>
+      </div>
+      
       <Footer />
     </div>
   );

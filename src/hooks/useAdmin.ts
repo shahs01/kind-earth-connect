@@ -1,8 +1,7 @@
-
-import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Post, User } from "@/types";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import type { ImpactMetric, ImpactPhoto, CoveredLocation } from "@/hooks/useImpact";
 
 export interface AdminStats {
   totalUsers: number;
@@ -204,6 +203,208 @@ export const useAdminSiteSettings = () => {
   });
 };
 
+// Impact management functions
+export const useAdminImpactMetrics = () => {
+  return useQuery({
+    queryKey: ['admin-impact-metrics'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('impact_metrics')
+        .select('*')
+        .order('metric_key');
+      
+      if (error) throw error;
+      return data as ImpactMetric[];
+    },
+  });
+};
+
+export const useUpdateImpactMetric = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, metric_value }: { id: string; metric_value: number }) => {
+      const { error } = await supabase
+        .from('impact_metrics')
+        .update({ metric_value, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-impact-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['impact-metrics'] });
+      toast({
+        title: "Success",
+        description: "Impact metric updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update impact metric",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useAdminImpactPhotos = () => {
+  return useQuery({
+    queryKey: ['admin-impact-photos'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('impact_photos')
+        .select('*')
+        .order('order_position');
+      
+      if (error) throw error;
+      return data as ImpactPhoto[];
+    },
+  });
+};
+
+export const useCreateImpactPhoto = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (photoData: Omit<ImpactPhoto, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => {
+      const { data: user } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('impact_photos')
+        .insert({ 
+          ...photoData, 
+          created_by: user.user?.id 
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-impact-photos'] });
+      queryClient.invalidateQueries({ queryKey: ['impact-photos'] });
+      toast({
+        title: "Success",
+        description: "Impact photo added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add impact photo",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteImpactPhoto = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('impact_photos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-impact-photos'] });
+      queryClient.invalidateQueries({ queryKey: ['impact-photos'] });
+      toast({
+        title: "Success",
+        description: "Impact photo removed successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove impact photo",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useAdminCoveredLocations = () => {
+  return useQuery({
+    queryKey: ['admin-covered-locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('covered_locations')
+        .select('*')
+        .order('city_name');
+      
+      if (error) throw error;
+      return data as CoveredLocation[];
+    },
+  });
+};
+
+export const useCreateCoveredLocation = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (locationData: Omit<CoveredLocation, 'id' | 'created_at' | 'updated_at'>) => {
+      const { error } = await supabase
+        .from('covered_locations')
+        .insert(locationData);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-covered-locations'] });
+      queryClient.invalidateQueries({ queryKey: ['covered-locations'] });
+      toast({
+        title: "Success",
+        description: "Location added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add location",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteCoveredLocation = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('covered_locations')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-covered-locations'] });
+      queryClient.invalidateQueries({ queryKey: ['covered-locations'] });
+      toast({
+        title: "Success",
+        description: "Location removed successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove location",
+        variant: "destructive",
+      });
+    },
+  });
+};
 
 // --- Mutations ---
 
