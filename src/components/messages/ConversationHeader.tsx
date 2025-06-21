@@ -2,10 +2,11 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, User, Flag, Trash2, Archive, Inbox } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { MoreVertical, User, Flag, Trash2, Archive, Inbox, Heart } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useConversationStates } from "@/hooks/useConversationStates";
+import { useHelpRecording } from "@/hooks/useHelpRecording";
 
 interface ConversationHeaderProps {
   otherUser: any;
@@ -27,6 +28,11 @@ const ConversationHeader = ({
   const { userId } = useParams<{ userId: string }>();
   const { unarchiveConversation } = useConversationStates();
   const [isArchived, setIsArchived] = React.useState(false);
+  
+  const { isHelpRecorded, toggleHelpRecording, loading: helpLoading } = useHelpRecording({
+    helperId: otherUser?.id,
+    conversationId: userId
+  });
 
   // Check if conversation is archived
   React.useEffect(() => {
@@ -96,6 +102,13 @@ const ConversationHeader = ({
               <User className="mr-2 h-4 w-4" />
               View Profile
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={toggleHelpRecording} disabled={helpLoading}>
+              <Heart 
+                className={`mr-2 h-4 w-4 ${isHelpRecorded ? 'fill-red-500 text-red-500' : ''}`} 
+              />
+              Record Help
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onReportUser}>
               <Flag className="mr-2 h-4 w-4" />
               Report User
