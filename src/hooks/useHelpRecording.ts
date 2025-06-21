@@ -87,6 +87,7 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
           return;
         }
 
+        // Immediately update state after successful deletion
         setIsHelpRecorded(false);
         toast({
           title: "Help recording removed",
@@ -112,6 +113,7 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
           return;
         }
 
+        // Immediately update state after successful insertion
         setIsHelpRecorded(true);
         toast({
           title: "Help recorded",
