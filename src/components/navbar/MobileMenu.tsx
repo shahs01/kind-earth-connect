@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdmin";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import MobileUserMenu from "./MobileUserMenu";
-import { useEffect } from "react";
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -18,7 +18,8 @@ import {
   Shield, 
   FileText, 
   File, 
-  Search 
+  Search,
+  TrendingUp
 } from "lucide-react";
 
 interface MobileMenuProps {
@@ -32,12 +33,19 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
   const { data: isAdmin } = useAdminCheck();
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
 
+  // Prevent background scrolling when menu is open
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
     };
-    
-  }, []);
+  }, [isMenuOpen]);
 
   const handleLinkClick = () => {
     toggleMenu();
@@ -51,6 +59,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
 
   const aboutItems = [
     { label: "About Us", path: "/about", icon: <Info className="mr-2 h-4 w-4" /> },
+    { label: "Our Impact", path: "/our-impact", icon: <TrendingUp className="mr-2 h-4 w-4" /> },
     { label: "Our Values", path: "/values", icon: <Heart className="mr-2 h-4 w-4" /> },
     { label: "FAQ", path: "/faq", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
     { label: "Safety Tips", path: "/safety-tips", icon: <Shield className="mr-2 h-4 w-4" /> },
@@ -67,8 +76,8 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
   ];
 
   return (
-    <div className="md:hidden bg-white border-t border-gray-200">
-      <div className="container mx-auto px-4 py-4">
+    <div className="md:hidden bg-white border-t border-gray-200 fixed left-0 right-0 top-[73px] bottom-0 z-40 overflow-y-auto">
+      <div className="container mx-auto px-4 py-4 h-full">
         {/* Navigation Links */}
         <div className="space-y-2 mb-4">
           <Link
