@@ -121,8 +121,8 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
       variant="ghost"
       className={`${
         hasMarked 
-          ? "text-green-600 hover:text-green-700 hover:bg-green-50" 
-          : "text-thryvance-green hover:text-thryvance-green-dark hover:bg-green-50"
+          ? "text-red-500 hover:text-red-600" 
+          : "text-gray-500 hover:text-red-500"
       } ${className}`}
     >
       {loading ? (
@@ -130,7 +130,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
       ) : (
         <Heart className={`h-4 w-4 mr-1 ${hasMarked ? 'fill-current' : ''}`} />
       )}
-      {hasMarked ? "Impact recorded!" : "This person helped me"}
+      This person helped me
     </Button>
   );
 };
