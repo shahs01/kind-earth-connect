@@ -40,7 +40,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
   const messagesByDate = useMemo((): GroupedMessages => {
     const groups: GroupedMessages = {};
     
-    if (messages && messages.length) {
+    if (messages && messages.length > 0) {
       messages.forEach((message: Message) => {
         if (!message.created_at) return;
         
@@ -68,8 +68,14 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
     const currentMessageCount = messages.length;
     const previousMessageCount = previousMessageCountRef.current;
     
+    // On initial load with messages, scroll to bottom
+    if (currentMessageCount > 0 && previousMessageCount === 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
     // Only scroll if we have new messages (count increased) and it's not the initial load
-    if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
+    else if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
     
