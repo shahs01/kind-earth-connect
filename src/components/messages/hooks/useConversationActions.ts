@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationStates } from "@/hooks/useConversationStates";
@@ -9,13 +8,15 @@ interface UseConversationActionsProps {
   currentUserId?: string;
   clearMessages: () => void;
   navigate: NavigateFunction;
+  refreshConversations?: () => void;
 }
 
 export function useConversationActions({
   userId,
   currentUserId,
   clearMessages,
-  navigate
+  navigate,
+  refreshConversations
 }: UseConversationActionsProps) {
   const { toast } = useToast();
   const { deleteConversation, archiveConversation } = useConversationStates();
@@ -45,8 +46,18 @@ export function useConversationActions({
       const success = await deleteConversation(userId);
       
       if (success) {
+        // Refresh conversations list to remove from sidebar
+        if (refreshConversations) {
+          refreshConversations();
+        }
+        
         // Navigate back to messages root after deletion
         navigate('/messages');
+        
+        toast({
+          title: "Conversation deleted",
+          description: "The conversation has been deleted from your messages."
+        });
       }
       
       return success;
@@ -61,7 +72,7 @@ export function useConversationActions({
     } finally {
       setIsDeleting(false);
     }
-  }, [userId, currentUserId, deleteConversation, clearMessages, toast, navigate, isDeleting]);
+  }, [userId, currentUserId, deleteConversation, clearMessages, toast, navigate, refreshConversations, isDeleting]);
 
   const handleArchiveConversation = useCallback(async () => {
     if (!userId || !currentUserId) {

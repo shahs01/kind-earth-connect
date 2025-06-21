@@ -24,7 +24,8 @@ export default function useConversation(userId?: string) {
     loadConversation,
     sending,
     clearLocalMessages,
-    setConnectionError: setMessagesConnectionError
+    setConnectionError: setMessagesConnectionError,
+    refreshConversations
   } = useMessages();
 
   // Load conversation when userId changes - this is the key fix
@@ -115,7 +116,8 @@ export default function useConversation(userId?: string) {
     userId,
     currentUserId: user?.id,
     clearMessages: clearLocalMessages,
-    navigate
+    navigate,
+    refreshConversations
   });
 
   const handleSendMessage = useCallback(async (content: string) => {

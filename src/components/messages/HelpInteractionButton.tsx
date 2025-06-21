@@ -47,18 +47,24 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   }, [helperId, conversationId, user, getHelpInteractions]);
 
   const handleToggleHelp = async () => {
-    if (hasMarked) {
-      // Remove the help interaction
-      const success = await removeHelpInteraction(helperId, conversationId);
-      if (success) {
-        setHasMarked(false);
+    if (loading) return; // Prevent double clicks
+    
+    try {
+      if (hasMarked) {
+        // Remove the help interaction
+        const success = await removeHelpInteraction(helperId, conversationId);
+        if (success) {
+          setHasMarked(false);
+        }
+      } else {
+        // Add the help interaction
+        const success = await markAsHelped(helperId, conversationId);
+        if (success) {
+          setHasMarked(true);
+        }
       }
-    } else {
-      // Add the help interaction
-      const success = await markAsHelped(helperId, conversationId);
-      if (success) {
-        setHasMarked(true);
-      }
+    } catch (error) {
+      console.error('Error toggling help interaction:', error);
     }
   };
 
