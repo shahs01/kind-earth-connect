@@ -15,11 +15,17 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
 
   // Check if help is already recorded for this conversation
   const checkHelpStatus = useCallback(async () => {
-    if (!helperId || !conversationId) return;
+    if (!helperId || !conversationId) {
+      setIsHelpRecorded(false);
+      return;
+    }
 
     try {
       const { data: currentUser } = await supabase.auth.getUser();
-      if (!currentUser.user) return;
+      if (!currentUser.user) {
+        setIsHelpRecorded(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('help_interactions')
@@ -29,14 +35,17 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
         .eq('conversation_id', conversationId)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error("Error checking help status:", error);
+        setIsHelpRecorded(false);
         return;
       }
 
-      setIsHelpRecorded(!!data);
+      // Explicitly set to false if no data exists, true if data exists
+      setIsHelpRecorded(data !== null);
     } catch (error) {
       console.error("Error in checkHelpStatus:", error);
+      setIsHelpRecorded(false);
     }
   }, [helperId, conversationId]);
 
