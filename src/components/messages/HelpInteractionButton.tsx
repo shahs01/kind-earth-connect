@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, Loader2 } from "lucide-react";
 import { useHelpInteractions } from "@/hooks/useHelpInteractions";
@@ -13,13 +13,38 @@ interface HelpInteractionButtonProps {
 
 const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInteractionButtonProps) => {
   const { user } = useAuth();
-  const { markAsHelped, removeHelpInteraction, loading } = useHelpInteractions();
+  const { markAsHelped, removeHelpInteraction, getHelpInteractions, loading } = useHelpInteractions();
   const [hasMarked, setHasMarked] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   // Don't show if user is trying to mark themselves
   if (!user || user.id === helperId) {
     return null;
   }
+
+  // Check if user has already marked this helper
+  useEffect(() => {
+    const checkExistingInteraction = async () => {
+      if (!user) return;
+      
+      setIsChecking(true);
+      try {
+        const interactions = await getHelpInteractions(helperId);
+        const hasInteraction = interactions.some(
+          interaction => 
+            interaction.helped_by_id === user.id && 
+            interaction.conversation_id === (conversationId || null)
+        );
+        setHasMarked(hasInteraction);
+      } catch (error) {
+        console.error('Error checking help interaction:', error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkExistingInteraction();
+  }, [helperId, conversationId, user, getHelpInteractions]);
 
   const handleToggleHelp = async () => {
     if (hasMarked) {
@@ -40,7 +65,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   return (
     <Button
       onClick={handleToggleHelp}
-      disabled={loading}
+      disabled={loading || isChecking}
       size="sm"
       variant="ghost"
       className={`${
@@ -49,7 +74,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
           : "text-thryvance-green hover:text-thryvance-green-dark hover:bg-green-50"
       } ${className}`}
     >
-      {loading ? (
+      {loading || isChecking ? (
         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
       ) : (
         <Heart className={`h-4 w-4 mr-1 ${hasMarked ? 'fill-current' : ''}`} />

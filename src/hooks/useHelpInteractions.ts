@@ -83,12 +83,12 @@ export function useHelpInteractions() {
     }
   };
 
-  const getHelpInteractions = async (userId: string) => {
+  const getHelpInteractions = async (helperId: string) => {
     try {
       const { data, error } = await supabase
         .from('help_interactions')
         .select('*')
-        .eq('helper_id', userId);
+        .eq('helper_id', helperId);
 
       if (error) throw error;
       return data || [];
