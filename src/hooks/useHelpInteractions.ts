@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function useHelpInteractions() {
   const [loading, setLoading] = useState(false);
 
-  const markAsHelped = async (helperId: string, conversationId?: string) => {
+  const toggleHelpInteraction = async (helperId: string, conversationId?: string) => {
     setLoading(true);
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
@@ -13,90 +13,83 @@ export function useHelpInteractions() {
         throw new Error("Not authenticated");
       }
 
-      const { error } = await supabase
+      // First check if interaction exists
+      const { data: existing, error: checkError } = await supabase
         .from('help_interactions')
-        .insert([{
-          helper_id: helperId,
-          helped_by_id: currentUser.id,
-          conversation_id: conversationId || null
-        }]);
-
-      if (error) {
-        if (error.code === '23505') { // Unique constraint violation
-          return false;
-        }
-        throw error;
-      }
-
-      return true;
-    } catch (error: any) {
-      console.error("Error recording help interaction:", error);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeHelpInteraction = async (helperId: string, conversationId?: string) => {
-    setLoading(true);
-    try {
-      const currentUser = (await supabase.auth.getUser()).data.user;
-      if (!currentUser) {
-        throw new Error("Not authenticated");
-      }
-
-      console.log("Attempting to remove interaction:", {
-        helper_id: helperId,
-        helped_by_id: currentUser.id,
-        conversation_id: conversationId || null
-      });
-
-      const { error, count } = await supabase
-        .from('help_interactions')
-        .delete({ count: 'exact' })
+        .select('id')
         .eq('helper_id', helperId)
         .eq('helped_by_id', currentUser.id)
-        .eq('conversation_id', conversationId || null);
+        .eq('conversation_id', conversationId || null)
+        .maybeSingle();
 
-      if (error) {
-        console.error("Database error removing interaction:", error);
-        throw error;
+      if (checkError) {
+        throw checkError;
       }
 
-      console.log("Removed interaction count:", count);
-      
-      // Only return true if we actually deleted a row
-      return count !== null && count > 0;
+      if (existing) {
+        // Remove existing interaction
+        const { error: deleteError } = await supabase
+          .from('help_interactions')
+          .delete()
+          .eq('id', existing.id);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+        return false; // Now unselected
+      } else {
+        // Add new interaction
+        const { error: insertError } = await supabase
+          .from('help_interactions')
+          .insert([{
+            helper_id: helperId,
+            helped_by_id: currentUser.id,
+            conversation_id: conversationId || null
+          }]);
+
+        if (insertError) {
+          throw insertError;
+        }
+        return true; // Now selected
+      }
     } catch (error: any) {
-      console.error("Error removing help interaction:", error);
-      return false;
+      console.error("Error toggling help interaction:", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const getHelpInteractions = async (helperId: string) => {
+  const checkHelpInteraction = async (helperId: string, conversationId?: string) => {
     try {
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      if (!currentUser) {
+        return false;
+      }
+
       const { data, error } = await supabase
         .from('help_interactions')
-        .select('*')
-        .eq('helper_id', helperId);
+        .select('id')
+        .eq('helper_id', helperId)
+        .eq('helped_by_id', currentUser.id)
+        .eq('conversation_id', conversationId || null)
+        .maybeSingle();
 
       if (error) {
-        throw error;
+        console.error("Error checking help interaction:", error);
+        return false;
       }
-      
-      return data || [];
+
+      return !!data;
     } catch (error: any) {
-      console.error("Error fetching help interactions:", error);
-      return [];
+      console.error("Error checking help interaction:", error);
+      return false;
     }
   };
 
   return {
-    markAsHelped,
-    removeHelpInteraction,
-    getHelpInteractions,
+    toggleHelpInteraction,
+    checkHelpInteraction,
     loading
   };
 }
