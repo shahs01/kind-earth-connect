@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -307,33 +308,34 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
       <Navbar />
       <main className="flex-grow w-full">
         <div className="container mx-auto px-4 py-8 max-w-full">
-          <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Volunteer Your Time</h1>
-                <p className="text-lg text-gray-700">
-                  Share your time and talents to make a difference in your community.
-                </p>
-              </div>
-              
-              <div className="w-full md:w-auto mt-4 md:mt-0">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="browse" className="flex items-center gap-1">
-                      <UsersIcon className="h-4 w-4" /> Browse Opportunities
-                    </TabsTrigger>
-                    <TabsTrigger value="post" className="flex items-center gap-1">
-                      <Plus className="h-4 w-4" /> Post Opportunity
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+          <div className="max-w-6xl mx-auto">
+            {/* Header Section */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Volunteer Your Time</h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Share your time and talents to make a difference in your community.
+              </p>
+            </div>
+            
+            {/* Tabs Navigation */}
+            <div className="flex justify-center mb-8">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-md">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="browse" className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" /> Browse Opportunities
+                  </TabsTrigger>
+                  <TabsTrigger value="post" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" /> Post Opportunity
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
             
             <div className="mt-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsContent value="browse">
-                  <div className="flex flex-wrap gap-3 mb-8">
+                  {/* Filter Buttons */}
+                  <div className="flex flex-wrap justify-center gap-3 mb-8">
                     <Button variant="outline" className="bg-thryvance-green text-white hover:bg-thryvance-green-dark">
                       All Opportunities
                     </Button>
@@ -345,36 +347,37 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                     <Button variant="outline">Individuals</Button>
                   </div>
                   
+                  {/* Content Area */}
                   {isLoading ? (
-                    <div className="flex justify-center items-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-thryvance-green" />
-                      <span className="ml-2">Loading opportunities...</span>
+                    <div className="flex justify-center items-center py-16">
+                      <Loader2 className="h-8 w-8 animate-spin text-thryvance-green mr-3" />
+                      <span className="text-lg">Loading opportunities...</span>
                     </div>
                   ) : opportunities.length === 0 ? (
-                    <div className="text-center py-12">
-                      <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-xl font-medium text-gray-700">No volunteer opportunities yet</h3>
-                      <p className="text-gray-500 mt-2">
+                    <div className="text-center py-16">
+                      <AlertCircle className="h-16 w-16 mx-auto text-gray-400 mb-6" />
+                      <h3 className="text-2xl font-semibold text-gray-700 mb-3">No volunteer opportunities yet</h3>
+                      <p className="text-gray-500 mb-8 text-lg">
                         Be the first to post a volunteer opportunity!
                       </p>
                       {isAuthenticated && (
                         <Button 
                           onClick={() => setActiveTab("post")}
-                          className="mt-4 bg-thryvance-green hover:bg-thryvance-green-dark"
+                          className="bg-thryvance-green hover:bg-thryvance-green-dark px-8 py-3 text-lg"
                         >
                           Post an Opportunity
                         </Button>
                       )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                       {opportunities.map(opportunity => (
                         <div 
                           key={opportunity.id} 
                           className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                           onClick={() => handleOpportunityClick(opportunity)}
                         >
-                          <div className="h-40 bg-gray-200 overflow-hidden">
+                          <div className="h-48 bg-gray-200 overflow-hidden">
                             {opportunity.photos && opportunity.photos.length > 0 ? (
                               <img 
                                 src={opportunity.photos[0]} 
@@ -383,30 +386,30 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <Image className="h-8 w-8" />
+                                <Image className="h-12 w-12" />
                               </div>
                             )}
                           </div>
-                          <div className="p-5">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">{opportunity.title}</h3>
-                              <span className="bg-thryvance-green-light text-thryvance-green text-xs font-medium px-2 py-1 rounded">
+                          <div className="p-6">
+                            <div className="flex justify-between items-start mb-3">
+                              <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">{opportunity.title}</h3>
+                              <span className="bg-thryvance-green-light text-thryvance-green text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap ml-2">
                                 {opportunity.category}
                               </span>
                             </div>
                             
                             <div className="space-y-2 mb-4">
                               <div className="flex items-center text-sm text-gray-600">
-                                <MapPin className="h-4 w-4 mr-2" />
-                                {opportunity.location}
+                                <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <span className="line-clamp-1">{opportunity.location}</span>
                               </div>
                               <div className="flex items-center text-sm text-gray-600">
-                                <User className="h-4 w-4 mr-2" />
-                                Posted by {opportunity.user.name}
+                                <User className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <span className="line-clamp-1">Posted by {opportunity.user.name}</span>
                               </div>
                               <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="h-4 w-4 mr-2" />
-                                {new Date(opportunity.created_at).toLocaleDateString()}
+                                <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                                <span>{new Date(opportunity.created_at).toLocaleDateString()}</span>
                               </div>
                             </div>
                             
@@ -432,276 +435,308 @@ ${validLinks.length > 0 ? `\nRelated Links:\n${validLinks.join('\n')}` : ''}`;
                     </div>
                   )}
                   
-                  <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                    <h2 className="text-xl font-semibold mb-4">Virtual Volunteer Opportunities</h2>
-                    <p className="text-gray-700 mb-4">
-                      Can't volunteer in person? We also offer remote opportunities:
-                    </p>
-                    <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-5">
-                      <li>Online tutoring and mentorship</li>
-                      <li>Digital content creation</li>
-                      <li>Administrative support</li>
-                      <li>Translation services</li>
-                      <li>Virtual event planning</li>
-                    </ul>
-                    <Button variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
-                      Browse Virtual Opportunities
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">Group Volunteering</h2>
-                    <p className="text-gray-700 mb-4">
-                      Looking for team-building opportunities or ways to give back with your:
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-                      <div className="bg-white p-3 rounded text-center">Company</div>
-                      <div className="bg-white p-3 rounded text-center">School</div>
-                      <div className="bg-white p-3 rounded text-center">Faith Group</div>
-                      <div className="bg-white p-3 rounded text-center">Community Org</div>
-                    </div>
-                    <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                      Request Group Volunteer Day
-                    </Button>
+                  {/* Additional Sections */}
+                  <div className="space-y-8">
+                    <Card className="shadow-md">
+                      <CardContent className="p-8">
+                        <h2 className="text-2xl font-semibold mb-4 text-center">Virtual Volunteer Opportunities</h2>
+                        <p className="text-gray-700 mb-6 text-center max-w-2xl mx-auto">
+                          Can't volunteer in person? We also offer remote opportunities:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                          <div className="text-center p-4 bg-gray-50 rounded-lg">
+                            <div className="font-medium text-gray-800">Online tutoring and mentorship</div>
+                          </div>
+                          <div className="text-center p-4 bg-gray-50 rounded-lg">
+                            <div className="font-medium text-gray-800">Digital content creation</div>
+                          </div>
+                          <div className="text-center p-4 bg-gray-50 rounded-lg">
+                            <div className="font-medium text-gray-800">Administrative support</div>
+                          </div>
+                          <div className="text-center p-4 bg-gray-50 rounded-lg">
+                            <div className="font-medium text-gray-800">Translation services</div>
+                          </div>
+                          <div className="text-center p-4 bg-gray-50 rounded-lg">
+                            <div className="font-medium text-gray-800">Virtual event planning</div>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <Button variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
+                            Browse Virtual Opportunities
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-md">
+                      <CardContent className="p-8">
+                        <h2 className="text-2xl font-semibold mb-4 text-center">Group Volunteering</h2>
+                        <p className="text-gray-700 mb-6 text-center max-w-2xl mx-auto">
+                          Looking for team-building opportunities or ways to give back with your:
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div className="bg-white p-4 rounded-lg shadow-sm text-center border">
+                            <div className="font-medium text-gray-800">Company</div>
+                          </div>
+                          <div className="bg-white p-4 rounded-lg shadow-sm text-center border">
+                            <div className="font-medium text-gray-800">School</div>
+                          </div>
+                          <div className="bg-white p-4 rounded-lg shadow-sm text-center border">
+                            <div className="font-medium text-gray-800">Faith Group</div>
+                          </div>
+                          <div className="bg-white p-4 rounded-lg shadow-sm text-center border">
+                            <div className="font-medium text-gray-800">Community Org</div>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                            Request Group Volunteer Day
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="post">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="mb-6">
-                        <h2 className="text-xl font-semibold mb-2">Post a Volunteer Opportunity</h2>
-                        <p className="text-gray-600">
-                          Share details about your volunteer opportunity to find dedicated helpers for your organization's mission.
-                        </p>
-                      </div>
-                      
-                      {!isAuthenticated && (
-                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                          <div className="flex items-start">
-                            <div className="flex-shrink-0">
-                              <AlertCircle className="h-5 w-5 text-yellow-400" />
-                            </div>
-                            <div className="ml-3">
-                              <h3 className="text-sm font-medium text-yellow-800">Authentication required</h3>
-                              <div className="mt-2 text-sm text-yellow-700">
-                                <p>You need to be logged in to post volunteer opportunities.</p>
+                  <div className="max-w-3xl mx-auto">
+                    <Card className="shadow-lg">
+                      <CardContent className="p-8">
+                        <div className="text-center mb-8">
+                          <h2 className="text-2xl font-semibold mb-3">Post a Volunteer Opportunity</h2>
+                          <p className="text-gray-600 max-w-xl mx-auto">
+                            Share details about your volunteer opportunity to find dedicated helpers for your organization's mission.
+                          </p>
+                        </div>
+                        
+                        {!isAuthenticated && (
+                          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <AlertCircle className="h-5 w-5 text-yellow-400" />
+                              </div>
+                              <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">Authentication required</h3>
+                                <div className="mt-2 text-sm text-yellow-700">
+                                  <p>You need to be logged in to post volunteer opportunities.</p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                          <label htmlFor="title" className="block font-medium">Opportunity Title</label>
-                          <Input
-                            id="title"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleInputChange}
-                            placeholder="e.g., Community Garden Helper"
-                            required
-                            disabled={!isAuthenticated}
-                          />
-                        </div>
+                        )}
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                           <div className="space-y-2">
-                            <label htmlFor="location" className="block font-medium">Location</label>
+                            <label htmlFor="title" className="block font-medium text-left">Opportunity Title</label>
                             <Input
-                              id="location"
-                              name="location"
-                              value={formData.location}
+                              id="title"
+                              name="title"
+                              value={formData.title}
                               onChange={handleInputChange}
-                              placeholder="e.g., Main St Community Center"
+                              placeholder="e.g., Community Garden Helper"
                               required
                               disabled={!isAuthenticated}
                             />
                           </div>
                           
-                          <div className="space-y-2">
-                            <label htmlFor="category" className="block font-medium">Category</label>
-                            <Select 
-                              value={formData.category}
-                              onValueChange={(value) => handleSelectChange("category", value)}
-                              disabled={!isAuthenticated}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {categories.map(category => (
-                                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-2">
-                            <label htmlFor="schedule" className="block font-medium">Schedule</label>
-                            <Input
-                              id="schedule"
-                              name="schedule"
-                              value={formData.schedule}
-                              onChange={handleInputChange}
-                              placeholder="e.g., Weekends, 9am-12pm"
-                              required
-                              disabled={!isAuthenticated}
-                            />
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <label htmlFor="commitment" className="block font-medium">Commitment</label>
-                            <Input
-                              id="commitment"
-                              name="commitment"
-                              value={formData.commitment}
-                              onChange={handleInputChange}
-                              placeholder="e.g., Weekly, 3 months, etc."
-                              required
-                              disabled={!isAuthenticated}
-                            />
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <label htmlFor="spots" className="block font-medium">Available Spots</label>
-                            <Input
-                              id="spots"
-                              name="spots"
-                              type="number"
-                              min="1"
-                              value={formData.spots}
-                              onChange={handleInputChange}
-                              required
-                              disabled={!isAuthenticated}
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label htmlFor="description" className="block font-medium">Description</label>
-                          <Textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            placeholder="Describe the volunteer opportunity, what volunteers will be doing, skills required, etc."
-                            rows={5}
-                            required
-                            disabled={!isAuthenticated}
-                          />
-                        </div>
-                        
-                        {/* Photo Upload Section */}
-                        <div className="space-y-2">
-                          <label className="block font-medium">Photos (optional, max 3)</label>
-                          <div className="flex flex-col gap-4">
-                            <div className="grid grid-cols-3 gap-4">
-                              {photoPreviewUrls.map((url, index) => (
-                                <div key={index} className="relative aspect-square rounded-md overflow-hidden border bg-white">
-                                  <img src={url} alt={`Preview ${index + 1}`} className="h-full w-full object-cover" />
-                                  <button
-                                    type="button"
-                                    onClick={() => removePhoto(index)}
-                                    className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
-                                    disabled={!isAuthenticated}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              ))}
-                              
-                              {photos.length < 3 && (
-                                <label htmlFor="photoUpload" className={`flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 ${isAuthenticated ? 'bg-gray-50 cursor-pointer hover:bg-gray-100' : 'bg-gray-100 cursor-not-allowed'} transition-colors`}>
-                                  <Image className="h-6 w-6 text-gray-400 mb-1" />
-                                  <span className="text-xs text-gray-500">Add Photo</span>
-                                  <input
-                                    id="photoUpload"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handlePhotoUpload}
-                                    className="sr-only"
-                                    disabled={!isAuthenticated}
-                                  />
-                                </label>
-                              )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <label htmlFor="location" className="block font-medium text-left">Location</label>
+                              <Input
+                                id="location"
+                                name="location"
+                                value={formData.location}
+                                onChange={handleInputChange}
+                                placeholder="e.g., Main St Community Center"
+                                required
+                                disabled={!isAuthenticated}
+                              />
                             </div>
-                            <p className="text-xs text-gray-500">Upload photos related to your opportunity (max 3)</p>
+                            
+                            <div className="space-y-2">
+                              <label htmlFor="category" className="block font-medium text-left">Category</label>
+                              <Select 
+                                value={formData.category}
+                                onValueChange={(value) => handleSelectChange("category", value)}
+                                disabled={!isAuthenticated}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map(category => (
+                                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                        </div>
-                        
-                        {/* Links Section */}
-                        <div className="space-y-2">
-                          <label className="block font-medium">Related Links (optional)</label>
-                          <div className="space-y-3">
-                            {formData.links.map((link, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <div className="flex-grow">
-                                  <div className="relative">
-                                    <Input
-                                      value={link}
-                                      onChange={(e) => handleLinkChange(index, e.target.value)}
-                                      placeholder="https://example.com"
-                                      className="pl-9"
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                              <label htmlFor="schedule" className="block font-medium text-left">Schedule</label>
+                              <Input
+                                id="schedule"
+                                name="schedule"
+                                value={formData.schedule}
+                                onChange={handleInputChange}
+                                placeholder="e.g., Weekends, 9am-12pm"
+                                required
+                                disabled={!isAuthenticated}
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label htmlFor="commitment" className="block font-medium text-left">Commitment</label>
+                              <Input
+                                id="commitment"
+                                name="commitment"
+                                value={formData.commitment}
+                                onChange={handleInputChange}
+                                placeholder="e.g., Weekly, 3 months, etc."
+                                required
+                                disabled={!isAuthenticated}
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label htmlFor="spots" className="block font-medium text-left">Available Spots</label>
+                              <Input
+                                id="spots"
+                                name="spots"
+                                type="number"
+                                min="1"
+                                value={formData.spots}
+                                onChange={handleInputChange}
+                                required
+                                disabled={!isAuthenticated}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label htmlFor="description" className="block font-medium text-left">Description</label>
+                            <Textarea
+                              id="description"
+                              name="description"
+                              value={formData.description}
+                              onChange={handleInputChange}
+                              placeholder="Describe the volunteer opportunity, what volunteers will be doing, skills required, etc."
+                              rows={5}
+                              required
+                              disabled={!isAuthenticated}
+                            />
+                          </div>
+                          
+                          {/* Photo Upload Section */}
+                          <div className="space-y-2">
+                            <label className="block font-medium text-left">Photos (optional, max 3)</label>
+                            <div className="flex flex-col gap-4">
+                              <div className="grid grid-cols-3 gap-4">
+                                {photoPreviewUrls.map((url, index) => (
+                                  <div key={index} className="relative aspect-square rounded-md overflow-hidden border bg-white">
+                                    <img src={url} alt={`Preview ${index + 1}`} className="h-full w-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => removePhoto(index)}
+                                      className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-700 hover:bg-white"
+                                      disabled={!isAuthenticated}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                                
+                                {photos.length < 3 && (
+                                  <label htmlFor="photoUpload" className={`flex flex-col justify-center items-center aspect-square border border-dashed rounded-md border-gray-300 ${isAuthenticated ? 'bg-gray-50 cursor-pointer hover:bg-gray-100' : 'bg-gray-100 cursor-not-allowed'} transition-colors`}>
+                                    <Image className="h-6 w-6 text-gray-400 mb-1" />
+                                    <span className="text-xs text-gray-500">Add Photo</span>
+                                    <input
+                                      id="photoUpload"
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={handlePhotoUpload}
+                                      className="sr-only"
                                       disabled={!isAuthenticated}
                                     />
-                                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                  </div>
-                                </div>
-                                <Button 
-                                  type="button" 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={() => removeLinkField(index)}
-                                  disabled={formData.links.length === 1 || !isAuthenticated}
-                                  className="flex-shrink-0"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
+                                  </label>
+                                )}
                               </div>
-                            ))}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={addLinkField}
-                              disabled={!isAuthenticated}
-                              className="text-xs"
+                              <p className="text-xs text-gray-500 text-left">Upload photos related to your opportunity (max 3)</p>
+                            </div>
+                          </div>
+                          
+                          {/* Links Section */}
+                          <div className="space-y-2">
+                            <label className="block font-medium text-left">Related Links (optional)</label>
+                            <div className="space-y-3">
+                              {formData.links.map((link, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                  <div className="flex-grow">
+                                    <div className="relative">
+                                      <Input
+                                        value={link}
+                                        onChange={(e) => handleLinkChange(index, e.target.value)}
+                                        placeholder="https://example.com"
+                                        className="pl-9"
+                                        disabled={!isAuthenticated}
+                                      />
+                                      <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => removeLinkField(index)}
+                                    disabled={formData.links.length === 1 || !isAuthenticated}
+                                    className="flex-shrink-0"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addLinkField}
+                                disabled={!isAuthenticated}
+                                className="text-xs"
+                              >
+                                Add Another Link
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-6 flex flex-col sm:flex-row justify-end gap-3">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setActiveTab("browse")}
+                              className="px-6"
                             >
-                              Add Another Link
+                              Cancel
+                            </Button>
+                            <Button 
+                              type="submit" 
+                              className="bg-thryvance-green hover:bg-thryvance-green-dark px-6"
+                              disabled={isSubmitting || !isAuthenticated}
+                            >
+                              {isSubmitting ? (
+                                <>Processing...</>
+                              ) : (
+                                <>
+                                  <Briefcase className="mr-2 h-4 w-4" />
+                                  Post Opportunity
+                                </>
+                              )}
                             </Button>
                           </div>
-                        </div>
-                        
-                        <div className="pt-4 flex flex-col sm:flex-row justify-end gap-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => setActiveTab("browse")}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            type="submit" 
-                            className="bg-thryvance-green hover:bg-thryvance-green-dark"
-                            disabled={isSubmitting || !isAuthenticated}
-                          >
-                            {isSubmitting ? (
-                              <>Processing...</>
-                            ) : (
-                              <>
-                                <Briefcase className="mr-2 h-4 w-4" />
-                                Post Opportunity
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
