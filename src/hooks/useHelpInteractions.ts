@@ -8,6 +8,8 @@ export function useHelpInteractions() {
   const { toast } = useToast();
 
   const markAsHelped = async (helperId: string, conversationId?: string) => {
+    if (loading) return false; // Prevent concurrent operations
+    
     setLoading(true);
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
@@ -50,15 +52,19 @@ export function useHelpInteractions() {
       });
       return false;
     } finally {
-      setLoading(false);
+      setLoading(false); // Always reset loading state
     }
   };
 
   const removeHelpInteraction = async (helperId: string, conversationId?: string) => {
+    if (loading) return false; // Prevent concurrent operations
+    
     setLoading(true);
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
-      if (!currentUser) throw new Error("Not authenticated");
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
 
       const { error } = await supabase
         .from('help_interactions')
@@ -67,7 +73,9 @@ export function useHelpInteractions() {
         .eq('helped_by_id', currentUser.id)
         .eq('conversation_id', conversationId || null);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: "Impact removed",
@@ -84,18 +92,22 @@ export function useHelpInteractions() {
       });
       return false;
     } finally {
-      setLoading(false);
+      setLoading(false); // Always reset loading state
     }
   };
 
   const getHelpInteractions = async (helperId: string) => {
+    // Don't set loading for read operations to avoid UI conflicts
     try {
       const { data, error } = await supabase
         .from('help_interactions')
         .select('*')
         .eq('helper_id', helperId);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+      
       return data || [];
     } catch (error: any) {
       console.error("Error fetching help interactions:", error);
