@@ -14,7 +14,7 @@ const AboutUsDropdown = () => {
       <DropdownMenuTrigger className="flex items-center text-sm text-gray-700 hover:text-thryvance-green focus:outline-none">
         About Us <ChevronDown className="ml-1 h-4 w-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className="bg-white shadow-lg border z-50">
         <DropdownMenuItem asChild>
           <Link to="/about" className="w-full">About Thryvance</Link>
         </DropdownMenuItem>
