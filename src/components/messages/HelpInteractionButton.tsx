@@ -66,22 +66,30 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
       return;
     }
     
+    const previousState = hasMarked;
+    
     try {
-      let success = false;
-      
       if (hasMarked) {
-        success = await removeHelpInteraction(helperId, conversationId);
-        if (success) {
-          setHasMarked(false);
+        // Optimistically update the state first
+        setHasMarked(false);
+        const success = await removeHelpInteraction(helperId, conversationId);
+        if (!success) {
+          // Revert on failure
+          setHasMarked(previousState);
         }
       } else {
-        success = await markAsHelped(helperId, conversationId);
-        if (success) {
-          setHasMarked(true);
+        // Optimistically update the state first
+        setHasMarked(true);
+        const success = await markAsHelped(helperId, conversationId);
+        if (!success) {
+          // Revert on failure
+          setHasMarked(previousState);
         }
       }
     } catch (error) {
       console.error('Error toggling help interaction:', error);
+      // Revert to previous state on error
+      setHasMarked(previousState);
     }
   };
 
