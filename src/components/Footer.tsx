@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import Logo from "./Logo";
 import { Instagram, Twitter } from "lucide-react";
@@ -16,9 +15,6 @@ const Footer = () => {
             <blockquote className="text-gray-700 italic mb-6 pl-4 border-l-4 border-thryvance-green text-left">
               "Thryvance connects neighbors to create a network of care where everyone can both give and receive help when they need it most."
             </blockquote>
-            <p className="text-sm text-gray-600 mb-4 text-left">
-              We believe every community has the power to support its members. Our platform makes it easy to offer help, request assistance, and connect with local organizations making a difference.
-            </p>
             <div className="flex space-x-4">
               <a 
                 href="https://www.instagram.com/thryvance.ca/" 
