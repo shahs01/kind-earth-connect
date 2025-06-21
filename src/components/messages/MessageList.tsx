@@ -81,9 +81,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
     
-    // When messages are cleared (like during conversation deletion), don't scroll
+    // When messages are cleared (like during conversation deletion), don't scroll and reset for next conversation
     if (currentMessageCount === 0 && previousMessageCount > 0) {
-      isInitialLoadRef.current = true; // Reset for next conversation
+      isInitialLoadRef.current = true;
     }
     
     // Update the ref for next comparison
