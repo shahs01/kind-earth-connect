@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { ImpactMetric, ImpactPhoto, CoveredLocation } from "@/hooks/useImpact";
+import type { User, Post } from "@/types/index";
 
 export interface AdminStats {
   totalUsers: number;

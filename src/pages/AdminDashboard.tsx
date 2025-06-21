@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useAdminCheck } from "@/hooks/useAdmin";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,17 +17,24 @@ import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 import AdminImpact from "@/components/admin/AdminImpact";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { data: isAdmin, isLoading: isAdminLoading } = useAdminCheck();
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user || user.role !== "admin") {
+    if (!isAuthenticated || !user) {
+      navigate("/login");
+    } else if (!isAdminLoading && !isAdmin) {
       navigate("/login");
     }
-  }, [user, navigate]);
+  }, [user, isAuthenticated, isAdmin, isAdminLoading, navigate]);
 
-  if (!user || user.role !== "admin") {
+  if (!isAuthenticated || !user || isAdminLoading) {
+    return null;
+  }
+
+  if (!isAdmin) {
     return null;
   }
 

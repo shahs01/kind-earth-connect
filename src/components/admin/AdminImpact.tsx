@@ -37,6 +37,8 @@ const AdminImpact = () => {
     coordinates: null
   });
 
+  const [metricValues, setMetricValues] = useState<{[key: string]: string}>({});
+
   const { data: metrics, isLoading: metricsLoading } = useAdminImpactMetrics();
   const { data: photos, isLoading: photosLoading } = useAdminImpactPhotos();
   const { data: locations, isLoading: locationsLoading } = useAdminCoveredLocations();
@@ -52,6 +54,10 @@ const AdminImpact = () => {
     if (!isNaN(numericValue)) {
       updateMetricMutation.mutate({ id, metric_value: numericValue });
     }
+  };
+
+  const handleMetricValueChange = (id: string, value: string) => {
+    setMetricValues(prev => ({ ...prev, [id]: value }));
   };
 
   const handleCreatePhoto = () => {
@@ -115,13 +121,13 @@ const AdminImpact = () => {
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
-                          defaultValue={metric.metric_value}
+                          value={metricValues[metric.id] ?? metric.metric_value}
+                          onChange={(e) => handleMetricValueChange(metric.id, e.target.value)}
                           className="w-24"
-                          onBlur={(e) => handleUpdateMetric(metric.id, e.target.value)}
                         />
                         <Button
                           size="sm"
-                          onClick={() => handleUpdateMetric(metric.id, document.querySelector(`input[defaultValue="${metric.metric_value}"]`)?.value || "0")}
+                          onClick={() => handleUpdateMetric(metric.id, metricValues[metric.id] ?? metric.metric_value.toString())}
                         >
                           <Save className="h-4 w-4" />
                         </Button>
