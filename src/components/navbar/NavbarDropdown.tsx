@@ -11,9 +11,10 @@ import {
 interface NavbarDropdownProps {
   label: string;
   type: "about" | "involved" | "support";
+  isActive?: boolean;
 }
 
-const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
+const NavbarDropdown = ({ label, type, isActive = false }: NavbarDropdownProps) => {
   const aboutItems = [
     { label: "About Us", path: "/about", icon: <Info className="mr-2 h-4 w-4" /> },
     { label: "Our Impact", path: "/our-impact", icon: <TrendingUp className="mr-2 h-4 w-4" /> },
@@ -46,7 +47,9 @@ const NavbarDropdown = ({ label, type }: NavbarDropdownProps) => {
   return (
     <div className="relative">
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center transition-colors hover:text-thryvance-green text-gray-700 focus:outline-none">
+        <DropdownMenuTrigger className={`flex items-center transition-colors hover:text-thryvance-green focus:outline-none ${
+          isActive ? "text-thryvance-green font-medium" : "text-gray-700"
+        }`}>
           <span>{label}</span>
           <ChevronDown className="ml-1 h-4 w-4" />
         </DropdownMenuTrigger>

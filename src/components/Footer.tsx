@@ -8,7 +8,7 @@ const Footer = () => {
     <footer className="bg-thryvance-neutral-light border-t border-thryvance-neutral w-full">
       <div className="container mx-auto px-4 md:px-6 py-16 max-w-full">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          <div className="md:col-span-2">
+          <div className="md:col-span-1">
             <Logo size="lg" className="mb-6" />
             <p className="text-gray-600 mb-4 text-base leading-relaxed">
               Building stronger communities through mutual support and kindness.
@@ -104,8 +104,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Support & Subscribe</h3>
-            <ul className="space-y-2 mb-6">
+            <h3 className="font-semibold mb-4">Get Involved</h3>
+            <ul className="space-y-2">
               <li>
                 <Link to="/donate" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Donate
@@ -127,27 +127,36 @@ const Footer = () => {
                 </Link>
               </li>
             </ul>
+          </div>
+          
+          <div>
+            <h3 className="font-semibold mb-4">Stay Updated</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Subscribe to our newsletter for community updates and impact stories.
+            </p>
             
-            <div className="bg-white/60 p-4 rounded-lg border border-gray-200">
-              <h4 className="font-medium text-gray-800 mb-2">Stay Updated</h4>
-              <p className="text-sm text-gray-600 mb-3">
-                Subscribe to our newsletter for community updates and impact stories.
-              </p>
-              <div className="space-y-2">
-                <input 
-                  type="email" 
-                  placeholder="Your email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent text-sm"
-                  aria-label="Email address for newsletter subscription"
-                />
-                <Link to="/subscribe" className="block">
-                  <button 
-                    className="w-full bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-md transition-colors text-sm font-medium"
-                    aria-label="Subscribe to newsletter"
-                  >
-                    Subscribe
-                  </button>
-                </Link>
+            <div className="bg-white/60 p-4 rounded-lg border border-gray-200 animate-float relative overflow-hidden">
+              {/* Enhanced breathing background effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-thryvance-green/5 to-thryvance-blue/5 animate-pulse opacity-50"></div>
+              
+              <div className="relative z-10">
+                <h4 className="font-medium text-gray-800 mb-2">Newsletter</h4>
+                <div className="space-y-2">
+                  <input 
+                    type="email" 
+                    placeholder="Your email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent text-sm transition-all duration-300"
+                    aria-label="Email address for newsletter subscription"
+                  />
+                  <Link to="/subscribe" className="block">
+                    <button 
+                      className="w-full bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-md transition-all duration-300 text-sm font-medium hover:shadow-md"
+                      aria-label="Subscribe to newsletter"
+                    >
+                      Subscribe
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

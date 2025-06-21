@@ -98,14 +98,20 @@ export default {
 					}
 				},
                 'float': {
-                    '0%, 100%': { transform: 'translateY(0)' },
-                    '50%': { transform: 'translateY(-10px)' }
+                    '0%, 100%': { 
+                        transform: 'translateY(0) scale(1)',
+                        borderRadius: '0.5rem'
+                    },
+                    '50%': { 
+                        transform: 'translateY(-4px) scale(1.01)',
+                        borderRadius: '0.75rem'
+                    }
                 }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-                'float': 'float 6s ease-in-out infinite'
+                'float': 'float 4s ease-in-out infinite'
 			},
             backgroundImage: {
                 'hero-pattern': 'linear-gradient(120deg, #E3F2E9 0%, #E5F0F9 100%)',
