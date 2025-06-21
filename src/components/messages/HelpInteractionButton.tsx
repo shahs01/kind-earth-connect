@@ -16,6 +16,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   const { markAsHelped, removeHelpInteraction, getHelpInteractions, loading } = useHelpInteractions();
   const [hasMarked, setHasMarked] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [buttonLoading, setButtonLoading] = useState(false);
 
   // Don't show if user is trying to mark themselves
   if (!user || user.id === helperId) {
@@ -33,6 +34,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
       }
       
       try {
+        console.log("Checking existing interaction for helper:", helperId);
         const interactions = await getHelpInteractions(helperId);
         if (mounted) {
           const hasInteraction = interactions.some(
@@ -40,6 +42,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
               interaction.helped_by_id === user.id && 
               interaction.conversation_id === (conversationId || null)
           );
+          console.log("Has existing interaction:", hasInteraction);
           setHasMarked(hasInteraction);
         }
       } catch (error) {
@@ -62,34 +65,34 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   }, [helperId, conversationId, user, getHelpInteractions]);
 
   const handleToggleHelp = async () => {
-    if (loading || initialLoading) {
+    if (loading || initialLoading || buttonLoading) {
       return;
     }
     
-    const previousState = hasMarked;
+    setButtonLoading(true);
     
     try {
+      console.log("Toggling help interaction, current state:", hasMarked);
+      
       if (hasMarked) {
-        // Optimistically update the state first
-        setHasMarked(false);
+        console.log("Removing help interaction");
         const success = await removeHelpInteraction(helperId, conversationId);
-        if (!success) {
-          // Revert on failure
-          setHasMarked(previousState);
+        if (success) {
+          setHasMarked(false);
+          console.log("Successfully removed interaction, state now:", false);
         }
       } else {
-        // Optimistically update the state first
-        setHasMarked(true);
+        console.log("Adding help interaction");
         const success = await markAsHelped(helperId, conversationId);
-        if (!success) {
-          // Revert on failure
-          setHasMarked(previousState);
+        if (success) {
+          setHasMarked(true);
+          console.log("Successfully added interaction, state now:", true);
         }
       }
     } catch (error) {
       console.error('Error toggling help interaction:', error);
-      // Revert to previous state on error
-      setHasMarked(previousState);
+    } finally {
+      setButtonLoading(false);
     }
   };
 
@@ -108,10 +111,12 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
     );
   }
 
+  const isLoading = loading || buttonLoading;
+
   return (
     <Button
       onClick={handleToggleHelp}
-      disabled={loading}
+      disabled={isLoading}
       size="sm"
       variant="ghost"
       className={`${
@@ -120,7 +125,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
           : "text-thryvance-green hover:text-thryvance-green-dark hover:bg-green-50"
       } ${className}`}
     >
-      {loading ? (
+      {isLoading ? (
         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
       ) : (
         <Heart className={`h-4 w-4 mr-1 ${hasMarked ? 'fill-current' : ''}`} />

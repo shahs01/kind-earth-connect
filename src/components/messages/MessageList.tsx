@@ -35,8 +35,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(0);
-  const isInitialLoadRef = useRef(true);
-  const hasScrolledOnceRef = useRef(false); // Track if we've scrolled at least once
+  const isFirstLoadRef = useRef(true);
 
   // Memoize grouped messages to prevent unnecessary recalculations
   const messagesByDate = useMemo((): GroupedMessages => {
@@ -61,32 +60,41 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
   useEffect(() => {
     console.log("MessageList render with messages:", {
       count: messages.length, 
-      loading: loading
+      loading: loading,
+      isFirstLoad: isFirstLoadRef.current,
+      previousCount: previousMessageCountRef.current
     });
   }, [messages.length, loading]);
 
-  // Only scroll to bottom when new messages are added, not on page refresh
+  // Simplified scroll logic - only scroll on initial load or when new messages are added
   useEffect(() => {
     const currentMessageCount = messages.length;
     const previousMessageCount = previousMessageCountRef.current;
     
-    // On initial load with messages, only scroll if we haven't scrolled before (prevents refresh auto-scroll)
-    if (currentMessageCount > 0 && isInitialLoadRef.current && !hasScrolledOnceRef.current) {
-      isInitialLoadRef.current = false;
-      hasScrolledOnceRef.current = true;
+    console.log("Scroll logic check:", {
+      currentCount: currentMessageCount,
+      previousCount: previousMessageCount,
+      isFirstLoad: isFirstLoadRef.current
+    });
+    
+    // Only scroll to bottom on initial load with messages (not on refresh)
+    if (currentMessageCount > 0 && isFirstLoadRef.current && previousMessageCount === 0) {
+      console.log("Initial load scroll");
+      isFirstLoadRef.current = false;
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     }
-    // Only scroll if we have new messages (count increased) and it's not the initial load
-    else if (currentMessageCount > previousMessageCount && previousMessageCount > 0 && hasScrolledOnceRef.current) {
+    // Only scroll if we have new messages (count increased) and it's not the first load
+    else if (currentMessageCount > previousMessageCount && !isFirstLoadRef.current && previousMessageCount > 0) {
+      console.log("New message scroll");
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
     
     // When messages are cleared (like during conversation deletion), reset for next conversation
     if (currentMessageCount === 0 && previousMessageCount > 0) {
-      isInitialLoadRef.current = true;
-      hasScrolledOnceRef.current = false; // Reset scroll tracking
+      console.log("Messages cleared, resetting");
+      isFirstLoadRef.current = true;
     }
     
     // Update the ref for next comparison
