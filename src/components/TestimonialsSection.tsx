@@ -1,5 +1,13 @@
 
 import { Quote } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { useEffect, useRef } from "react";
 
 const testimonials = [
   {
@@ -55,10 +63,68 @@ const testimonials = [
 ];
 
 const TestimonialsSection = () => {
+  const carouselRef = useRef<any>(null);
+
+  useEffect(() => {
+    let autoPlayInterval: NodeJS.Timeout;
+    let isMouseActive = false;
+    let mouseTimeout: NodeJS.Timeout;
+
+    const startAutoPlay = () => {
+      if (!isMouseActive && carouselRef.current) {
+        autoPlayInterval = setInterval(() => {
+          carouselRef.current?.scrollNext();
+        }, 4000);
+      }
+    };
+
+    const stopAutoPlay = () => {
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+      }
+    };
+
+    const handleMouseActivity = () => {
+      isMouseActive = true;
+      stopAutoPlay();
+      
+      if (mouseTimeout) {
+        clearTimeout(mouseTimeout);
+      }
+      
+      mouseTimeout = setTimeout(() => {
+        isMouseActive = false;
+        startAutoPlay();
+      }, 2000);
+    };
+
+    const carouselElement = carouselRef.current;
+    if (carouselElement) {
+      carouselElement.addEventListener('mouseenter', handleMouseActivity);
+      carouselElement.addEventListener('mousemove', handleMouseActivity);
+      carouselElement.addEventListener('mouseleave', () => {
+        isMouseActive = false;
+        if (mouseTimeout) {
+          clearTimeout(mouseTimeout);
+        }
+        setTimeout(startAutoPlay, 1000);
+      });
+    }
+
+    startAutoPlay();
+
+    return () => {
+      stopAutoPlay();
+      if (mouseTimeout) {
+        clearTimeout(mouseTimeout);
+      }
+    };
+  }, []);
+
   return (
-    <section className="py-16 bg-gradient-to-br from-thryvance-blue-light/30 to-thryvance-green-light/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-12">
+    <section className="py-20 bg-gradient-to-br from-thryvance-blue-light/30 to-thryvance-green-light/30">
+      <div className="container mx-auto px-6">
+        <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-800">
             Stories from Our Community
           </h2>
@@ -67,34 +133,46 @@ const TestimonialsSection = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <div 
-              key={index}
-              className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-white/50"
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2 bg-thryvance-green-light rounded-full">
-                  <Quote className="w-4 h-4 text-thryvance-green" />
-                </div>
-              </div>
-              
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                "{testimonial.text}"
-              </p>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-gray-800">
-                    — {testimonial.author}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {testimonial.location}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="max-w-6xl mx-auto">
+          <Carousel
+            ref={carouselRef}
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {testimonials.map((testimonial, index) => (
+                <CarouselItem key={index} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                  <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-white/50 h-full">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2 bg-thryvance-green-light rounded-full">
+                        <Quote className="w-4 h-4 text-thryvance-green" />
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-700 mb-4 leading-relaxed">
+                      "{testimonial.text}"
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-800">
+                          — {testimonial.author}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {testimonial.location}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
         </div>
       </div>
     </section>

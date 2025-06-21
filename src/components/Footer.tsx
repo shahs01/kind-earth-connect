@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import Logo from "./Logo";
 import { Instagram, Twitter } from "lucide-react";
@@ -5,12 +6,18 @@ import { Instagram, Twitter } from "lucide-react";
 const Footer = () => {
   return (
     <footer className="bg-thryvance-neutral-light border-t border-thryvance-neutral w-full">
-      <div className="container mx-auto px-4 md:px-6 py-12 max-w-full">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <Logo className="mb-4" />
-            <p className="text-gray-600 mb-4">
+      <div className="container mx-auto px-4 md:px-6 py-16 max-w-full">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+          <div className="md:col-span-2">
+            <Logo size="lg" className="mb-6" />
+            <p className="text-gray-600 mb-4 text-base leading-relaxed">
               Building stronger communities through mutual support and kindness.
+            </p>
+            <blockquote className="text-gray-700 italic mb-6 pl-4 border-l-4 border-thryvance-green">
+              "Thryvance connects neighbors to create a network of care where everyone can both give and receive help when they need it most."
+            </blockquote>
+            <p className="text-sm text-gray-600 mb-4">
+              We believe every community has the power to support its members. Our platform makes it easy to offer help, request assistance, and connect with local organizations making a difference.
             </p>
             <div className="flex space-x-4">
               <a 
@@ -97,8 +104,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Support Us</h3>
-            <ul className="space-y-2">
+            <h3 className="font-semibold mb-4">Support & Subscribe</h3>
+            <ul className="space-y-2 mb-6">
               <li>
                 <Link to="/donate" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Donate
@@ -121,20 +128,21 @@ const Footer = () => {
               </li>
             </ul>
             
-            <div className="mt-6">
-              <p className="text-gray-600">
-                Subscribe to our newsletter
+            <div className="bg-white/60 p-4 rounded-lg border border-gray-200">
+              <h4 className="font-medium text-gray-800 mb-2">Stay Updated</h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Subscribe to our newsletter for community updates and impact stories.
               </p>
-              <div className="flex mt-2">
+              <div className="space-y-2">
                 <input 
                   type="email" 
                   placeholder="Your email"
-                  className="px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-thryvance-green focus:border-transparent text-sm"
                   aria-label="Email address for newsletter subscription"
                 />
-                <Link to="/subscribe">
+                <Link to="/subscribe" className="block">
                   <button 
-                    className="bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-r-md transition-colors"
+                    className="w-full bg-thryvance-green hover:bg-thryvance-green-dark text-white px-4 py-2 rounded-md transition-colors text-sm font-medium"
                     aria-label="Subscribe to newsletter"
                   >
                     Subscribe
@@ -145,7 +153,7 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-thryvance-neutral mt-10 pt-6 text-center text-gray-600 text-sm space-y-2">
+        <div className="border-t border-thryvance-neutral mt-12 pt-8 text-center text-gray-600 text-sm space-y-2">
           <p>© {new Date().getFullYear()} Thryvance. Unregistered BC non-profit.</p>
           <p>Donations support our mission but are not tax-deductible.</p>
         </div>
