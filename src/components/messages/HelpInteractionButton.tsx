@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, X } from "lucide-react";
 import { useHelpInteractions } from "@/hooks/useHelpInteractions";
 import { useAuth } from "@/context/AuthContext";
 
@@ -13,7 +13,7 @@ interface HelpInteractionButtonProps {
 
 const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInteractionButtonProps) => {
   const { user } = useAuth();
-  const { markAsHelped, loading } = useHelpInteractions();
+  const { markAsHelped, removeHelpInteraction, loading } = useHelpInteractions();
   const [hasMarked, setHasMarked] = useState(false);
 
   // Don't show if user is trying to mark themselves
@@ -28,11 +28,34 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
     }
   };
 
+  const handleRemoveHelp = async () => {
+    const success = await removeHelpInteraction(helperId, conversationId);
+    if (success) {
+      setHasMarked(false);
+    }
+  };
+
   if (hasMarked) {
     return (
-      <div className={`flex items-center text-green-600 text-sm ${className}`}>
-        <Heart className="h-4 w-4 mr-1 fill-current" />
-        Impact recorded!
+      <div className={`flex items-center gap-2 ${className}`}>
+        <div className="flex items-center text-green-600 text-sm">
+          <Heart className="h-4 w-4 mr-1 fill-current" />
+          Impact recorded!
+        </div>
+        <Button
+          onClick={handleRemoveHelp}
+          disabled={loading}
+          size="sm"
+          variant="ghost"
+          className="text-gray-500 hover:text-red-600 hover:bg-red-50 px-2"
+          title="Remove help interaction"
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <X className="h-3 w-3" />
+          )}
+        </Button>
       </div>
     );
   }

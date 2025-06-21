@@ -49,6 +49,40 @@ export function useHelpInteractions() {
     }
   };
 
+  const removeHelpInteraction = async (helperId: string, conversationId?: string) => {
+    setLoading(true);
+    try {
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      if (!currentUser) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from('help_interactions')
+        .delete()
+        .eq('helper_id', helperId)
+        .eq('helped_by_id', currentUser.id)
+        .eq('conversation_id', conversationId || null);
+
+      if (error) throw error;
+
+      toast({
+        title: "Impact removed",
+        description: "The help interaction has been removed.",
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error removing help interaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove the help interaction. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getHelpInteractions = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -66,6 +100,7 @@ export function useHelpInteractions() {
 
   return {
     markAsHelped,
+    removeHelpInteraction,
     getHelpInteractions,
     loading
   };
