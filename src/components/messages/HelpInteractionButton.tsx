@@ -62,7 +62,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
     }
   };
 
-  // Show loading only during initial check or when there's no user state determined yet
+  // Show loading only during initial check
   if (isChecking) {
     return (
       <Button

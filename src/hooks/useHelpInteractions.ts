@@ -10,12 +10,17 @@ export function useHelpInteractions() {
   const markAsHelped = async (helperId: string, conversationId?: string) => {
     setLoading(true);
     try {
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
       const { error } = await supabase
         .from('help_interactions')
         .insert([{
           helper_id: helperId,
-          helped_by_id: (await supabase.auth.getUser()).data.user?.id!,
-          conversation_id: conversationId
+          helped_by_id: currentUser.id,
+          conversation_id: conversationId || null
         }]);
 
       if (error) {
