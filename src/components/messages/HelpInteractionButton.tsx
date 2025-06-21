@@ -15,7 +15,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   const { user } = useAuth();
   const { markAsHelped, removeHelpInteraction, getHelpInteractions, loading } = useHelpInteractions();
   const [hasMarked, setHasMarked] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Don't show if user is trying to mark themselves
   if (!user || user.id === helperId) {
@@ -24,48 +24,57 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
 
   // Check if user has already marked this helper
   useEffect(() => {
+    let mounted = true;
+    
     const checkExistingInteraction = async () => {
       if (!user || !helperId) {
-        setIsChecking(false);
+        setInitialLoading(false);
         return;
       }
       
-      setIsChecking(true);
       try {
         const interactions = await getHelpInteractions(helperId);
-        const hasInteraction = interactions.some(
-          interaction => 
-            interaction.helped_by_id === user.id && 
-            interaction.conversation_id === (conversationId || null)
-        );
-        setHasMarked(hasInteraction);
+        if (mounted) {
+          const hasInteraction = interactions.some(
+            interaction => 
+              interaction.helped_by_id === user.id && 
+              interaction.conversation_id === (conversationId || null)
+          );
+          setHasMarked(hasInteraction);
+        }
       } catch (error) {
         console.error('Error checking help interaction:', error);
-        setHasMarked(false);
+        if (mounted) {
+          setHasMarked(false);
+        }
       } finally {
-        setIsChecking(false);
+        if (mounted) {
+          setInitialLoading(false);
+        }
       }
     };
 
     checkExistingInteraction();
+    
+    return () => {
+      mounted = false;
+    };
   }, [helperId, conversationId, user, getHelpInteractions]);
 
   const handleToggleHelp = async () => {
-    if (loading || isChecking) {
-      return; // Don't proceed if already loading or checking
+    if (loading || initialLoading) {
+      return;
     }
     
     try {
       let success = false;
       
       if (hasMarked) {
-        // Remove the help interaction
         success = await removeHelpInteraction(helperId, conversationId);
         if (success) {
           setHasMarked(false);
         }
       } else {
-        // Add the help interaction
         success = await markAsHelped(helperId, conversationId);
         if (success) {
           setHasMarked(true);
@@ -77,7 +86,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
   };
 
   // Show loading only during initial check
-  if (isChecking) {
+  if (initialLoading) {
     return (
       <Button
         disabled
@@ -91,12 +100,10 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
     );
   }
 
-  const isDisabled = loading || isChecking;
-
   return (
     <Button
       onClick={handleToggleHelp}
-      disabled={isDisabled}
+      disabled={loading}
       size="sm"
       variant="ghost"
       className={`${

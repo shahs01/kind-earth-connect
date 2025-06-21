@@ -8,8 +8,6 @@ export function useHelpInteractions() {
   const { toast } = useToast();
 
   const markAsHelped = async (helperId: string, conversationId?: string) => {
-    if (loading) return false; // Prevent concurrent operations
-    
     setLoading(true);
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
@@ -52,13 +50,11 @@ export function useHelpInteractions() {
       });
       return false;
     } finally {
-      setLoading(false); // Always reset loading state
+      setLoading(false);
     }
   };
 
   const removeHelpInteraction = async (helperId: string, conversationId?: string) => {
-    if (loading) return false; // Prevent concurrent operations
-    
     setLoading(true);
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
@@ -92,12 +88,11 @@ export function useHelpInteractions() {
       });
       return false;
     } finally {
-      setLoading(false); // Always reset loading state
+      setLoading(false);
     }
   };
 
   const getHelpInteractions = async (helperId: string) => {
-    // Don't set loading for read operations to avoid UI conflicts
     try {
       const { data, error } = await supabase
         .from('help_interactions')
