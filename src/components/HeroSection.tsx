@@ -16,7 +16,7 @@ const HeroSection = () => {
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 break-words">
-              Get Help. Give Help. <span className="text-thryvance-green">Right Here</span> in Your Community.
+              Get <span className="text-thryvance-green">Help</span>. Give <span className="text-thryvance-green">Help</span>. Right Here in Your Community.
             </h1>
             
             <p className="text-lg md:text-xl text-gray-600">
