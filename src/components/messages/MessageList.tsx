@@ -36,6 +36,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
   const listContainerRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
+  const hasScrolledOnceRef = useRef(false); // Track if we've scrolled at least once
 
   // Memoize grouped messages to prevent unnecessary recalculations
   const messagesByDate = useMemo((): GroupedMessages => {
@@ -64,26 +65,28 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
     });
   }, [messages.length, loading]);
 
-  // Only scroll to bottom when new messages are added or on initial load with messages
+  // Only scroll to bottom when new messages are added, not on page refresh
   useEffect(() => {
     const currentMessageCount = messages.length;
     const previousMessageCount = previousMessageCountRef.current;
     
-    // On initial load with messages, scroll to bottom
-    if (currentMessageCount > 0 && isInitialLoadRef.current) {
+    // On initial load with messages, only scroll if we haven't scrolled before (prevents refresh auto-scroll)
+    if (currentMessageCount > 0 && isInitialLoadRef.current && !hasScrolledOnceRef.current) {
       isInitialLoadRef.current = false;
+      hasScrolledOnceRef.current = true;
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     }
     // Only scroll if we have new messages (count increased) and it's not the initial load
-    else if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
+    else if (currentMessageCount > previousMessageCount && previousMessageCount > 0 && hasScrolledOnceRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
     
-    // When messages are cleared (like during conversation deletion), don't scroll and reset for next conversation
+    // When messages are cleared (like during conversation deletion), reset for next conversation
     if (currentMessageCount === 0 && previousMessageCount > 0) {
       isInitialLoadRef.current = true;
+      hasScrolledOnceRef.current = false; // Reset scroll tracking
     }
     
     // Update the ref for next comparison
