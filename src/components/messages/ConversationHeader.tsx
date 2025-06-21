@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreVertical, User, Flag, Trash2, Archive, Inbox } from "lucide-react";
-import HelpInteractionButton from "./HelpInteractionButton";
 import { useParams } from "react-router-dom";
 import { useConversationStates } from "@/hooks/useConversationStates";
 
@@ -86,12 +85,6 @@ const ConversationHeader = ({
       </div>
       
       <div className="flex items-center space-x-2">
-        <HelpInteractionButton 
-          helperId={otherUser.id}
-          conversationId={userId}
-          className="hidden md:flex"
-        />
-        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
@@ -103,15 +96,6 @@ const ConversationHeader = ({
               <User className="mr-2 h-4 w-4" />
               View Profile
             </DropdownMenuItem>
-            <div className="md:hidden">
-              <DropdownMenuItem asChild>
-                <HelpInteractionButton 
-                  helperId={otherUser.id}
-                  conversationId={userId}
-                  className="w-full justify-start"
-                />
-              </DropdownMenuItem>
-            </div>
             <DropdownMenuItem onClick={onReportUser}>
               <Flag className="mr-2 h-4 w-4" />
               Report User
