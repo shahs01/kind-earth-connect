@@ -64,7 +64,9 @@ export function useHelpInteractions() {
       }
 
       console.log("Removed interaction count:", count);
-      return true;
+      
+      // Only return true if we actually deleted a row
+      return count !== null && count > 0;
     } catch (error: any) {
       console.error("Error removing help interaction:", error);
       return false;
