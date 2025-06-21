@@ -14,35 +14,35 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
   const { toast } = useToast();
 
   // Check if help is already recorded for this conversation
-  useEffect(() => {
-    const checkHelpStatus = async () => {
-      if (!helperId || !conversationId) return;
+  const checkHelpStatus = useCallback(async () => {
+    if (!helperId || !conversationId) return;
 
-      try {
-        const { data: currentUser } = await supabase.auth.getUser();
-        if (!currentUser.user) return;
+    try {
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser.user) return;
 
-        const { data, error } = await supabase
-          .from('help_interactions')
-          .select('id')
-          .eq('helper_id', helperId)
-          .eq('helped_by_id', currentUser.user.id)
-          .eq('conversation_id', conversationId)
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from('help_interactions')
+        .select('id')
+        .eq('helper_id', helperId)
+        .eq('helped_by_id', currentUser.user.id)
+        .eq('conversation_id', conversationId)
+        .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error checking help status:", error);
-          return;
-        }
-
-        setIsHelpRecorded(!!data);
-      } catch (error) {
-        console.error("Error in checkHelpStatus:", error);
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking help status:", error);
+        return;
       }
-    };
 
-    checkHelpStatus();
+      setIsHelpRecorded(!!data);
+    } catch (error) {
+      console.error("Error in checkHelpStatus:", error);
+    }
   }, [helperId, conversationId]);
+
+  useEffect(() => {
+    checkHelpStatus();
+  }, [checkHelpStatus]);
 
   const toggleHelpRecording = useCallback(async () => {
     if (!helperId || !conversationId) {
