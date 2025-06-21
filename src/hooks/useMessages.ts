@@ -204,6 +204,11 @@ export function useMessages() {
     }
   }, [user?.id, toast, getConversationState]);
 
+  // Add refreshConversations as a wrapper
+  const refreshConversations = useCallback(() => {
+    return fetchConversations();
+  }, [fetchConversations]);
+
   // Load conversation messages for a specific user
   const loadConversation = useCallback(async (userId: string) => {
     if (!user?.id) return [];
@@ -406,6 +411,7 @@ export function useMessages() {
     connectionError,
     setConnectionError,
     fetchConversations,
+    refreshConversations,
     loadConversation,
     sendMessage,
     clearLocalMessages
