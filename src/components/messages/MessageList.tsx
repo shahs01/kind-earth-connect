@@ -34,6 +34,7 @@ const MessageSkeleton: React.FC = () => (
 const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUserId }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(0);
 
   // Memoize grouped messages to prevent unnecessary recalculations
   const messagesByDate = useMemo((): GroupedMessages => {
@@ -61,6 +62,20 @@ const MessageList: React.FC<MessageListProps> = ({ messages, loading, currentUse
       loading: loading
     });
   }, [messages.length, loading]);
+
+  // Only scroll to bottom when new messages are added, not on every re-render
+  useEffect(() => {
+    const currentMessageCount = messages.length;
+    const previousMessageCount = previousMessageCountRef.current;
+    
+    // Only scroll if we have new messages (count increased) and it's not the initial load
+    if (currentMessageCount > previousMessageCount && previousMessageCount > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    
+    // Update the ref for next comparison
+    previousMessageCountRef.current = currentMessageCount;
+  }, [messages.length]);
 
   if (loading && messages.length === 0) {
     return (
