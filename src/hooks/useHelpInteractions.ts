@@ -45,17 +45,25 @@ export function useHelpInteractions() {
         throw new Error("Not authenticated");
       }
 
-      const { error } = await supabase
+      console.log("Attempting to remove interaction:", {
+        helper_id: helperId,
+        helped_by_id: currentUser.id,
+        conversation_id: conversationId || null
+      });
+
+      const { error, count } = await supabase
         .from('help_interactions')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('helper_id', helperId)
         .eq('helped_by_id', currentUser.id)
         .eq('conversation_id', conversationId || null);
 
       if (error) {
+        console.error("Database error removing interaction:", error);
         throw error;
       }
 
+      console.log("Removed interaction count:", count);
       return true;
     } catch (error: any) {
       console.error("Error removing help interaction:", error);
