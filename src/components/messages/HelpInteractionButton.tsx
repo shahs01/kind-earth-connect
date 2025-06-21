@@ -62,12 +62,25 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
     }
   };
 
-  const isLoading = loading || isChecking;
+  // Show loading only during initial check or when there's no user state determined yet
+  if (isChecking) {
+    return (
+      <Button
+        disabled
+        size="sm"
+        variant="ghost"
+        className={`text-gray-400 ${className}`}
+      >
+        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+        Loading...
+      </Button>
+    );
+  }
 
   return (
     <Button
       onClick={handleToggleHelp}
-      disabled={isLoading}
+      disabled={loading}
       size="sm"
       variant="ghost"
       className={`${
@@ -76,7 +89,7 @@ const HelpInteractionButton = ({ helperId, conversationId, className }: HelpInte
           : "text-thryvance-green hover:text-thryvance-green-dark hover:bg-green-50"
       } ${className}`}
     >
-      {isLoading ? (
+      {loading ? (
         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
       ) : (
         <Heart className={`h-4 w-4 mr-1 ${hasMarked ? 'fill-current' : ''}`} />
