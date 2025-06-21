@@ -79,15 +79,27 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
       }
 
       if (isHelpRecorded) {
-        // Remove help recording - use a single filter with AND conditions
-        const { error } = await supabase
+        // Remove help recording - first check if record exists
+        const { data: existingRecord } = await supabase
           .from('help_interactions')
-          .delete()
-          .match({
-            helper_id: helperId,
-            helped_by_id: currentUser.user.id,
-            conversation_id: conversationId
-          });
+          .select('id')
+          .eq('helper_id', helperId)
+          .eq('helped_by_id', currentUser.user.id)
+          .eq('conversation_id', conversationId)
+          .maybeSingle();
+
+        if (!existingRecord) {
+          console.log("No existing record found to delete");
+          setIsHelpRecorded(false);
+          setLoading(false);
+          return;
+        }
+
+        // Delete the specific record
+        const { error, count } = await supabase
+          .from('help_interactions')
+          .delete({ count: 'exact' })
+          .eq('id', existingRecord.id);
 
         if (error) {
           console.error("Error removing help recording:", error);
@@ -100,21 +112,45 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
           return;
         }
 
-        console.log("Successfully removed help recording");
+        if (count === 0) {
+          console.log("No records were deleted");
+          setIsHelpRecorded(false);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Successfully removed help recording, count:", count);
         setIsHelpRecorded(false);
         toast({
           title: "Help recording removed",
           description: "The help recording has been removed"
         });
       } else {
-        // Add help recording
-        const { error } = await supabase
+        // Add help recording - first check if it already exists
+        const { data: existingRecord } = await supabase
+          .from('help_interactions')
+          .select('id')
+          .eq('helper_id', helperId)
+          .eq('helped_by_id', currentUser.user.id)
+          .eq('conversation_id', conversationId)
+          .maybeSingle();
+
+        if (existingRecord) {
+          console.log("Record already exists");
+          setIsHelpRecorded(true);
+          setLoading(false);
+          return;
+        }
+
+        // Insert new record
+        const { error, data } = await supabase
           .from('help_interactions')
           .insert({
             helper_id: helperId,
             helped_by_id: currentUser.user.id,
             conversation_id: conversationId
-          });
+          })
+          .select();
 
         if (error) {
           console.error("Error recording help:", error);
@@ -127,13 +163,17 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
           return;
         }
 
-        console.log("Successfully recorded help");
+        console.log("Successfully recorded help, data:", data);
         setIsHelpRecorded(true);
         toast({
           title: "Help recorded",
           description: "Thank you for recording this person's help!"
         });
       }
+
+      // Double-check the status after the operation
+      await checkHelpStatus();
+      
     } catch (error) {
       console.error("Error in toggleHelpRecording:", error);
       toast({
@@ -144,7 +184,7 @@ export function useHelpRecording({ helperId, conversationId }: UseHelpRecordingP
     } finally {
       setLoading(false);
     }
-  }, [helperId, conversationId, isHelpRecorded, loading, toast]);
+  }, [helperId, conversationId, isHelpRecorded, loading, toast, checkHelpStatus]);
 
   return {
     isHelpRecorded,
