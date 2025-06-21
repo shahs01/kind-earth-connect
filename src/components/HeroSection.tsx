@@ -9,7 +9,7 @@ const HeroSection = () => {
     <div className="bg-hero-pattern py-16 md:py-24 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-          <div className="flex-1 space-y-6 max-w-full">
+          <div className="flex-1 space-y-6 max-w-full text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 backdrop-blur-sm shadow-sm">
               <Sprout className="h-4 w-4 text-thryvance-green" />
               <span className="text-sm font-medium">Community Support Platform</span>

@@ -10,13 +10,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="md:col-span-1">
             <Logo size="lg" className="mb-6" />
-            <p className="text-gray-600 mb-4 text-base leading-relaxed">
+            <p className="text-gray-600 mb-4 text-base leading-relaxed text-left">
               Building stronger communities through mutual support and kindness.
             </p>
-            <blockquote className="text-gray-700 italic mb-6 pl-4 border-l-4 border-thryvance-green">
+            <blockquote className="text-gray-700 italic mb-6 pl-4 border-l-4 border-thryvance-green text-left">
               "Thryvance connects neighbors to create a network of care where everyone can both give and receive help when they need it most."
             </blockquote>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-4 text-left">
               We believe every community has the power to support its members. Our platform makes it easy to offer help, request assistance, and connect with local organizations making a difference.
             </p>
             <div className="flex space-x-4">
@@ -42,8 +42,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Navigation</h3>
-            <ul className="space-y-2">
+            <h3 className="font-semibold mb-4 text-left">Navigation</h3>
+            <ul className="space-y-2 text-left">
               <li>
                 <Link to="/" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Home
@@ -73,8 +73,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Resources</h3>
-            <ul className="space-y-2">
+            <h3 className="font-semibold mb-4 text-left">Resources</h3>
+            <ul className="space-y-2 text-left">
               <li>
                 <Link to="/values" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Community Guidelines
@@ -104,8 +104,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Get Involved</h3>
-            <ul className="space-y-2">
+            <h3 className="font-semibold mb-4 text-left">Get Involved</h3>
+            <ul className="space-y-2 text-left">
               <li>
                 <Link to="/donate" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Donate
@@ -130,8 +130,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-semibold mb-4">Stay Updated</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="font-semibold mb-4 text-left">Stay Updated</h3>
+            <p className="text-sm text-gray-600 mb-4 text-left">
               Subscribe to our newsletter for community updates and impact stories.
             </p>
             
@@ -140,7 +140,7 @@ const Footer = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-thryvance-green/5 to-thryvance-blue/5 animate-pulse opacity-50"></div>
               
               <div className="relative z-10">
-                <h4 className="font-medium text-gray-800 mb-2">Newsletter</h4>
+                <h4 className="font-medium text-gray-800 mb-2 text-left">Newsletter</h4>
                 <div className="space-y-2">
                   <input 
                     type="email" 
