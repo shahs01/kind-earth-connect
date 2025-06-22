@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      about_images: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          order_position: number | null
+          section_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          order_position?: number | null
+          section_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          order_position?: number | null
+          section_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string

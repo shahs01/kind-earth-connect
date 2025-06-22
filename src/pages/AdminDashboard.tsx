@@ -12,6 +12,7 @@ import AdminPosts from "@/components/admin/AdminPosts";
 import AdminNonprofits from "@/components/admin/AdminNonprofits";
 import AdminTeamMembers from "@/components/admin/AdminTeamMembers";
 import AdminSiteContent from "@/components/admin/AdminSiteContent";
+import AdminAboutImages from "@/components/admin/AdminAboutImages";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 import AdminImpact from "@/components/admin/AdminImpact";
@@ -54,6 +55,8 @@ const AdminDashboard = () => {
         return <AdminImpact />;
       case "content":
         return <AdminSiteContent />;
+      case "about-images":
+        return <AdminAboutImages />;
       case "settings":
         return <AdminSettings />;
       case "audit":
@@ -75,7 +78,7 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-10">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="posts">Posts</TabsTrigger>
@@ -83,6 +86,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="team">Team</TabsTrigger>
               <TabsTrigger value="impact">Impact</TabsTrigger>
               <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="about-images">About Images</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="audit">Audit</TabsTrigger>
             </TabsList>

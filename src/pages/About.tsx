@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAboutImages } from "@/hooks/useAboutImages";
 
 interface TeamMember {
   id: string;
@@ -27,6 +27,9 @@ const About = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [content, setContent] = useState<Record<string, SiteContent>>({});
   const [loading, setLoading] = useState(true);
+  
+  const { data: missionImages } = useAboutImages('our_mission');
+  const { data: storyImages } = useAboutImages('our_story');
 
   useEffect(() => {
     fetchData();
@@ -108,7 +111,32 @@ const About = () => {
             <div className="text-gray-700 mb-6 whitespace-pre-line">
               {getContentValue('our_mission', 'content', 'We believe that when communities have access to the right resources and connections, they can thrive and overcome challenges together.')}
             </div>
-            <div className="aspect-video bg-gray-200 rounded-lg mb-6"></div>
+            
+            {/* Mission Images */}
+            {missionImages && missionImages.length > 0 && (
+              <div className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {missionImages.map((image) => (
+                    <div key={image.id} className="rounded-lg overflow-hidden">
+                      <img
+                        src={image.image_url}
+                        alt={image.alt_text || 'Mission image'}
+                        className="w-full h-48 object-cover"
+                      />
+                      {image.caption && (
+                        <p className="text-sm text-gray-600 mt-2 px-2">{image.caption}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Show placeholder if no images uploaded */}
+            {(!missionImages || missionImages.length === 0) && (
+              <div className="aspect-video bg-gray-200 rounded-lg mb-6"></div>
+            )}
+            
             <h3 className="text-lg font-medium mb-3">Core Values</h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <li className="flex items-start">
@@ -158,9 +186,27 @@ const About = () => {
             <h2 className="text-xl font-semibold mb-4">
               {getContentValue('our_story', 'title', 'Our Story')}
             </h2>
-            <div className="space-y-4 text-gray-700 whitespace-pre-line">
+            <div className="space-y-4 text-gray-700 whitespace-pre-line mb-6">
               {getContentValue('our_story', 'content', 'Thryvance began in 2022 when a group of community organizers noticed a disconnect between available resources and community needs.')}
             </div>
+            
+            {/* Story Images */}
+            {storyImages && storyImages.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {storyImages.map((image) => (
+                  <div key={image.id} className="rounded-lg overflow-hidden">
+                    <img
+                      src={image.image_url}
+                      alt={image.alt_text || 'Story image'}
+                      className="w-full h-48 object-cover"
+                    />
+                    {image.caption && (
+                      <p className="text-sm text-gray-600 mt-2 px-2">{image.caption}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="bg-white shadow-md rounded-lg p-6 mb-8">
