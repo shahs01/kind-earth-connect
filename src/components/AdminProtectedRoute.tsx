@@ -1,15 +1,10 @@
 
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdmin";
 import { Loader2, Shield } from "lucide-react";
-import { ReactNode } from "react";
 
-interface AdminProtectedRouteProps {
-  children: ReactNode;
-}
-
-const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
+const AdminProtectedRoute = () => {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const { data: isAdmin, isLoading: isAdminLoading } = useAdminCheck();
   const location = useLocation();
@@ -53,7 +48,7 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
   }
 
   // User is authenticated and is an admin
-  return <>{children}</>;
+  return <Outlet />;
 };
 
 export default AdminProtectedRoute;
