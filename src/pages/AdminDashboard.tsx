@@ -28,16 +28,43 @@ const AdminDashboard = () => {
     if (!isAuthenticated || !user) {
       navigate("/login");
     } else if (!isAdminLoading && !isAdmin) {
-      navigate("/login");
+      navigate("/");
     }
   }, [user, isAuthenticated, isAdmin, isAdminLoading, navigate]);
 
   if (!isAuthenticated || !user || isAdminLoading) {
-    return null;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-thryvance-green mx-auto mb-2"></div>
+          <p className="text-gray-600">Loading admin panel...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAdmin) {
-    return null;
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-red-600 mb-4">
+            <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-red-800 mb-2">Access Denied</h1>
+          <p className="text-red-600 mb-6">
+            You don't have administrator privileges to access this area.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const renderTabContent = () => {
@@ -81,19 +108,21 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-11">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="posts">Posts</TabsTrigger>
-              <TabsTrigger value="nonprofits">Nonprofits</TabsTrigger>
-              <TabsTrigger value="team">Team</TabsTrigger>
-              <TabsTrigger value="impact">Impact</TabsTrigger>
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="about-images">About Images</TabsTrigger>
-              <TabsTrigger value="seed-posts">Seed Data</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="audit">Audit</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 lg:grid-cols-11 min-w-max">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="posts">Posts</TabsTrigger>
+                <TabsTrigger value="nonprofits">Nonprofits</TabsTrigger>
+                <TabsTrigger value="team">Team</TabsTrigger>
+                <TabsTrigger value="impact">Impact</TabsTrigger>
+                <TabsTrigger value="content">Content</TabsTrigger>
+                <TabsTrigger value="about-images">About Images</TabsTrigger>
+                <TabsTrigger value="seed-posts">Seed Data</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="audit">Audit</TabsTrigger>
+              </TabsList>
+            </div>
 
             <div className="bg-white rounded-lg shadow p-6">
               {renderTabContent()}
