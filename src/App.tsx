@@ -92,56 +92,14 @@ function App() {
               <Route path="/seed-posts" element={<SeedPosts />} />
               
               {/* Protected Routes */}
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/favorites" 
-                element={
-                  <ProtectedRoute>
-                    <Favorites />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/messages" 
-                element={
-                  <ProtectedRoute>
-                    <Messages />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/notifications" 
-                element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/edit-posting/:id" 
-                element={
-                  <ProtectedRoute>
-                    <EditPosting />
-                  </ProtectedRoute>
-                } 
-              />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              <Route path="/edit-posting/:id" element={<ProtectedRoute><EditPosting /></ProtectedRoute>} />
               
               {/* Admin Routes */}
-              <Route 
-                path="/admin" 
-                element={
-                  <AdminProtectedRoute>
-                    <AdminDashboard />
-                  </AdminProtectedRoute>
-                } 
-              />
+              <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
