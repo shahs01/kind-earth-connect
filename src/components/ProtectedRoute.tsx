@@ -1,14 +1,17 @@
 
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
+import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
+  children: ReactNode;
   redirectPath?: string;
   requireVerified?: boolean;
 }
 
 const ProtectedRoute = ({ 
+  children,
   redirectPath = "/login",
   requireVerified = false
 }: ProtectedRouteProps) => {
@@ -48,7 +51,7 @@ const ProtectedRoute = ({
 
   // User is authenticated and meets verification requirements
   console.log("ProtectedRoute: Access granted");
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
