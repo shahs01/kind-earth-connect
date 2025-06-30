@@ -2,7 +2,6 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { AuthProvider } from './context/AuthContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 console.log('main.tsx: Starting application');
@@ -18,9 +17,7 @@ if (rootElement) {
   console.log('main.tsx: Creating React root and rendering');
   createRoot(rootElement).render(
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <App />
     </QueryClientProvider>
   );
 } else {
