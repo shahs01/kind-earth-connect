@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { seedPosts } from '../../scripts/seedPosts';
+import { seedPosts } from '@/utils/seedPosts';
 
 const SeedPosts = () => {
   const [isSeeding, setIsSeeding] = useState(false);
