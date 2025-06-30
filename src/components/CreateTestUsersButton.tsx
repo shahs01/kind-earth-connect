@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { createTestUsers } from "@/utils/createTestUsers";
 import { useState } from "react";
@@ -70,7 +71,7 @@ const CreateTestUsersButton = () => {
         className="bg-blue-600 hover:bg-blue-700 text-white"
       >
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isLoading ? "Creating Users..." : "Create 100 Test Users"}
+        {isLoading ? "Creating Users..." : "Create 50 Test Users"}
       </Button>
       {progress && (
         <p className="text-sm text-gray-600">{progress}</p>
@@ -80,3 +81,4 @@ const CreateTestUsersButton = () => {
 };
 
 export default CreateTestUsersButton;
+

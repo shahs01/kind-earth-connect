@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface TestUser {
@@ -73,8 +74,8 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export const createTestUsers = async (): Promise<TestUser[]> => {
   const testUsers: TestUser[] = [];
   
-  // Generate 100 test users
-  for (let i = 1; i <= 100; i++) {
+  // Generate 50 test users
+  for (let i = 1; i <= 50; i++) {
     testUsers.push({
       email: `tester${i}@gmail.com`,
       password: '#Aa123456',
@@ -97,7 +98,7 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
     const user = testUsers[i];
     
     try {
-      console.log(`[${i + 1}/100] Creating user: ${user.email}`);
+      console.log(`[${i + 1}/50] Creating user: ${user.email}`);
       
       // Create the user account
       const { data, error } = await supabase.auth.signUp({
@@ -137,7 +138,7 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
           } else if (retryData.user) {
             createdUsers.push(user);
             successCount++;
-            console.log(`✓ Created user ${successCount}/100: ${user.email} (after retry)`);
+            console.log(`✓ Created user ${successCount}/50: ${user.email} (after retry)`);
           }
         } else {
           console.error(`Failed to create user ${user.email}:`, error.message);
@@ -146,7 +147,7 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
       } else if (data.user) {
         createdUsers.push(user);
         successCount++;
-        console.log(`✓ Created user ${successCount}/100: ${user.email}`);
+        console.log(`✓ Created user ${successCount}/50: ${user.email}`);
       }
       
       // Wait 2 seconds between each user creation attempt
@@ -169,3 +170,4 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
   
   return createdUsers;
 };
+
