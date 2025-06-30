@@ -2,9 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -46,69 +44,63 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const queryClient = new QueryClient();
-
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/search-help" element={<SearchHelp />} />
-              <Route path="/offer-help" element={<OfferHelp />} />
-              <Route path="/request-help" element={<RequestHelp />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/nonprofits" element={<NonprofitDirectory />} />
-              <Route path="/volunteer" element={<Volunteer />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/create-posting" element={<CreatePosting />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/safety-tips" element={<SafetyTips />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/values" element={<Values />} />
-              <Route path="/our-impact" element={<OurImpact />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/partner-with-us" element={<PartnerWithUs />} />
-              <Route path="/donate" element={<Donate />} />
-              <Route path="/monthly-giving" element={<MonthlyGiving />} />
-              <Route path="/sponsor-project" element={<SponsorProject />} />
-              <Route path="/donate-goods" element={<DonateGoods />} />
-              <Route path="/list-nonprofit" element={<ListNonprofit />} />
-              <Route path="/subscribe" element={<Subscribe />} />
-              
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/messages" element={<Messages />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/edit-posting/:id" element={<EditPosting />} />
-              </Route>
-              
-              {/* Admin Routes */}
-              <Route element={<AdminProtectedRoute />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/search-help" element={<SearchHelp />} />
+          <Route path="/offer-help" element={<OfferHelp />} />
+          <Route path="/request-help" element={<RequestHelp />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/nonprofits" element={<NonprofitDirectory />} />
+          <Route path="/volunteer" element={<Volunteer />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/create-posting" element={<CreatePosting />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/safety-tips" element={<SafetyTips />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/values" element={<Values />} />
+          <Route path="/our-impact" element={<OurImpact />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/partner-with-us" element={<PartnerWithUs />} />
+          <Route path="/donate" element={<Donate />} />
+          <Route path="/monthly-giving" element={<MonthlyGiving />} />
+          <Route path="/sponsor-project" element={<SponsorProject />} />
+          <Route path="/donate-goods" element={<DonateGoods />} />
+          <Route path="/list-nonprofit" element={<ListNonprofit />} />
+          <Route path="/subscribe" element={<Subscribe />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/edit-posting/:id" element={<EditPosting />} />
+          </Route>
+          
+          {/* Admin Routes */}
+          <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
   );
 }
 
