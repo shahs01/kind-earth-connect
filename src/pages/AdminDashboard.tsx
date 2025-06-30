@@ -19,31 +19,87 @@ import AdminImpact from "@/components/admin/AdminImpact";
 import SeedPosts from "@/pages/SeedPosts";
 
 const AdminDashboard = () => {
-  const { user, isAuthenticated } = useAuth();
-  const { data: isAdmin, isLoading: isAdminLoading } = useAdminCheck();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { data: isAdmin, isLoading: isAdminLoading, error: adminError } = useAdminCheck();
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      navigate("/login");
-    } else if (!isAdminLoading && !isAdmin) {
-      navigate("/");
-    }
-  }, [user, isAuthenticated, isAdmin, isAdminLoading, navigate]);
+  console.log("AdminDashboard: Auth state", { 
+    isAuthenticated, 
+    hasUser: !!user, 
+    isAdmin, 
+    authLoading, 
+    isAdminLoading,
+    adminError 
+  });
 
-  if (!isAuthenticated || !user || isAdminLoading) {
+  useEffect(() => {
+    // Only redirect if we're sure about the auth state
+    if (!authLoading && !isAuthenticated) {
+      console.log("AdminDashboard: Not authenticated, redirecting to login");
+      navigate("/login");
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
+  // Show loading while checking authentication or admin status
+  if (authLoading || isAdminLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-thryvance-green mx-auto mb-2"></div>
-          <p className="text-gray-600">Loading admin panel...</p>
+          <p className="text-gray-600">
+            {authLoading ? "Loading..." : "Verifying admin access..."}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!isAdmin) {
+  // If not authenticated, this will be handled by the useEffect above
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-thryvance-green mx-auto mb-2"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If there's an error checking admin status, show it
+  if (adminError) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-red-600 mb-4">
+            <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-red-800 mb-2">Error</h1>
+          <p className="text-red-600 mb-6">
+            Failed to verify admin status. Please try again.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors mr-2"
+          >
+            Retry
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If authenticated but not admin, show access denied
+  if (isAdmin === false) {
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">

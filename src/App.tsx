@@ -43,7 +43,6 @@ import ListNonprofit from "./pages/ListNonprofit";
 import Subscribe from "./pages/Subscribe";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -130,14 +129,10 @@ function App() {
               } 
             />
             
-            {/* Admin Routes */}
+            {/* Admin Routes - Simplified without AdminProtectedRoute wrapper */}
             <Route 
               path="/admin" 
-              element={
-                <AdminProtectedRoute>
-                  <AdminDashboard />
-                </AdminProtectedRoute>
-              } 
+              element={<AdminDashboard />}
             />
             
             <Route path="*" element={<NotFound />} />
