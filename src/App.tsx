@@ -70,7 +70,6 @@ function App() {
               <Route path="/volunteer" element={<Volunteer />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
-              <Route path="/create-posting" element={<CreatePosting />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/safety-tips" element={<SafetyTips />} />
@@ -79,6 +78,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/auth-callback" element={<AuthCallback />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/values" element={<Values />} />
               <Route path="/our-impact" element={<OurImpact />} />
@@ -91,15 +91,22 @@ function App() {
               <Route path="/list-nonprofit" element={<ListNonprofit />} />
               <Route path="/subscribe" element={<Subscribe />} />
               
-              {/* Protected Routes - temporarily disabled to debug */}
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/edit-posting/:id" element={<EditPosting />} />
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/profile/:id" element={<Profile />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/messages/:conversationId" element={<Messages />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/create-posting" element={<CreatePosting />} />
+                <Route path="/edit-posting/:id" element={<EditPosting />} />
+              </Route>
               
-              {/* Admin Routes - temporarily disabled to debug */}
-              <Route path="/admin" element={<AdminDashboard />} />
+              {/* Admin Routes */}
+              <Route element={<AdminProtectedRoute />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+              </Route>
               
               <Route path="*" element={<NotFound />} />
             </Routes>

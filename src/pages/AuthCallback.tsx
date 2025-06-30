@@ -18,7 +18,7 @@ const AuthCallback = () => {
       try {
         console.log("Auth callback initiated, checking URL params:", window.location.href);
         
-        // First, try to get the session from Supabase
+        // Handle the auth callback from URL fragments
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -40,7 +40,7 @@ const AuthCallback = () => {
             .from('profiles')
             .select('username')
             .eq('id', data.session.user.id)
-            .single();
+            .maybeSingle();
           
           // If profile doesn't exist or username is missing, show username selection
           if (!profileData || !profileData.username) {
@@ -54,13 +54,6 @@ const AuthCallback = () => {
             return;
           }
           
-          // Store session info for debugging
-          localStorage.setItem('supabase_session_debug', JSON.stringify({
-            timestamp: new Date().toISOString(),
-            user_id: data.session.user.id,
-            email: data.session.user.email
-          }));
-          
           toast({
             title: "Login successful!",
             description: "Welcome back to Thryvance.",
@@ -69,36 +62,30 @@ const AuthCallback = () => {
           // Navigate to home page after successful auth
           navigate("/", { replace: true });
         } else {
-          console.log("No session found in auth callback, checking URL hash for tokens");
+          console.log("No session found in auth callback, waiting for auth state change");
           
-          // Check if there are auth tokens in the URL that might not have been processed yet
-          const hashParams = new URLSearchParams(window.location.hash.substr(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          
-          if (accessToken) {
-            console.log("Found access token in URL, waiting for Supabase to process...");
-            // Give Supabase a moment to process the tokens
-            setTimeout(async () => {
-              const { data: retryData, error: retryError } = await supabase.auth.getSession();
-              if (retryData?.session) {
-                console.log("Session found on retry");
-                
+          // Set up a temporary listener for auth state changes
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+              console.log("Auth state change in callback:", event, session?.user?.email);
+              
+              if (session) {
                 // Check if this is an OAuth user without a username
                 const { data: profileData } = await supabase
                   .from('profiles')
                   .select('username')
-                  .eq('id', retryData.session.user.id)
-                  .single();
+                  .eq('id', session.user.id)
+                  .maybeSingle();
                 
                 if (!profileData || !profileData.username) {
-                  console.log("OAuth user needs to select username on retry");
+                  console.log("OAuth user needs to select username");
                   setOauthUserData({
-                    email: retryData.session.user.email,
-                    name: retryData.session.user.user_metadata?.name || retryData.session.user.user_metadata?.full_name || "",
-                    phone: retryData.session.user.user_metadata?.phone || ""
+                    email: session.user.email,
+                    name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || "",
+                    phone: session.user.user_metadata?.phone || ""
                   });
                   setNeedsUsername(true);
+                  subscription.unsubscribe();
                   return;
                 }
                 
@@ -107,15 +94,22 @@ const AuthCallback = () => {
                   description: "Welcome back to Thryvance.",
                 });
                 navigate("/", { replace: true });
-              } else {
-                console.log("No session found on retry, redirecting to login");
+                subscription.unsubscribe();
+              } else if (event === 'SIGNED_OUT') {
+                console.log("User signed out, redirecting to login");
                 navigate("/login", { replace: true });
+                subscription.unsubscribe();
               }
-            }, 1000);
-          } else {
-            console.log("No tokens found, redirecting to login");
-            navigate("/login", { replace: true });
-          }
+            }
+          );
+          
+          // Clean up subscription after 10 seconds if nothing happens
+          setTimeout(() => {
+            subscription.unsubscribe();
+            if (!needsUsername) {
+              navigate("/login", { replace: true });
+            }
+          }, 10000);
         }
       } catch (err) {
         console.error("Auth callback handling error:", err);
