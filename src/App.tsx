@@ -44,7 +44,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+console.log('App.tsx: App component loaded');
+
 function App() {
+  console.log('App.tsx: App component rendering');
+  
   return (
     <TooltipProvider>
       <Toaster />

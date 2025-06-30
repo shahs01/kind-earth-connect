@@ -5,12 +5,24 @@ import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+console.log('main.tsx: Starting application');
+
 const queryClient = new QueryClient()
 
-createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </QueryClientProvider>
-);
+console.log('main.tsx: QueryClient created');
+
+const rootElement = document.getElementById("root");
+console.log('main.tsx: Root element found:', !!rootElement);
+
+if (rootElement) {
+  console.log('main.tsx: Creating React root and rendering');
+  createRoot(rootElement).render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+} else {
+  console.error('main.tsx: Root element not found!');
+}
