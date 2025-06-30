@@ -92,14 +92,18 @@ function App() {
               <Route path="/seed-posts" element={<SeedPosts />} />
               
               {/* Protected Routes */}
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-              <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/edit-posting/:id" element={<ProtectedRoute><EditPosting /></ProtectedRoute>} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/edit-posting/:id" element={<EditPosting />} />
+              </Route>
               
               {/* Admin Routes */}
-              <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+              <Route element={<AdminProtectedRoute />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+              </Route>
               
               <Route path="*" element={<NotFound />} />
             </Routes>
