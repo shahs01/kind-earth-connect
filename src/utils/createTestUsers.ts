@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface TestUser {
@@ -76,7 +77,7 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
   for (let i = 1; i <= 100; i++) {
     testUsers.push({
       email: `tester${i}@gmail.com`,
-      password: '#A123456',
+      password: '#Aa123456',
       username: generateUsername(i - 1),
       name: generateName(i - 1),
       location: generateLocation(i - 1)
