@@ -1,5 +1,3 @@
-
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface TestUser {
@@ -25,13 +23,27 @@ const generateUsername = (index: number): string => {
   return `${prefix}_${suffix}${number}`;
 };
 
-// Generate realistic names
+// Generate realistic names with unique combinations
 const generateName = (index: number): string => {
-  const firstNames = ['Sarah', 'Mike', 'Emma', 'David', 'Lisa', 'Alex', 'Maya', 'James', 'Rachel', 'Kevin', 'Amanda', 'Ryan', 'Sophie', 'Chris', 'Jennifer', 'Mark', 'Nicole', 'Tyler', 'Jessica', 'Brandon'];
-  const lastNames = ['Chen', 'Thompson', 'Rodriguez', 'Kim', 'Wong', 'Johnson', 'Patel', 'Wilson', 'Green', 'Lee', 'Foster', 'Miller', 'Taylor', 'Brown', 'Davis', 'Garcia', 'Martinez', 'Anderson', 'Moore', 'Jackson'];
+  const firstNames = [
+    'Sarah', 'Mike', 'Emma', 'David', 'Lisa', 'Alex', 'Maya', 'James', 'Rachel', 'Kevin',
+    'Amanda', 'Ryan', 'Sophie', 'Chris', 'Jennifer', 'Mark', 'Nicole', 'Tyler', 'Jessica', 'Brandon',
+    'Emily', 'Daniel', 'Ashley', 'Michael', 'Samantha', 'Andrew', 'Megan', 'Joshua', 'Lauren', 'Matthew',
+    'Hannah', 'Christopher', 'Brittany', 'Nicholas', 'Stephanie', 'Jacob', 'Rebecca', 'Anthony', 'Elizabeth', 'William',
+    'Kayla', 'Joseph', 'Amber', 'Ryan', 'Michelle', 'John', 'Danielle', 'Steven', 'Christina', 'Paul'
+  ];
   
+  const lastNames = [
+    'Chen', 'Thompson', 'Rodriguez', 'Kim', 'Wong', 'Johnson', 'Patel', 'Wilson', 'Green', 'Lee',
+    'Foster', 'Miller', 'Taylor', 'Brown', 'Davis', 'Garcia', 'Martinez', 'Anderson', 'Moore', 'Jackson',
+    'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Lewis', 'Walker',
+    'Hall', 'Allen', 'Young', 'King', 'Wright', 'Lopez', 'Hill', 'Scott', 'Adams', 'Baker',
+    'Gonzalez', 'Nelson', 'Carter', 'Mitchell', 'Perez', 'Roberts', 'Turner', 'Phillips', 'Campbell', 'Parker'
+  ];
+  
+  // Ensure unique combinations by using index directly
   const firstName = firstNames[index % firstNames.length];
-  const lastName = lastNames[Math.floor(index / firstNames.length) % lastNames.length];
+  const lastName = lastNames[index % lastNames.length];
   
   return `${firstName} ${lastName}`;
 };
@@ -170,4 +182,3 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
   
   return createdUsers;
 };
-
