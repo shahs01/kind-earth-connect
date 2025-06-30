@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface TestUser {
@@ -36,14 +37,14 @@ const generateName = (index: number): string => {
   const lastNames = [
     'Chen', 'Thompson', 'Rodriguez', 'Kim', 'Wong', 'Johnson', 'Patel', 'Wilson', 'Green', 'Lee',
     'Foster', 'Miller', 'Taylor', 'Brown', 'Davis', 'Garcia', 'Martinez', 'Anderson', 'Moore', 'Jackson',
-    'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Lewis', 'Walker',
-    'Hall', 'Allen', 'Young', 'King', 'Wright', 'Lopez', 'Hill', 'Scott', 'Adams', 'Baker',
-    'Gonzalez', 'Nelson', 'Carter', 'Mitchell', 'Perez', 'Roberts', 'Turner', 'Phillips', 'Campbell', 'Parker'
+    'White', 'Harris', 'Martin', 'Clark', 'Lewis', 'Walker', 'Hall', 'Allen', 'Young', 'King', 
+    'Wright', 'Lopez', 'Hill', 'Scott', 'Adams', 'Baker', 'Gonzalez', 'Nelson', 'Carter', 'Mitchell',
+    'Perez', 'Roberts', 'Turner', 'Phillips', 'Campbell', 'Parker', 'Evans', 'Edwards', 'Collins', 'Stewart'
   ];
   
-  // Ensure unique combinations by using index directly
-  const firstName = firstNames[index % firstNames.length];
-  const lastName = lastNames[index % lastNames.length];
+  // Create unique combinations by using both indices
+  const firstName = firstNames[index];
+  const lastName = lastNames[index];
   
   return `${firstName} ${lastName}`;
 };
@@ -86,10 +87,10 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export const createTestUsers = async (): Promise<TestUser[]> => {
   const testUsers: TestUser[] = [];
   
-  // Generate 50 test users
+  // Generate 50 test users with testing1@gmail.com to testing50@gmail.com format
   for (let i = 1; i <= 50; i++) {
     testUsers.push({
-      email: `tester${i}@gmail.com`,
+      email: `testing${i}@gmail.com`,
       password: '#Aa123456',
       username: generateUsername(i - 1),
       name: generateName(i - 1),
