@@ -1,26 +1,26 @@
 
 import { Button } from "@/components/ui/button";
-import { seedPosts } from "@/utils/seedPosts";
+import { createTestUsers } from "@/utils/createTestUsers";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const SeedPostsButton = () => {
+const CreateTestUsersButton = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSeedPosts = async () => {
+  const handleCreateUsers = async () => {
     setIsLoading(true);
     try {
-      await seedPosts();
+      const createdUsers = await createTestUsers();
       toast({
-        title: "Posts seeded successfully!",
-        description: "Added 100 realistic placeholder posts to the community section.",
+        title: "Test users created!",
+        description: `Successfully created ${createdUsers.length} test user accounts.`,
       });
     } catch (error) {
       toast({
-        title: "Error seeding posts",
-        description: "There was an error adding the placeholder posts.",
+        title: "Error creating test users",
+        description: "There was an error creating the test user accounts.",
         variant: "destructive",
       });
     } finally {
@@ -30,14 +30,14 @@ const SeedPostsButton = () => {
 
   return (
     <Button 
-      onClick={handleSeedPosts} 
+      onClick={handleCreateUsers} 
       disabled={isLoading}
-      className="bg-thryvance-green hover:bg-thryvance-green-dark text-white"
+      className="bg-blue-600 hover:bg-blue-700 text-white"
     >
       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Seed 100 Community Posts
+      Create 100 Test Users
     </Button>
   );
 };
 
-export default SeedPostsButton;
+export default CreateTestUsersButton;

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const seedPosts = async () => {
@@ -7,21 +6,21 @@ export const seedPosts = async () => {
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, name, username, location')
-      .limit(15);
+      .limit(200); // Increased limit to accommodate more test users
 
     if (profilesError) {
       console.error('Error fetching profiles:', profilesError);
       return;
     }
 
-    if (!profiles || profiles.length === 0) {
-      console.log('No existing profiles found. Please create some user accounts first.');
+    if (!profiles || profiles.length < 10) {
+      console.log('Not enough user profiles found. Please create test users first.');
       return;
     }
 
     console.log(`Found ${profiles.length} existing profiles to use for seeding posts`);
 
-    // Create seed posts using existing user IDs
+    // Create seed posts using existing user IDs - now with 100 posts total
     const offers = [
       {
         title: 'Free dining table and 4 chairs',
@@ -222,6 +221,207 @@ export const seedPosts = async () => {
         location: 'Mississauga, ON',
         photos: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400'],
         days_ago: 24
+      },
+      // Add 25 more offer posts to reach 50 total
+      {
+        title: 'Couch and loveseat set',
+        description: 'Moving to smaller place. Both pieces are comfortable and in good condition. Just need them gone.',
+        category: 'Furniture',
+        location: 'Abbotsford, BC',
+        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'],
+        days_ago: 25
+      },
+      {
+        title: 'Free haircuts for seniors',
+        description: 'Licensed hairstylist offering free haircuts to seniors who cant get out easily. Will come to you.',
+        category: 'Community Help',
+        location: 'Coquitlam, BC',
+        photos: [],
+        days_ago: 26
+      },
+      {
+        title: 'Stack of magazines',
+        description: 'Years worth of National Geographic and Readers Digest. Great for waiting rooms or just browsing.',
+        category: 'Household Items',
+        location: 'Medicine Hat, AB',
+        photos: [],
+        days_ago: 27
+      },
+      {
+        title: 'Warm winter gloves and scarves',
+        description: 'Cleaned out winter gear. Several pairs of gloves and scarves that are barely used.',
+        category: 'Clothing',
+        location: 'Kitchener, ON',
+        photos: ['https://images.unsplash.com/photo-1621452773781-0f992fd1f5c8?w=400'],
+        days_ago: 28
+      },
+      {
+        title: 'Fresh apples from tree',
+        description: 'Apple tree produced way more than expected! Come pick some or Ill bag them up for you.',
+        category: 'Food',
+        location: 'Vernon, BC',
+        photos: ['https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400'],
+        days_ago: 29
+      },
+      {
+        title: 'Printer and ink cartridges',
+        description: 'Canon printer works great, have several unused ink cartridges too. Going paperless.',
+        category: 'Technology',
+        location: 'Grande Prairie, AB',
+        photos: [],
+        days_ago: 30
+      },
+      {
+        title: 'Ride sharing to Edmonton',
+        description: 'Drive to Edmonton twice a month for work. Always room for passengers to share gas.',
+        category: 'Transportation',
+        location: 'Calgary, AB',
+        photos: [],
+        days_ago: 2
+      },
+      {
+        title: 'Kitchen utensils and gadgets',
+        description: 'Downsizing kitchen. Spatulas, whisks, can opener, all the basics. All clean and working.',
+        category: 'Household Items',
+        location: 'Nanaimo, BC',
+        photos: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400'],
+        days_ago: 4
+      },
+      {
+        title: 'Free piano moving help',
+        description: 'Strong guy with truck offering to help move pianos or heavy furniture. Just cover gas.',
+        category: 'Community Help',
+        location: 'London, ON',
+        photos: [],
+        days_ago: 6
+      },
+      {
+        title: 'Bedsheets and pillowcases',
+        description: 'Queen size bedding sets. Washed and ready to go. Different colors and patterns available.',
+        category: 'Household Items',
+        location: 'Kamloops, BC',
+        photos: [],
+        days_ago: 8
+      },
+      {
+        title: 'Womens winter boots size 6',
+        description: 'Waterproof winter boots, barely worn. Great for snow and ice. Too small for me now.',
+        category: 'Clothing',
+        location: 'Airdrie, AB',
+        photos: ['https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400'],
+        days_ago: 11
+      },
+      {
+        title: 'Board games and puzzles',
+        description: 'Family game night collection. Monopoly, Scrabble, several 1000-piece puzzles. All complete.',
+        category: 'Household Items',
+        location: 'Windsor, ON',
+        photos: ['https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400'],
+        days_ago: 13
+      },
+      {
+        title: 'Fresh baked dinner rolls',
+        description: 'Bake fresh rolls every Sunday. Always make too many. Perfect for family dinners.',
+        category: 'Food',
+        location: 'Langley, BC',
+        photos: ['https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400'],
+        days_ago: 15
+      },
+      {
+        title: 'Computer keyboard and mouse',
+        description: 'Wireless keyboard and mouse combo. Works perfectly, just upgraded to gaming setup.',
+        category: 'Technology',
+        location: 'Spruce Grove, AB',
+        photos: [],
+        days_ago: 17
+      },
+      {
+        title: 'Ride to Toronto monthly',
+        description: 'Visit family in Toronto once a month. Room for 1-2 passengers, split gas and driving.',
+        category: 'Transportation',
+        location: 'Hamilton, ON',
+        photos: [],
+        days_ago: 19
+      },
+      {
+        title: 'Queen size mattress pad',
+        description: 'Memory foam mattress topper. Makes any bed super comfortable. Hardly used.',
+        category: 'Furniture',
+        location: 'Penticton, BC',
+        photos: [],
+        days_ago: 21
+      },
+      {
+        title: 'Free dog training classes',
+        description: 'Certified dog trainer offering free basic obedience classes for rescue dogs.',
+        category: 'Community Help',
+        location: 'Leduc, AB',
+        photos: ['https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400'],
+        days_ago: 23
+      },
+      {
+        title: 'Coffee maker and grinder',
+        description: 'Drip coffee maker and electric grinder. Both work great, just switched to espresso.',
+        category: 'Household Items',
+        location: 'Oshawa, ON',
+        photos: [],
+        days_ago: 25
+      },
+      {
+        title: 'Teen girl clothes size S',
+        description: 'Daughter outgrew these clothes. Trendy styles, name brands. Perfect for high school.',
+        category: 'Clothing',
+        location: 'Campbell River, BC',
+        photos: ['https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400', 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400'],
+        days_ago: 27
+      },
+      {
+        title: 'Leftover catering food',
+        description: 'Event was cancelled. Have trays of sandwiches and salads. All fresh, made this morning.',
+        category: 'Food',
+        location: 'Lloydminster, AB',
+        photos: [],
+        days_ago: 1
+      },
+      {
+        title: 'Desk lamp and organizers',
+        description: 'Study setup for student. Adjustable desk lamp plus pencil holders and file organizers.',
+        category: 'Household Items',
+        location: 'Kingston, ON',
+        photos: [],
+        days_ago: 3
+      },
+      {
+        title: 'Free guitar strings',
+        description: 'Bought wrong gauge strings. Still in packages. Perfect for acoustic guitar players.',
+        category: 'Community Help',
+        location: 'North Vancouver, BC',
+        photos: [],
+        days_ago: 5
+      },
+      {
+        title: 'Smartphone cases and accessories',
+        description: 'Collection of phone cases for various models. Screen protectors and car mounts too.',
+        category: 'Technology',
+        location: 'Camrose, AB',
+        photos: ['https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400'],
+        days_ago: 7
+      },
+      {
+        title: 'Curtains and blinds',
+        description: 'Redecorating and have various window treatments. Different sizes and styles available.',
+        category: 'Household Items',
+        location: 'Guelph, ON',
+        photos: [],
+        days_ago: 9
+      },
+      {
+        title: 'Mens casual shoes size 10',
+        description: 'Sneakers and casual shoes that dont fit anymore. All in good condition.',
+        category: 'Clothing',
+        location: 'Delta, BC',
+        photos: ['https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400'],
+        days_ago: 12
       }
     ];
 
@@ -425,12 +625,216 @@ export const seedPosts = async () => {
         location: 'Lethbridge, AB',
         photos: [],
         days_ago: 25
+      },
+      // Add 25 more request posts to reach 50 total
+      {
+        title: 'Looking for warm blankets',
+        description: 'Heating bills are too high. Need extra blankets to stay warm this winter. Any condition appreciated.',
+        category: 'Household Items',
+        location: 'Abbotsford, BC',
+        photos: [],
+        days_ago: 26
+      },
+      {
+        title: 'Need help with computer virus',
+        description: 'Computer is running very slow, think it has virus. Would appreciate tech help from someone knowledgeable.',
+        category: 'Community Help',
+        location: 'Medicine Hat, AB',
+        photos: [],
+        days_ago: 27
+      },
+      {
+        title: 'Looking for mens jeans size 32',
+        description: 'Lost weight and need smaller jeans. Size 32 waist, any length. Casual or work appropriate.',
+        category: 'Clothing',
+        location: 'Kitchener, ON',
+        photos: [],
+        days_ago: 28
+      },
+      {
+        title: 'Need ride to job interview',
+        description: 'Important interview next Friday downtown. Car is in shop. Can pay gas money.',
+        category: 'Transportation',
+        location: 'Vancouver, BC',
+        photos: [],
+        days_ago: 29
+      },
+      {
+        title: 'Looking for small refrigerator',
+        description: 'Studio apartment with no fridge. Need something small and energy efficient. Any working fridge helps.',
+        category: 'Household Items',
+        location: 'Vernon, BC',
+        photos: [],
+        days_ago: 30
+      },
+      {
+        title: 'Need help moving piano',
+        description: 'Moving next weekend and need help with upright piano. Professional movers too expensive.',
+        category: 'Community Help',
+        location: 'Grande Prairie, AB',
+        photos: [],
+        days_ago: 3
+      },
+      {
+        title: 'Looking for textbooks',
+        description: 'College student needing textbooks for business program. Any business or economics books appreciated.',
+        category: 'Household Items',
+        location: 'London, ON',
+        photos: [],
+        days_ago: 5
+      },
+      {
+        title: 'Need warm coat for teenager',
+        description: 'Son grew out of winter coat. Need something warm for Canadian winter. Size large.',
+        category: 'Clothing',
+        location: 'Nanaimo, BC',
+        photos: [],
+        days_ago: 7
+      },
+      {
+        title: 'Looking for ride to hospital',
+        description: 'Weekly medical appointments at hospital. Public transit takes 2 hours. Would appreciate rides.',
+        category: 'Transportation',
+        location: 'Kamloops, BC',
+        photos: [],
+        days_ago: 9
+      },
+      {
+        title: 'Need basic tools',
+        description: 'First time homeowner. Need basic toolkit - hammer, screwdrivers, wrench set. Any condition fine.',
+        category: 'Household Items',
+        location: 'Airdrie, AB',
+        photos: [],
+        days_ago: 11
+      },
+      {
+        title: 'Looking for French tutor',
+        description: 'Want to improve my French for work. Looking for conversational practice with native speaker.',
+        category: 'Community Help',
+        location: 'Windsor, ON',
+        photos: [],
+        days_ago: 13
+      },
+      {
+        title: 'Need smartphone charger cable',
+        description: 'Phone charger broke and cant afford new one right now. Need USB-C cable for Android.',
+        category: 'Technology',
+        location: 'Langley, BC',
+        photos: [],
+        days_ago: 15
+      },
+      {
+        title: 'Looking for coffee table',
+        description: 'Living room needs coffee table. Any size or style works. Just need somewhere to put drinks.',
+        category: 'Furniture',
+        location: 'Spruce Grove, AB',
+        photos: [],
+        days_ago: 17
+      },
+      {
+        title: 'Need womens dress shoes size 7',
+        description: 'Job interview next week needs professional shoes. Size 7, black or brown preferred.',
+        category: 'Clothing',
+        location: 'Hamilton, ON',
+        photos: [],
+        days_ago: 19
+      },
+      {
+        title: 'Looking for car battery boost',
+        description: 'Car battery died in driveway. Need someone with booster cables to help get it started.',
+        category: 'Community Help',
+        location: 'Penticton, BC',
+        photos: [],
+        days_ago: 1
+      },
+      {
+        title: 'Need kitchen dishes',
+        description: 'Moving out on my own. Need basic plates, bowls, cups for small apartment. Any condition helps.',
+        category: 'Household Items',
+        location: 'Leduc, AB',
+        photos: [],
+        days_ago: 2
+      },
+      {
+        title: 'Looking for WiFi router',
+        description: 'Internet is slow with old router. Need newer router for better connection. Any working router appreciated.',
+        category: 'Technology',
+        location: 'Oshawa, ON',
+        photos: [],
+        days_ago: 4
+      },
+      {
+        title: 'Need help with yard work',
+        description: 'Elderly and cant manage yard anymore. Need help with weeding and lawn mowing.',
+        category: 'Community Help',
+        location: 'Campbell River, BC',
+        photos: [],
+        days_ago: 6
+      },
+      {
+        title: 'Looking for bed frame',
+        description: 'Have mattress but sleeping on floor. Need any bed frame that fits double mattress.',
+        category: 'Furniture',
+        location: 'Lloydminster, AB',
+        photos: [],
+        days_ago: 8
+      },
+      {
+        title: 'Need winter hat and mittens',
+        description: 'Lost my winter accessories. Need warm hat and mittens for walking to work in cold.',
+        category: 'Clothing',
+        location: 'Kingston, ON',
+        photos: [],
+        days_ago: 10
+      },
+      {
+        title: 'Looking for ride to work',
+        description: 'Car broke down and need rides to work this week. Work downtown, live in suburbs. Can pay gas.',
+        category: 'Transportation',
+        location: 'North Vancouver, BC',
+        photos: [],
+        days_ago: 12
+      },
+      {
+        title: 'Need basic furniture',
+        description: 'Starting over after difficult time. Need basic furniture - chair, small table, anything helps.',
+        category: 'Furniture',
+        location: 'Camrose, AB',
+        photos: [],
+        days_ago: 14
+      },
+      {
+        title: 'Looking for math help',
+        description: 'Adult upgrading math skills for college. Need patient tutor for basic algebra and geometry.',
+        category: 'Community Help',
+        location: 'Guelph, ON',
+        photos: [],
+        days_ago: 16
+      },
+      {
+        title: 'Need USB flash drive',
+        description: 'Student needing to transfer files for school project. Any size USB drive would be helpful.',
+        category: 'Technology',
+        location: 'Delta, BC',
+        photos: [],
+        days_ago: 18
+      },
+      {
+        title: 'Looking for canned food',
+        description: 'Going through tough financial time. Would appreciate any canned goods or non-perishable food.',
+        category: 'Food',
+        location: 'Wetaskiwin, AB',
+        photos: [],
+        days_ago: 20
       }
     ];
 
-    // Create offer posts
+    // Shuffle profiles to randomize user assignment
+    const shuffledProfiles = [...profiles].sort(() => Math.random() - 0.5);
+
+    // Create offer posts (50)
     const offerPosts = offers.map((offer, index) => ({
-      user_id: profiles[index % profiles.length].id,
+      user_id: shuffledProfiles[index % shuffledProfiles.length].id,
       type: 'offer',
       title: offer.title,
       description: offer.description,
@@ -441,9 +845,9 @@ export const seedPosts = async () => {
       status: 'active'
     }));
 
-    // Create request posts
+    // Create request posts (50)
     const requestPosts = requests.map((request, index) => ({
-      user_id: profiles[index % profiles.length].id,
+      user_id: shuffledProfiles[(index + 50) % shuffledProfiles.length].id,
       type: 'request',
       title: request.title,
       description: request.description,
