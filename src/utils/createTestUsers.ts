@@ -67,6 +67,9 @@ const generateLocation = (index: number): string => {
   return locations[index % locations.length];
 };
 
+// Delay function to handle rate limiting
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const createTestUsers = async (): Promise<TestUser[]> => {
   const testUsers: TestUser[] = [];
   
@@ -83,46 +86,79 @@ export const createTestUsers = async (): Promise<TestUser[]> => {
   
   console.log('Generated test user data, starting account creation...');
   
-  // Create users through Supabase Auth API
+  // Create users through Supabase Auth API with rate limiting handling
   const createdUsers: TestUser[] = [];
   let successCount = 0;
   let errorCount = 0;
+  let rateLimitCount = 0;
   
-  for (const user of testUsers) {
-    try {
-      // Create the user account
-      const { data, error } = await supabase.auth.signUp({
-        email: user.email,
-        password: user.password,
-        options: {
-          data: {
-            username: user.username,
-            name: user.name,
-            location: user.location
+  // Process users in smaller batches with delays
+  const batchSize = 5;
+  const batchDelay = 2000; // 2 seconds between batches
+  
+  for (let i = 0; i < testUsers.length; i += batchSize) {
+    const batch = testUsers.slice(i, i + batchSize);
+    console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(testUsers.length / batchSize)}...`);
+    
+    // Process each user in the batch
+    for (const user of batch) {
+      try {
+        console.log(`Attempting to create user: ${user.email}`);
+        
+        // Create the user account
+        const { data, error } = await supabase.auth.signUp({
+          email: user.email,
+          password: user.password,
+          options: {
+            data: {
+              username: user.username,
+              name: user.name,
+              location: user.location
+            }
+          }
+        });
+        
+        if (error) {
+          if (error.message.includes('rate limit') || error.message.includes('429')) {
+            console.log(`Rate limited for user ${user.email}, will retry later`);
+            rateLimitCount++;
+            // Wait longer before retrying
+            await delay(5000);
+            continue;
+          } else {
+            console.error(`Failed to create user ${user.email}:`, error.message);
+            errorCount++;
+            continue;
           }
         }
-      });
-      
-      if (error) {
-        console.error(`Failed to create user ${user.email}:`, error.message);
-        errorCount++;
-        continue;
-      }
-      
-      if (data.user) {
-        createdUsers.push(user);
-        successCount++;
-        console.log(`Created user ${successCount}/100: ${user.email}`);
         
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        if (data.user) {
+          createdUsers.push(user);
+          successCount++;
+          console.log(`✓ Created user ${successCount}/100: ${user.email}`);
+          
+          // Small delay between individual user creations
+          await delay(500);
+        }
+      } catch (error) {
+        console.error(`Error creating user ${user.email}:`, error);
+        errorCount++;
       }
-    } catch (error) {
-      console.error(`Error creating user ${user.email}:`, error);
-      errorCount++;
+    }
+    
+    // Delay between batches to avoid rate limiting
+    if (i + batchSize < testUsers.length) {
+      console.log(`Waiting ${batchDelay/1000} seconds before next batch...`);
+      await delay(batchDelay);
     }
   }
   
-  console.log(`User creation complete. Success: ${successCount}, Errors: ${errorCount}`);
+  console.log(`\n=== User Creation Summary ===`);
+  console.log(`Total attempted: ${testUsers.length}`);
+  console.log(`Successfully created: ${successCount}`);
+  console.log(`Errors: ${errorCount}`);
+  console.log(`Rate limited: ${rateLimitCount}`);
+  console.log(`===============================`);
+  
   return createdUsers;
 };
