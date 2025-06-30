@@ -43,7 +43,6 @@ import ListNonprofit from "./pages/ListNonprofit";
 import Subscribe from "./pages/Subscribe";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
-import SeedPosts from "./pages/SeedPosts";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -88,7 +87,6 @@ function App() {
             <Route path="/donate-goods" element={<DonateGoods />} />
             <Route path="/list-nonprofit" element={<ListNonprofit />} />
             <Route path="/subscribe" element={<Subscribe />} />
-            <Route path="/seed-posts" element={<SeedPosts />} />
             
             {/* Protected Routes */}
             <Route 
