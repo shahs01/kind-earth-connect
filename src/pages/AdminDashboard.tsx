@@ -16,6 +16,7 @@ import AdminAboutImages from "@/components/admin/AdminAboutImages";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 import AdminImpact from "@/components/admin/AdminImpact";
+import SeedPosts from "@/pages/SeedPosts";
 
 const AdminDashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -57,6 +58,8 @@ const AdminDashboard = () => {
         return <AdminSiteContent />;
       case "about-images":
         return <AdminAboutImages />;
+      case "seed-posts":
+        return <SeedPosts />;
       case "settings":
         return <AdminSettings />;
       case "audit":
@@ -78,7 +81,7 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-10">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-11">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="posts">Posts</TabsTrigger>
@@ -87,6 +90,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="impact">Impact</TabsTrigger>
               <TabsTrigger value="content">Content</TabsTrigger>
               <TabsTrigger value="about-images">About Images</TabsTrigger>
+              <TabsTrigger value="seed-posts">Seed Data</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="audit">Audit</TabsTrigger>
             </TabsList>

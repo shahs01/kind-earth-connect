@@ -194,12 +194,35 @@ function getRandomImages(category: string, count: number): string[] {
   return shuffled.slice(0, count);
 }
 
+// Function to generate random timestamp within past 40 days
+function getRandomTimestamp(): string {
+  const now = new Date();
+  const fortyDaysAgo = new Date(now.getTime() - (40 * 24 * 60 * 60 * 1000));
+  const randomTime = fortyDaysAgo.getTime() + Math.random() * (now.getTime() - fortyDaysAgo.getTime());
+  return new Date(randomTime).toISOString();
+}
+
 // Generate more posts to reach 100 total
 function generateAdditionalPosts(): any[] {
   const additionalPosts = [];
   const categories = ['food', 'furniture', 'clothing', 'household', 'tech', 'services'];
   const locations = ['Vancouver, BC', 'Surrey, BC', 'Burnaby, BC', 'Richmond, BC', 'Calgary, AB', 'Toronto, ON'];
   const types = ['offer', 'request'];
+  
+  // More varied post titles and descriptions for better searchability
+  const offerTitles = [
+    "Free books and magazines", "Help with gardening", "Cooking lessons available", "Free tutoring sessions",
+    "Offering ride shares", "Free pet sitting", "Help with moving", "Language exchange partner",
+    "Free home repairs", "Sharing tools and equipment", "Free music lessons", "Art supplies to give away",
+    "Help with resume writing", "Free childcare", "Bicycle repair service", "Computer troubleshooting help"
+  ];
+  
+  const requestTitles = [
+    "Need help with yard work", "Looking for study buddy", "Need transportation help", "Seeking babysitter",
+    "Looking for workout partner", "Need help with taxes", "Seeking language tutor", "Need pet care advice",
+    "Looking for roommate", "Need furniture assembly help", "Seeking career advice", "Need tech support",
+    "Looking for cooking partner", "Need help with cleaning", "Seeking volunteer opportunities", "Need moving boxes"
+  ];
   
   for (let i = 0; i < 90; i++) {
     const category = categories[Math.floor(Math.random() * categories.length)];
@@ -208,9 +231,12 @@ function generateAdditionalPosts(): any[] {
     const username = seedUsers[Math.floor(Math.random() * seedUsers.length)].username;
     const imageCount = Math.random() < 0.1 ? 0 : Math.random() < 0.3 ? Math.floor(Math.random() * 3) + 2 : 1;
     
+    const titlePool = type === 'offer' ? offerTitles : requestTitles;
+    const title = titlePool[Math.floor(Math.random() * titlePool.length)] + ` - ${category}`;
+    
     additionalPosts.push({
-      title: `${type === 'offer' ? 'Offering' : 'Looking for'} ${category} item ${i + 1}`,
-      description: `This is a generated ${type} post for ${category} in ${location}. Contact me if interested!`,
+      title,
+      description: `This is a ${type} for ${category} items in ${location}. I'm looking to connect with someone who can help or needs assistance. Feel free to message me if you're interested!`,
       category,
       location,
       type,
@@ -276,6 +302,7 @@ export async function seedPosts() {
       }
       
       const images = post.images > 0 ? getRandomImages(post.category, post.images) : [];
+      const createdAt = getRandomTimestamp();
       
       const { error: postError } = await supabase
         .from('posts')
@@ -288,13 +315,13 @@ export async function seedPosts() {
           user_id: userId,
           photos: images,
           status: 'active',
-          created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 30 days
+          created_at: createdAt,
         });
         
       if (postError) {
         console.log(`Post creation error:`, postError);
       } else {
-        console.log(`Created post: ${post.title}`);
+        console.log(`Created post: ${post.title} (${createdAt})`);
       }
     }
     
