@@ -52,9 +52,9 @@ const NavLinks = ({ isActive }: NavLinksProps) => {
       </Button>
       
       <Link
-        to="/nonprofit-directory"
+        to="/nonprofits"
         className={`transition-colors hover:text-thryvance-green ${
-          isActive("/nonprofit-directory") ? "text-thryvance-green font-medium" : "text-gray-700"
+          isActive("/nonprofits") ? "text-thryvance-green font-medium" : "text-gray-700"
         }`}
       >
         Nonprofits
