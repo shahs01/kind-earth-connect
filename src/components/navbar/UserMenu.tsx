@@ -57,7 +57,7 @@ const UserMenu = () => {
   };
 
   const goToAdminDashboard = () => {
-    navigate("/admin/dashboard");
+    navigate("/admin");
   };
 
   if (!user) return null;
