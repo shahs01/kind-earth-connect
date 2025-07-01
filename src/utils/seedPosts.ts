@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const seedPosts = async () => {
@@ -20,6 +21,162 @@ export const seedPosts = async () => {
 
     console.log(`Found ${profiles.length} existing profiles to use for seeding posts`);
 
+    // Create a large pool of unique images to ensure no duplicates
+    const uniqueImages = [
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400',
+      'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400',
+      'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400',
+      'https://images.unsplash.com/photo-1621452773781-0f992fd1f5c8?w=400',
+      'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=400',
+      'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400',
+      'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400',
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400',
+      'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
+      'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=400',
+      'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400',
+      'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400',
+      'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400',
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400',
+      'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400',
+      'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400',
+      'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400',
+      'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400',
+      'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      'https://images.unsplash.com/photo-1509228627152-72ae4c67f7d9?w=400',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
+      'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400',
+      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400',
+      'https://images.unsplash.com/photo-1522771930-78848d3d7bd0?w=400',
+      'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400',
+      'https://images.unsplash.com/photo-1627899633521-8da4fb533f82?w=400',
+      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400',
+      'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400',
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400',
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400',
+      'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400',
+      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400',
+      'https://images.unsplash.com/photo-1621947802413-8e2cda1ea2c3?w=400',
+      'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=400',
+      'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400',
+      'https://images.unsplash.com/photo-1562004760-aceed7bb0fe3?w=400',
+      'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
+      'https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400',
+      'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=400',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+      'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400',
+      'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400',
+      'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400',
+      'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400',
+      'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400',
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400',
+      'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400',
+      'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400',
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400',
+      'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400',
+      'https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400',
+      'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',
+      'https://images.unsplash.com/photo-1606904825846-647eb07f5d50?w=400',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400',
+      'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400',
+      'https://images.unsplash.com/photo-1574269909768-9ad12e1db0c5?w=400',
+      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400',
+      'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400',
+      'https://images.unsplash.com/photo-1529258283598-8d6fe60b27f4?w=400',
+      'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400',
+      'https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=400',
+      'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=400',
+      'https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?w=400',
+      'https://images.unsplash.com/photo-1519947486511-46149fa0138d?w=400',
+      'https://images.unsplash.com/photo-1586880244386-8b3e34c8382c?w=400',
+      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
+      'https://images.unsplash.com/photo-1567306301408-9b74779a11af?w=400',
+      'https://images.unsplash.com/photo-1610123598147-0da4ebdb6f11?w=400',
+      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400',
+      'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400',
+      'https://images.unsplash.com/photo-1584464491033-06628f3a6b7c?w=400',
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a42?w=400',
+      'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca6?w=400',
+      'https://images.unsplash.com/photo-1531297484002-80022131f5a2?w=400',
+      'https://images.unsplash.com/photo-1526374965329-7f61d4dc18c6?w=400',
+      'https://images.unsplash.com/photo-1485827404704-89b55fcc595f?w=400',
+      'https://images.unsplash.com/photo-1581091226826-a6a2a5aee159?w=400',
+      'https://images.unsplash.com/photo-1486312339219-ce68d2c6f44e?w=400',
+      'https://images.unsplash.com/photo-1461749280685-dccba630e2f7?w=400',
+      'https://images.unsplash.com/photo-1518770660440-4636190af476?w=400',
+      'https://images.unsplash.com/photo-1488590528506-98d2b5aba04c?w=400',
+      'https://images.unsplash.com/photo-1649972904350-6e44c42644a8?w=400',
+      'https://images.unsplash.com/photo-1504805572947-34fad45aed93?w=400',
+      'https://images.unsplash.com/photo-1495473258723-0a2f7d3c4e9b?w=400',
+      'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400',
+      'https://images.unsplash.com/photo-1571019613497-2f999bb52c47?w=400',
+      'https://images.unsplash.com/photo-1529258283599-8d6fe60b27f5?w=400',
+      'https://images.unsplash.com/photo-1502920918123-1aa500764cbe?w=400',
+      'https://images.unsplash.com/photo-1573843981268-be1999ff37ce?w=400',
+      'https://images.unsplash.com/photo-1573164713715-d95e436ab8d7?w=400',
+      'https://images.unsplash.com/photo-1511765224390-37f0e77cf0ec?w=400',
+      'https://images.unsplash.com/photo-1519947486512-46149fa0138e?w=400',
+      'https://images.unsplash.com/photo-1586880244387-8b3e34c8382d?w=400',
+      'https://images.unsplash.com/photo-1553062407099-98eeb64c6a63?w=400',
+      'https://images.unsplash.com/photo-1567306301409-9b74779a11b0?w=400',
+      'https://images.unsplash.com/photo-1610123598148-0da4ebdb6f12?w=400',
+      'https://images.unsplash.com/photo-1559827260-dc66d52bef20?w=400',
+      'https://images.unsplash.com/photo-1513475382586-d06e58bcb0e1?w=400',
+      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400',
+      'https://images.unsplash.com/photo-1574271118204-cd86f12787c2?w=400',
+      'https://images.unsplash.com/photo-1560806518-a49ca4b89714?w=400',
+      'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=400',
+      'https://images.unsplash.com/photo-1572635196184-84e35138cf62?w=400',
+      'https://images.unsplash.com/photo-1574080983074-4b5c5c8cc2a0?w=400',
+      'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400',
+      'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=400',
+      'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400',
+      'https://images.unsplash.com/photo-1554475901-4538ddfbccc2?w=400',
+      'https://images.unsplash.com/photo-1615655406736-b37c4fabf923?w=400',
+      'https://images.unsplash.com/photo-1593642532973-d31b6557fa68?w=400',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d7c?w=400',
+      'https://images.unsplash.com/photo-1560800452-f2d475982b78?w=400',
+      'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400',
+      'https://images.unsplash.com/photo-1493612276216-ee3925520721?w=400',
+      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
+      'https://images.unsplash.com/photo-1554189097-ffe88e998a2b?w=400',
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400',
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400',
+      'https://images.unsplash.com/photo-1565895999041-5a73bb9d9b97?w=400',
+      'https://images.unsplash.com/photo-1549388604-817d15aa0110?w=400',
+      'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=400',
+      'https://images.unsplash.com/photo-1563013544-824ae1b704d4?w=400',
+      'https://images.unsplash.com/photo-1574080983075-4b5c5c8cc2a1?w=400',
+      'https://images.unsplash.com/photo-1567538096631-e0c55bd6374d?w=400',
+      'https://images.unsplash.com/photo-1598300042248-d088f8ab3a92?w=400',
+      'https://images.unsplash.com/photo-1551024506-0bccd828d308?w=400',
+      'https://images.unsplash.com/photo-1554475901-4538ddfbccc3?w=400',
+      'https://images.unsplash.com/photo-1615655406737-b37c4fabf924?w=400',
+      'https://images.unsplash.com/photo-1593642532974-d31b6557fa69?w=400',
+      'https://images.unsplash.com/photo-1582719478251-c89cae4dc85c?w=400'
+    ];
+
+    // Track used images to ensure no duplicates
+    let usedImageIndices = new Set();
+    
+    // Function to get unique images for a post
+    const getUniqueImages = (count: number) => {
+      const selectedImages = [];
+      for (let i = 0; i < count; i++) {
+        let randomIndex;
+        do {
+          randomIndex = Math.floor(Math.random() * uniqueImages.length);
+        } while (usedImageIndices.has(randomIndex));
+        
+        usedImageIndices.add(randomIndex);
+        selectedImages.push(uniqueImages[randomIndex]);
+      }
+      return selectedImages;
+    };
+
     // Create seed posts using existing user IDs - now with 100 posts total
     const offers = [
       {
@@ -27,7 +184,7 @@ export const seedPosts = async () => {
         description: 'Moving out and need to get rid of my dining set. Solid wood table with some wear but still sturdy. Chairs are in good condition. You pick up!',
         category: 'Furniture',
         location: 'Vancouver, BC',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400', 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 2
       },
       {
@@ -35,7 +192,7 @@ export const seedPosts = async () => {
         description: 'Baked way too many chocolate chip cookies! Have about 3 dozen to share. Fresh out of the oven this morning.',
         category: 'Food',
         location: 'Calgary, AB',
-        photos: ['https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400', 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 1
       },
       {
@@ -43,7 +200,7 @@ export const seedPosts = async () => {
         description: 'My daughter outgrew these winter clothes. Coats, snow pants, boots, mittens. All in great shape from smoke-free home.',
         category: 'Clothing',
         location: 'Toronto, ON',
-        photos: ['https://images.unsplash.com/photo-1621452773781-0f992fd1f5c8?w=400', 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 5
       },
       {
@@ -51,7 +208,7 @@ export const seedPosts = async () => {
         description: 'Driving to the airport tomorrow around 2pm and have room for 1-2 passengers. Happy to help out!',
         category: 'Transportation',
         location: 'Richmond, BC',
-        photos: ['https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 0
       },
       {
@@ -59,7 +216,7 @@ export const seedPosts = async () => {
         description: 'Have an older ThinkPad that still works fine for basic tasks. Perfect for a student who needs something for school.',
         category: 'Technology',
         location: 'Burnaby, BC',
-        photos: ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400', 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 3
       },
       {
@@ -67,7 +224,7 @@ export const seedPosts = async () => {
         description: 'Tomatoes, zucchini, and carrots are ready! More than my family can eat. Come by this weekend.',
         category: 'Food',
         location: 'Edmonton, AB',
-        photos: ['https://images.unsplash.com/photo-1542838132-92c53300491e?w=400', 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=400', 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400'],
+        photos: getUniqueImages(3),
         days_ago: 4
       },
       {
@@ -75,7 +232,7 @@ export const seedPosts = async () => {
         description: 'Music teacher offering free lessons to someone who cant afford them. Have been teaching for 10 years.',
         category: 'Community Help',
         location: 'Surrey, BC',
-        photos: ['https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 7
       },
       {
@@ -83,7 +240,7 @@ export const seedPosts = async () => {
         description: 'Both work perfectly, just upgraded my kitchen. Microwave is 1.2 cubic ft, toaster is 4-slice.',
         category: 'Household Items',
         location: 'Ottawa, ON',
-        photos: ['https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400', 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 6
       },
       {
@@ -91,7 +248,7 @@ export const seedPosts = async () => {
         description: 'Love dogs and have flexible schedule. Can walk your pup during the day while youre at work. No charge!',
         category: 'Community Help',
         location: 'Victoria, BC',
-        photos: ['https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 8
       },
       {
@@ -99,7 +256,7 @@ export const seedPosts = async () => {
         description: 'Cleaning out closet. About 8 dress shirts, barely worn. Perfect for someone starting new job.',
         category: 'Clothing',
         location: 'Mississauga, ON',
-        photos: ['https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 9
       },
       {
@@ -107,7 +264,7 @@ export const seedPosts = async () => {
         description: 'Love baking sourdough! Make extra loaves every Saturday. Can drop off in Kelowna area.',
         category: 'Food',
         location: 'Kelowna, BC',
-        photos: ['https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400', 'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 10
       },
       {
@@ -115,7 +272,7 @@ export const seedPosts = async () => {
         description: 'Moving sale! Tall bookshelf and several plastic storage containers. All clean and in good shape.',
         category: 'Furniture',
         location: 'Red Deer, AB',
-        photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 12
       },
       {
@@ -123,7 +280,7 @@ export const seedPosts = async () => {
         description: 'Former math teacher offering free tutoring for students struggling with algebra or calculus.',
         category: 'Community Help',
         location: 'Hamilton, ON',
-        photos: ['https://images.unsplash.com/photo-1509228627152-72ae4c67f7d9?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 13
       },
       {
@@ -131,7 +288,7 @@ export const seedPosts = async () => {
         description: 'Bought during pandemic but barely used it. Works perfectly, just taking up space now.',
         category: 'Household Items',
         location: 'New Westminster, BC',
-        photos: ['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400', 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 14
       },
       {
@@ -139,7 +296,7 @@ export const seedPosts = async () => {
         description: 'Go to Costco every Thursday evening. Happy to give someone a ride who needs to stock up.',
         category: 'Transportation',
         location: 'Lethbridge, AB',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 15
       },
       {
@@ -147,7 +304,7 @@ export const seedPosts = async () => {
         description: 'My little one grew so fast! Tons of baby clothes in excellent condition. Mostly gender neutral colors.',
         category: 'Clothing',
         location: 'Vancouver, BC',
-        photos: ['https://images.unsplash.com/photo-1522771930-78848d3d7bd0?w=400', 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400', 'https://images.unsplash.com/photo-1627899633521-8da4fb533f82?w=400'],
+        photos: getUniqueImages(3),
         days_ago: 16
       },
       {
@@ -155,7 +312,7 @@ export const seedPosts = async () => {
         description: 'Upgraded my phone. This one has a cracked screen but everything works fine. Good for someone who needs backup phone.',
         category: 'Technology',
         location: 'Calgary, AB',
-        photos: ['https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 17
       },
       {
@@ -163,7 +320,7 @@ export const seedPosts = async () => {
         description: 'Had a bbq yesterday and made way too much food. Burgers, salads, desserts. All good for a few more days.',
         category: 'Food',
         location: 'Toronto, ON',
-        photos: ['https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400', 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 1
       },
       {
@@ -171,7 +328,7 @@ export const seedPosts = async () => {
         description: 'Redecorating living room. Both tables are in good condition, just dont match new decor.',
         category: 'Furniture',
         location: 'Richmond, BC',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400', 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 18
       },
       {
@@ -179,7 +336,7 @@ export const seedPosts = async () => {
         description: 'Accountant offering to help seniors or low-income families with their tax returns. No charge.',
         category: 'Community Help',
         location: 'Burnaby, BC',
-        photos: ['https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 19
       },
       {
@@ -187,7 +344,7 @@ export const seedPosts = async () => {
         description: 'Got new cookware for wedding. This old set is still perfectly good, just dont need two sets.',
         category: 'Household Items',
         location: 'Edmonton, AB',
-        photos: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400', 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 20
       },
       {
@@ -195,7 +352,7 @@ export const seedPosts = async () => {
         description: 'Changed careers and dont need business attire anymore. Blazers, dress pants, blouses. Professional quality.',
         category: 'Clothing',
         location: 'Surrey, BC',
-        photos: ['https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400', 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 21
       },
       {
@@ -203,7 +360,7 @@ export const seedPosts = async () => {
         description: 'Professional musician offering free guitar lessons for children aged 8-14. Bring your own guitar.',
         category: 'Community Help',
         location: 'Ottawa, ON',
-        photos: ['https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400', 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 22
       },
       {
@@ -211,7 +368,7 @@ export const seedPosts = async () => {
         description: 'Made too much preserves this summer. Have strawberry jam, dill pickles, and pickled beets.',
         category: 'Food',
         location: 'Victoria, BC',
-        photos: ['https://images.unsplash.com/photo-1621947802413-8e2cda1ea2c3?w=400', 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 23
       },
       {
@@ -219,16 +376,15 @@ export const seedPosts = async () => {
         description: 'Upgraded to new monitor. This one works fine, just a bit older. Perfect for second screen or student.',
         category: 'Technology',
         location: 'Mississauga, ON',
-        photos: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 24
       },
-      // Add 25 more offer posts to reach 50 total
       {
         title: 'Couch and loveseat set',
         description: 'Moving to smaller place. Both pieces are comfortable and in good condition. Just need them gone.',
         category: 'Furniture',
         location: 'Abbotsford, BC',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400', 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 25
       },
       {
@@ -236,7 +392,7 @@ export const seedPosts = async () => {
         description: 'Licensed hairstylist offering free haircuts to seniors who cant get out easily. Will come to you.',
         category: 'Community Help',
         location: 'Coquitlam, BC',
-        photos: ['https://images.unsplash.com/photo-1562004760-aceed7bb0fe3?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 26
       },
       {
@@ -244,7 +400,7 @@ export const seedPosts = async () => {
         description: 'Years worth of National Geographic and Readers Digest. Great for waiting rooms or just browsing.',
         category: 'Household Items',
         location: 'Medicine Hat, AB',
-        photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 27
       },
       {
@@ -252,7 +408,7 @@ export const seedPosts = async () => {
         description: 'Cleaned out winter gear. Several pairs of gloves and scarves that are barely used.',
         category: 'Clothing',
         location: 'Kitchener, ON',
-        photos: ['https://images.unsplash.com/photo-1621452773781-0f992fd1f5c8?w=400', 'https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 28
       },
       {
@@ -260,7 +416,7 @@ export const seedPosts = async () => {
         description: 'Apple tree produced way more than expected! Come pick some or Ill bag them up for you.',
         category: 'Food',
         location: 'Vernon, BC',
-        photos: ['https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400', 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 29
       },
       {
@@ -268,7 +424,7 @@ export const seedPosts = async () => {
         description: 'Canon printer works great, have several unused ink cartridges too. Going paperless.',
         category: 'Technology',
         location: 'Grande Prairie, AB',
-        photos: ['https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 30
       },
       {
@@ -276,7 +432,7 @@ export const seedPosts = async () => {
         description: 'Drive to Edmonton twice a month for work. Always room for passengers to share gas.',
         category: 'Transportation',
         location: 'Calgary, AB',
-        photos: ['https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 2
       },
       {
@@ -284,7 +440,7 @@ export const seedPosts = async () => {
         description: 'Downsizing kitchen. Spatulas, whisks, can opener, all the basics. All clean and working.',
         category: 'Household Items',
         location: 'Nanaimo, BC',
-        photos: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400', 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 4
       },
       {
@@ -292,7 +448,7 @@ export const seedPosts = async () => {
         description: 'Strong guy with truck offering to help move pianos or heavy furniture. Just cover gas.',
         category: 'Community Help',
         location: 'London, ON',
-        photos: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 6
       },
       {
@@ -300,7 +456,7 @@ export const seedPosts = async () => {
         description: 'Queen size bedding sets. Washed and ready to go. Different colors and patterns available.',
         category: 'Household Items',
         location: 'Kamloops, BC',
-        photos: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 8
       },
       {
@@ -308,7 +464,7 @@ export const seedPosts = async () => {
         description: 'Waterproof winter boots, barely worn. Great for snow and ice. Too small for me now.',
         category: 'Clothing',
         location: 'Airdrie, AB',
-        photos: ['https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400', 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 11
       },
       {
@@ -316,7 +472,7 @@ export const seedPosts = async () => {
         description: 'Family game night collection. Monopoly, Scrabble, several 1000-piece puzzles. All complete.',
         category: 'Household Items',
         location: 'Windsor, ON',
-        photos: ['https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400', 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 13
       },
       {
@@ -324,7 +480,7 @@ export const seedPosts = async () => {
         description: 'Bake fresh rolls every Sunday. Always make too many. Perfect for family dinners.',
         category: 'Food',
         location: 'Langley, BC',
-        photos: ['https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400', 'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 15
       },
       {
@@ -332,7 +488,7 @@ export const seedPosts = async () => {
         description: 'Wireless keyboard and mouse combo. Works perfectly, just upgraded to gaming setup.',
         category: 'Technology',
         location: 'Spruce Grove, AB',
-        photos: ['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 17
       },
       {
@@ -340,7 +496,7 @@ export const seedPosts = async () => {
         description: 'Visit family in Toronto once a month. Room for 1-2 passengers, split gas and driving.',
         category: 'Transportation',
         location: 'Hamilton, ON',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 19
       },
       {
@@ -348,7 +504,7 @@ export const seedPosts = async () => {
         description: 'Memory foam mattress topper. Makes any bed super comfortable. Hardly used.',
         category: 'Furniture',
         location: 'Penticton, BC',
-        photos: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 21
       },
       {
@@ -356,7 +512,7 @@ export const seedPosts = async () => {
         description: 'Certified dog trainer offering free basic obedience classes for rescue dogs.',
         category: 'Community Help',
         location: 'Leduc, AB',
-        photos: ['https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=400', 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 23
       },
       {
@@ -364,7 +520,7 @@ export const seedPosts = async () => {
         description: 'Drip coffee maker and electric grinder. Both work great, just switched to espresso.',
         category: 'Household Items',
         location: 'Oshawa, ON',
-        photos: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 25
       },
       {
@@ -372,7 +528,7 @@ export const seedPosts = async () => {
         description: 'Daughter outgrew these clothes. Trendy styles, name brands. Perfect for high school.',
         category: 'Clothing',
         location: 'Campbell River, BC',
-        photos: ['https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400', 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 27
       },
       {
@@ -380,7 +536,7 @@ export const seedPosts = async () => {
         description: 'Event was cancelled. Have trays of sandwiches and salads. All fresh, made this morning.',
         category: 'Food',
         location: 'Lloydminster, AB',
-        photos: ['https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400', 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 1
       },
       {
@@ -388,7 +544,7 @@ export const seedPosts = async () => {
         description: 'Study setup for student. Adjustable desk lamp plus pencil holders and file organizers.',
         category: 'Household Items',
         location: 'Kingston, ON',
-        photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 3
       },
       {
@@ -396,7 +552,7 @@ export const seedPosts = async () => {
         description: 'Bought wrong gauge strings. Still in packages. Perfect for acoustic guitar players.',
         category: 'Community Help',
         location: 'North Vancouver, BC',
-        photos: ['https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 5
       },
       {
@@ -404,7 +560,7 @@ export const seedPosts = async () => {
         description: 'Collection of phone cases for various models. Screen protectors and car mounts too.',
         category: 'Technology',
         location: 'Camrose, AB',
-        photos: ['https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400', 'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 7
       },
       {
@@ -412,7 +568,7 @@ export const seedPosts = async () => {
         description: 'Redecorating and have various window treatments. Different sizes and styles available.',
         category: 'Household Items',
         location: 'Guelph, ON',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 9
       },
       {
@@ -420,7 +576,7 @@ export const seedPosts = async () => {
         description: 'Sneakers and casual shoes that dont fit anymore. All in good condition.',
         category: 'Clothing',
         location: 'Delta, BC',
-        photos: ['https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400', 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 12
       }
     ];
@@ -431,7 +587,7 @@ export const seedPosts = async () => {
         description: 'Flight leaves at 10am, need to be there by 8am. Can contribute gas money. Starting from downtown Edmonton.',
         category: 'Transportation',
         location: 'Edmonton, AB',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 1
       },
       {
@@ -439,7 +595,7 @@ export const seedPosts = async () => {
         description: 'New to Canada and need warm winter coat. Mens medium. Any condition is fine, just need something warm.',
         category: 'Clothing',
         location: 'Surrey, BC',
-        photos: ['https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 2
       },
       {
@@ -447,7 +603,7 @@ export const seedPosts = async () => {
         description: 'Moving this weekend and need 1-2 people to help carry couch up to 2nd floor apartment. Can provide pizza and drinks!',
         category: 'Community Help',
         location: 'Ottawa, ON',
-        photos: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400', 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 3
       },
       {
@@ -455,7 +611,7 @@ export const seedPosts = async () => {
         description: 'Expecting our first baby in 3 months. Looking for crib in good condition. Can pick up anywhere in Victoria area.',
         category: 'Furniture',
         location: 'Victoria, BC',
-        photos: ['https://images.unsplash.com/photo-1522771930-78848d3d7bd0?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 4
       },
       {
@@ -463,7 +619,7 @@ export const seedPosts = async () => {
         description: 'My dad needs a simple smartphone for emergencies. Doesnt need to be fancy, just needs to work for calls and texts.',
         category: 'Technology',
         location: 'Mississauga, ON',
-        photos: ['https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 5
       },
       {
@@ -471,7 +627,7 @@ export const seedPosts = async () => {
         description: 'Starting a small baking business from home. Could use flour, sugar, eggs if anyone has extra.',
         category: 'Food',
         location: 'Kelowna, BC',
-        photos: ['https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 6
       },
       {
@@ -479,7 +635,7 @@ export const seedPosts = async () => {
         description: 'Working from home now and need proper desk. Any size is fine, just need something sturdy for computer.',
         category: 'Furniture',
         location: 'Red Deer, AB',
-        photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 7
       },
       {
@@ -487,7 +643,7 @@ export const seedPosts = async () => {
         description: 'Grade 11 student struggling with calculus. Looking for someone patient who can explain concepts clearly.',
         category: 'Community Help',
         location: 'Hamilton, ON',
-        photos: ['https://images.unsplash.com/photo-1509228627152-72ae4c67f7d9?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 8
       },
       {
@@ -495,7 +651,7 @@ export const seedPosts = async () => {
         description: 'Just moved into first apartment. Looking for basic cookware to get started. Any condition is appreciated.',
         category: 'Household Items',
         location: 'New Westminster, BC',
-        photos: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 9
       },
       {
@@ -503,7 +659,7 @@ export const seedPosts = async () => {
         description: 'Starting new office job next week. Need professional clothes - blouses, pants, maybe a blazer. Womens size 10.',
         category: 'Clothing',
         location: 'Lethbridge, AB',
-        photos: ['https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 10
       },
       {
@@ -511,7 +667,7 @@ export const seedPosts = async () => {
         description: 'Have medical appointment in Vancouver Friday afternoon. Can share gas costs. Leaving from Burnaby area.',
         category: 'Transportation',
         location: 'Vancouver, BC',
-        photos: ['https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 11
       },
       {
@@ -519,7 +675,7 @@ export const seedPosts = async () => {
         description: 'Trying to get back in shape. Looking for dumbbells, yoga mat, or any home gym equipment.',
         category: 'Household Items',
         location: 'Calgary, AB',
-        photos: ['https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 12
       },
       {
@@ -527,7 +683,7 @@ export const seedPosts = async () => {
         description: 'New immigrant looking for English conversation partner. Happy to teach you another language in exchange!',
         category: 'Community Help',
         location: 'Toronto, ON',
-        photos: ['https://images.unsplash.com/photo-1509228627152-72ae4c67f7d9?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 13
       },
       {
@@ -535,7 +691,7 @@ export const seedPosts = async () => {
         description: 'College student on tight budget. Need laptop for assignments and research. Any working laptop would be amazing.',
         category: 'Technology',
         location: 'Richmond, BC',
-        photos: ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 14
       },
       {
@@ -543,7 +699,7 @@ export const seedPosts = async () => {
         description: 'Family of 4 looking for dining table. Doesnt need to be fancy, just something we can all sit around for meals.',
         category: 'Furniture',
         location: 'Burnaby, BC',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 15
       },
       {
@@ -551,7 +707,7 @@ export const seedPosts = async () => {
         description: 'First winter in Canada! Need warm boots for walking to work. Womens size 8. Any style is fine.',
         category: 'Clothing',
         location: 'Edmonton, AB',
-        photos: ['https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 16
       },
       {
@@ -559,7 +715,7 @@ export const seedPosts = async () => {
         description: 'Elderly homeowner looking for help raking leaves and basic yard cleanup. Can provide refreshments.',
         category: 'Community Help',
         location: 'Surrey, BC',
-        photos: ['https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400', 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 17
       },
       {
@@ -567,7 +723,7 @@ export const seedPosts = async () => {
         description: 'Apartment didnt come with microwave. Looking for basic model that works. Can pick up anywhere in Ottawa.',
         category: 'Household Items',
         location: 'Ottawa, ON',
-        photos: ['https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 18
       },
       {
@@ -575,7 +731,7 @@ export const seedPosts = async () => {
         description: 'Volunteering at local food bank. Always need non-perishable items - canned goods, pasta, rice, etc.',
         category: 'Food',
         location: 'Victoria, BC',
-        photos: ['https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 19
       },
       {
@@ -583,7 +739,7 @@ export const seedPosts = async () => {
         description: 'Book lover with too many books and nowhere to put them! Looking for any kind of bookshelf or storage.',
         category: 'Furniture',
         location: 'Mississauga, ON',
-        photos: ['https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'],
+        photos: getUniqueImages(2),
         days_ago: 20
       },
       {
@@ -591,7 +747,7 @@ export const seedPosts = async () => {
         description: 'Working from home and need second monitor for productivity. Any size would be helpful.',
         category: 'Technology',
         location: 'Kelowna, BC',
-        photos: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 21
       },
       {
@@ -599,7 +755,7 @@ export const seedPosts = async () => {
         description: 'Baby is growing so fast! Need clothes for next size up. Boy or gender neutral colors preferred.',
         category: 'Clothing',
         location: 'Red Deer, AB',
-        photos: ['https://images.unsplash.com/photo-1522771930-78848d3d7bd0?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 22
       },
       {
@@ -607,7 +763,7 @@ export const seedPosts = async () => {
         description: 'Been out of work for a while and need help updating my resume. Not sure how to make it look professional.',
         category: 'Community Help',
         location: 'Hamilton, ON',
-        photos: ['https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 23
       },
       {
@@ -615,7 +771,7 @@ export const seedPosts = async () => {
         description: 'Just moved and need vacuum for apartment. Anything that works would be greatly appreciated.',
         category: 'Household Items',
         location: 'New Westminster, BC',
-        photos: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 24
       },
       {
@@ -623,16 +779,15 @@ export const seedPosts = async () => {
         description: 'Have doctors appointment Tuesday 2pm in Calgary. Elderly and cant drive anymore. Will pay gas money.',
         category: 'Transportation',
         location: 'Lethbridge, AB',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 25
       },
-      // Add 25 more request posts to reach 50 total
       {
         title: 'Looking for warm blankets',
         description: 'Heating bills are too high. Need extra blankets to stay warm this winter. Any condition appreciated.',
         category: 'Household Items',
         location: 'Abbotsford, BC',
-        photos: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 26
       },
       {
@@ -640,7 +795,7 @@ export const seedPosts = async () => {
         description: 'Computer is running very slow, think it has virus. Would appreciate tech help from someone knowledgeable.',
         category: 'Community Help',
         location: 'Medicine Hat, AB',
-        photos: ['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 27
       },
       {
@@ -648,7 +803,7 @@ export const seedPosts = async () => {
         description: 'Lost weight and need smaller jeans. Size 32 waist, any length. Casual or work appropriate.',
         category: 'Clothing',
         location: 'Kitchener, ON',
-        photos: ['https://images.unsplash.com/photo-1542272604-787c3835535d?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 28
       },
       {
@@ -656,7 +811,7 @@ export const seedPosts = async () => {
         description: 'Important interview next Friday downtown. Car is in shop. Can pay gas money.',
         category: 'Transportation',
         location: 'Vancouver, BC',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 29
       },
       {
@@ -664,7 +819,7 @@ export const seedPosts = async () => {
         description: 'Studio apartment with no fridge. Need something small and energy efficient. Any working fridge helps.',
         category: 'Household Items',
         location: 'Vernon, BC',
-        photos: ['https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 30
       },
       {
@@ -672,7 +827,7 @@ export const seedPosts = async () => {
         description: 'Moving next weekend and need help with upright piano. Professional movers too expensive.',
         category: 'Community Help',
         location: 'Grande Prairie, AB',
-        photos: ['https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 3
       },
       {
@@ -680,7 +835,7 @@ export const seedPosts = async () => {
         description: 'College student needing textbooks for business program. Any business or economics books appreciated.',
         category: 'Household Items',
         location: 'London, ON',
-        photos: ['https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 5
       },
       {
@@ -688,7 +843,7 @@ export const seedPosts = async () => {
         description: 'Son grew out of winter coat. Need something warm for Canadian winter. Size large.',
         category: 'Clothing',
         location: 'Nanaimo, BC',
-        photos: ['https://images.unsplash.com/photo-1544966503-7cc36a2d8e8b?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 7
       },
       {
@@ -696,7 +851,7 @@ export const seedPosts = async () => {
         description: 'Weekly medical appointments at hospital. Public transit takes 2 hours. Would appreciate rides.',
         category: 'Transportation',
         location: 'Kamloops, BC',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 9
       },
       {
@@ -704,7 +859,7 @@ export const seedPosts = async () => {
         description: 'First time homeowner. Need basic toolkit - hammer, screwdrivers, wrench set. Any condition fine.',
         category: 'Household Items',
         location: 'Airdrie, AB',
-        photos: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 11
       },
       {
@@ -712,7 +867,7 @@ export const seedPosts = async () => {
         description: 'Want to improve my French for work. Looking for conversational practice with native speaker.',
         category: 'Community Help',
         location: 'Windsor, ON',
-        photos: ['https://images.unsplash.com/photo-1509228627152-72ae4c67f7d9?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 13
       },
       {
@@ -720,7 +875,7 @@ export const seedPosts = async () => {
         description: 'Phone charger broke and cant afford new one right now. Need USB-C cable for Android.',
         category: 'Technology',
         location: 'Langley, BC',
-        photos: ['https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 15
       },
       {
@@ -728,7 +883,7 @@ export const seedPosts = async () => {
         description: 'Living room needs coffee table. Any size or style works. Just need somewhere to put drinks.',
         category: 'Furniture',
         location: 'Spruce Grove, AB',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 17
       },
       {
@@ -736,7 +891,7 @@ export const seedPosts = async () => {
         description: 'Job interview next week needs professional shoes. Size 7, black or brown preferred.',
         category: 'Clothing',
         location: 'Hamilton, ON',
-        photos: ['https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 19
       },
       {
@@ -744,7 +899,7 @@ export const seedPosts = async () => {
         description: 'Car battery died in driveway. Need someone with booster cables to help get it started.',
         category: 'Community Help',
         location: 'Penticton, BC',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 1
       },
       {
@@ -752,7 +907,7 @@ export const seedPosts = async () => {
         description: 'Moving out on my own. Need basic plates, bowls, cups for small apartment. Any condition helps.',
         category: 'Household Items',
         location: 'Leduc, AB',
-        photos: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 2
       },
       {
@@ -760,7 +915,7 @@ export const seedPosts = async () => {
         description: 'Internet is slow with old router. Need newer router for better connection. Any working router appreciated.',
         category: 'Technology',
         location: 'Oshawa, ON',
-        photos: ['https://images.unsplash.com/photo-1606904825846-647eb07f5d50?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 4
       },
       {
@@ -768,7 +923,7 @@ export const seedPosts = async () => {
         description: 'Elderly and cant manage yard anymore. Need help with weeding and lawn mowing.',
         category: 'Community Help',
         location: 'Campbell River, BC',
-        photos: ['https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 6
       },
       {
@@ -776,7 +931,7 @@ export const seedPosts = async () => {
         description: 'Have mattress but sleeping on floor. Need any bed frame that fits double mattress.',
         category: 'Furniture',
         location: 'Lloydminster, AB',
-        photos: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 8
       },
       {
@@ -784,7 +939,7 @@ export const seedPosts = async () => {
         description: 'Lost my winter accessories. Need warm hat and mittens for walking to work in cold.',
         category: 'Clothing',
         location: 'Kingston, ON',
-        photos: ['https://images.unsplash.com/photo-1621452773781-0f992fd1f5c8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 10
       },
       {
@@ -792,7 +947,7 @@ export const seedPosts = async () => {
         description: 'Car broke down and need rides to work this week. Work downtown, live in suburbs. Can pay gas.',
         category: 'Transportation',
         location: 'North Vancouver, BC',
-        photos: ['https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 12
       },
       {
@@ -800,7 +955,7 @@ export const seedPosts = async () => {
         description: 'Starting over after difficult time. Need basic furniture - chair, small table, anything helps.',
         category: 'Furniture',
         location: 'Camrose, AB',
-        photos: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 14
       },
       {
@@ -808,7 +963,7 @@ export const seedPosts = async () => {
         description: 'Adult upgrading math skills for college. Need patient tutor for basic algebra and geometry.',
         category: 'Community Help',
         location: 'Guelph, ON',
-        photos: ['https://images.unsplash.com/photo-1509228627152-72ae4c67f7d9?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 16
       },
       {
@@ -816,7 +971,7 @@ export const seedPosts = async () => {
         description: 'Student needing to transfer files for school project. Any size USB drive would be helpful.',
         category: 'Technology',
         location: 'Delta, BC',
-        photos: ['https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 18
       },
       {
@@ -824,7 +979,7 @@ export const seedPosts = async () => {
         description: 'Going through tough financial time. Would appreciate any canned goods or non-perishable food.',
         category: 'Food',
         location: 'Wetaskiwin, AB',
-        photos: ['https://images.unsplash.com/photo-1542838132-92c53300491e?w=400'],
+        photos: getUniqueImages(1),
         days_ago: 20
       }
     ];
