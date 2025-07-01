@@ -32,7 +32,8 @@ const AdminDashboard = () => {
     authLoading,
     isAdminLoading,
     isAdmin,
-    adminError: adminError?.message || adminError
+    adminError: adminError?.message || adminError,
+    currentPath: window.location.pathname
   });
 
   useEffect(() => {
