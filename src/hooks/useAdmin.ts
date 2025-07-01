@@ -71,11 +71,48 @@ export const useAdminCheck = () => {
   return useQuery({
     queryKey: ['adminCheck'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('is_admin');
-      if (error) throw error;
-      return data || false;
+      try {
+        // First check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          console.log("Admin check: No session found");
+          return false;
+        }
+
+        console.log("Admin check: Checking for user", session.user.id);
+
+        // Try the RPC function first
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('is_admin');
+        
+        if (!rpcError && rpcResult !== null) {
+          console.log("Admin check via RPC:", rpcResult);
+          return rpcResult;
+        }
+
+        console.log("RPC failed, checking user_roles table directly:", rpcError);
+
+        // Fallback: Check user_roles table directly
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (roleError) {
+          console.error("Error checking user roles:", roleError);
+          return false;
+        }
+
+        const isAdmin = roleData?.role === 'admin';
+        console.log("Admin check via user_roles table:", isAdmin);
+        return isAdmin;
+      } catch (error) {
+        console.error("Admin check error:", error);
+        return false;
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
   });
 };
 

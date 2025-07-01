@@ -28,8 +28,10 @@ import { useAdminCheck } from "@/hooks/useAdmin";
 
 const UserMenu = () => {
   const { user, logout } = useAuth();
-  const { data: isAdmin } = useAdminCheck();
+  const { data: isAdmin, isLoading: adminLoading } = useAdminCheck();
   const navigate = useNavigate();
+
+  console.log("UserMenu: Admin check result", { isAdmin, adminLoading, userId: user?.id });
 
   const handleSignOut = async () => {
     await logout();
@@ -57,6 +59,7 @@ const UserMenu = () => {
   };
 
   const goToAdminDashboard = () => {
+    console.log("UserMenu: Navigating to admin dashboard");
     navigate("/admin");
   };
 
@@ -74,13 +77,21 @@ const UserMenu = () => {
           </Avatar>
           <span className="hidden md:inline-block text-sm font-medium">
             {user.name || user.email?.split("@")[0] || "User"}
+            {isAdmin && !adminLoading && (
+              <span className="text-xs text-orange-600 ml-1">(Admin)</span>
+            )}
           </span>
           <ChevronDown className="h-4 w-4 text-gray-500" />
           <NotificationIndicator />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          My Account
+          {isAdmin && !adminLoading && (
+            <span className="text-xs text-orange-600 block">Administrator</span>
+          )}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={goToProfile}>
@@ -109,7 +120,7 @@ const UserMenu = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
-        {isAdmin && (
+        {isAdmin && !adminLoading && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -132,3 +143,4 @@ const UserMenu = () => {
 };
 
 export default UserMenu;
+
