@@ -43,7 +43,6 @@ import ListNonprofit from "./pages/ListNonprofit";
 import Subscribe from "./pages/Subscribe";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 console.log('App.tsx: App component loaded');
@@ -101,10 +100,8 @@ function App() {
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/create-posting" element={<CreatePosting />} />
                 <Route path="/edit-posting/:id" element={<EditPosting />} />
-              </Route>
-              
-              {/* Admin Routes */}
-              <Route element={<AdminProtectedRoute />}>
+                
+                {/* Admin Routes - Protected by both auth and admin check */}
                 <Route path="/admin" element={<AdminDashboard />} />
               </Route>
               
