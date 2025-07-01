@@ -81,22 +81,14 @@ export const useAdminCheck = () => {
 
         console.log("Admin check: Checking for user", session.user.id);
 
-        // Try the RPC function first
-        const { data: rpcResult, error: rpcError } = await supabase.rpc('is_admin');
-        
-        if (!rpcError && rpcResult !== null) {
-          console.log("Admin check via RPC:", rpcResult);
-          return rpcResult;
-        }
-
-        console.log("RPC failed, checking user_roles table directly:", rpcError);
-
-        // Fallback: Check user_roles table directly
+        // Check user_roles table directly for more reliable results
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', session.user.id)
           .maybeSingle();
+
+        console.log("Admin check: Role query result", { roleData, roleError });
 
         if (roleError) {
           console.error("Error checking user roles:", roleError);
@@ -104,7 +96,7 @@ export const useAdminCheck = () => {
         }
 
         const isAdmin = roleData?.role === 'admin';
-        console.log("Admin check via user_roles table:", isAdmin);
+        console.log("Admin check result:", isAdmin);
         return isAdmin;
       } catch (error) {
         console.error("Admin check error:", error);
@@ -112,7 +104,8 @@ export const useAdminCheck = () => {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1,
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 };
 

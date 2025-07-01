@@ -23,7 +23,7 @@ import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
-import SafetyTips from "./pages/SafetyTips";
+import SafetyTips from "./pages/SafetyTips";  
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import EditPosting from "./pages/EditPosting";
@@ -100,10 +100,10 @@ function App() {
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/create-posting" element={<CreatePosting />} />
                 <Route path="/edit-posting/:id" element={<EditPosting />} />
-                
-                {/* Admin Routes - Protected by both auth and admin check */}
-                <Route path="/admin" element={<AdminDashboard />} />
               </Route>
+              
+              {/* Admin Routes - Separate from other protected routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

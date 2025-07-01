@@ -28,10 +28,16 @@ import { useAdminCheck } from "@/hooks/useAdmin";
 
 const UserMenu = () => {
   const { user, logout } = useAuth();
-  const { data: isAdmin, isLoading: adminLoading } = useAdminCheck();
+  const { data: isAdmin, isLoading: adminLoading, error: adminError } = useAdminCheck();
   const navigate = useNavigate();
 
-  console.log("UserMenu: Admin check result", { isAdmin, adminLoading, userId: user?.id });
+  console.log("UserMenu: Admin check state", { 
+    isAdmin, 
+    adminLoading, 
+    adminError,
+    userId: user?.id,
+    userEmail: user?.email 
+  });
 
   const handleSignOut = async () => {
     await logout();
@@ -59,7 +65,7 @@ const UserMenu = () => {
   };
 
   const goToAdminDashboard = () => {
-    console.log("UserMenu: Navigating to admin dashboard");
+    console.log("UserMenu: Navigating to admin dashboard", { isAdmin, adminLoading });
     navigate("/admin");
   };
 
@@ -120,17 +126,19 @@ const UserMenu = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
-        {isAdmin && !adminLoading && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={goToAdminDashboard} className="text-orange-600">
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Admin Panel</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
+        {/* Always show admin option for debugging, but style differently based on access */}
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem 
+            onClick={goToAdminDashboard} 
+            className={isAdmin ? "text-orange-600" : "text-gray-400"}
+          >
+            <Shield className="mr-2 h-4 w-4" />
+            <span>Admin Panel</span>
+            {adminLoading && <span className="text-xs ml-1">(Loading...)</span>}
+            {!adminLoading && !isAdmin && <span className="text-xs ml-1">(No Access)</span>}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
@@ -143,4 +151,3 @@ const UserMenu = () => {
 };
 
 export default UserMenu;
-

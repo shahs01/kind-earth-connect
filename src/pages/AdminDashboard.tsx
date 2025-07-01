@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdmin";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, Shield, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,13 +24,15 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
 
-  console.log("AdminDashboard: Auth state", {
+  console.log("AdminDashboard: Complete auth state", {
     isAuthenticated,
     hasUser: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
     authLoading,
     isAdminLoading,
     isAdmin,
-    adminError
+    adminError: adminError?.message || adminError
   });
 
   useEffect(() => {
@@ -58,7 +60,7 @@ const AdminDashboard = () => {
     return null;
   }
 
-  // If authenticated but not admin, show access denied
+  // If authenticated but not admin, show access denied with debug info
   if (!isAdmin) {
     console.log("AdminDashboard: User is not admin, showing access denied");
     return (
@@ -69,6 +71,27 @@ const AdminDashboard = () => {
           <p className="text-red-600 mb-6">
             You don't have administrator privileges to access this area.
           </p>
+          
+          {/* Debug info */}
+          <div className="bg-white p-4 rounded-lg mb-6 text-left">
+            <h3 className="font-semibold text-gray-800 mb-2 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Debug Information
+            </h3>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p><strong>User ID:</strong> {user.id}</p>
+              <p><strong>Email:</strong> {user.email}</p>
+              <p><strong>Is Admin:</strong> {String(isAdmin)}</p>
+              <p><strong>Admin Loading:</strong> {String(isAdminLoading)}</p>
+              {adminError && <p><strong>Error:</strong> {String(adminError)}</p>}
+            </div>
+            <div className="mt-3 text-xs text-gray-500">
+              To make this user an admin, add a record to the user_roles table in Supabase:
+              <br />
+              user_id: {user.id}, role: 'admin'
+            </div>
+          </div>
+          
           <div className="space-y-3">
             <p className="text-sm text-red-500">
               If you believe this is an error, please contact support.
