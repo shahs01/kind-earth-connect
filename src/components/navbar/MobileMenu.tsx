@@ -19,7 +19,8 @@ import {
   FileText, 
   File, 
   Search,
-  TrendingUp
+  TrendingUp,
+  Briefcase
 } from "lucide-react";
 
 interface MobileMenuProps {
@@ -73,6 +74,7 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
     { label: "Partner With Us", path: "/partner-with-us", icon: <Handshake className="mr-2 h-4 w-4" /> },
     { label: "Volunteer", path: "/volunteer", icon: <HelpCircle className="mr-2 h-4 w-4" /> },
     { label: "Donate", path: "/donate", icon: <Heart className="mr-2 h-4 w-4" /> },
+    { label: "Careers", path: "/careers", icon: <Briefcase className="mr-2 h-4 w-4" /> },
   ];
 
   return (
@@ -139,17 +141,6 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
             onClick={handleLinkClick}
           >
             Donate
-          </Link>
-          <Link
-            to="/careers"
-            className={`block py-2 px-3 rounded-md transition-colors ${
-              isActive("/careers")
-                ? "bg-thryvance-green text-white"
-                : "text-gray-700 hover:bg-gray-100"
-            }`}
-            onClick={handleLinkClick}
-          >
-            Careers
           </Link>
 
           {/* About Us Dropdown */}
