@@ -45,7 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
     const fileContent = Uint8Array.from(atob(resumeFile.content), c => c.charCodeAt(0));
 
     const emailResponse = await resend.emails.send({
-      from: "Thryvance Careers <onboarding@resend.dev>",
+      from: "Thryvance Careers <noreply@thryvance.ca>",
       to: ["thryvance.ca@gmail.com"],
       subject: `New Resume Submission from ${name}`,
       html: `
