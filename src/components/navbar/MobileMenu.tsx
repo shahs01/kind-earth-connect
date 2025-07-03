@@ -205,20 +205,6 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
             )}
           </div>
 
-          {/* Admin Panel Link - Show for admin users */}
-          {isAuthenticated && isAdmin && (
-            <>
-              <Separator className="my-2" />
-              <Link
-                to="/admin/dashboard"
-                className="flex items-center py-2 px-3 rounded-md text-orange-600 hover:bg-orange-50 transition-colors"
-                onClick={handleLinkClick}
-              >
-                <Shield className="mr-3 h-4 w-4" />
-                Admin Panel
-              </Link>
-            </>
-          )}
         </div>
 
         <Separator className="my-4" />

@@ -112,7 +112,7 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
           
           {isAdmin && (
             <Link
-              to="/admin/dashboard"
+              to="/admin"
               className="flex items-center py-2 px-3 rounded-md text-orange-600 hover:bg-gray-100 transition-colors"
               onClick={handleLinkClick}
             >
