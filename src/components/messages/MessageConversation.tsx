@@ -396,6 +396,12 @@ const MessageConversation = () => {
         onReportUser={handleReportUser}
         onDeleteConversation={handleDeleteConversation}
         onArchiveConversation={handleArchiveConversation}
+        refreshArchiveStatus={() => {
+          // Force a re-render by updating otherUser state
+          if (otherUser) {
+            setOtherUser({...otherUser});
+          }
+        }}
       />
 
       {/* Messages Area */}

@@ -15,6 +15,7 @@ interface ConversationHeaderProps {
   onReportUser: () => void;
   onDeleteConversation: () => void;
   onArchiveConversation: () => void;
+  refreshArchiveStatus?: () => void;
 }
 
 const ConversationHeader = ({
@@ -23,10 +24,11 @@ const ConversationHeader = ({
   onViewProfile,
   onReportUser,
   onDeleteConversation,
-  onArchiveConversation
+  onArchiveConversation,
+  refreshArchiveStatus
 }: ConversationHeaderProps) => {
   const { userId } = useParams<{ userId: string }>();
-  const { unarchiveConversation } = useConversationStates();
+  const { unarchiveConversation, getConversationState } = useConversationStates();
   const [isArchived, setIsArchived] = React.useState(false);
   
   const { isHelpRecorded, toggleHelpRecording, loading: helpLoading } = useHelpRecording({
@@ -38,14 +40,13 @@ const ConversationHeader = ({
   React.useEffect(() => {
     const checkArchiveStatus = async () => {
       if (userId) {
-        const { getConversationState } = require("@/hooks/useConversationStates");
         const state = await getConversationState(userId);
         setIsArchived(state?.is_archived || false);
       }
     };
     
     checkArchiveStatus();
-  }, [userId]);
+  }, [userId, getConversationState]);
 
   const handleUnarchive = async () => {
     if (userId) {
@@ -119,7 +120,15 @@ const ConversationHeader = ({
                 Unarchive Conversation
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={onArchiveConversation}>
+              <DropdownMenuItem onClick={() => {
+                onArchiveConversation();
+                // Refresh archive status after archiving
+                setTimeout(() => {
+                  if (refreshArchiveStatus) {
+                    refreshArchiveStatus();
+                  }
+                }, 100);
+              }}>
                 <Archive className="mr-2 h-4 w-4" />
                 Archive Conversation
               </DropdownMenuItem>
