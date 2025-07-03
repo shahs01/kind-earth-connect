@@ -140,6 +140,17 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
           >
             Donate
           </Link>
+          <Link
+            to="/careers"
+            className={`block py-2 px-3 rounded-md transition-colors ${
+              isActive("/careers")
+                ? "bg-thryvance-green text-white"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={handleLinkClick}
+          >
+            Careers
+          </Link>
 
           {/* About Us Dropdown */}
           <div className="space-y-2">
