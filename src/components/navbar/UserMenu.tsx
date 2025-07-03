@@ -48,6 +48,10 @@ const UserMenu = () => {
     navigate(`/profile/${user?.id}`);
   };
 
+  const goToSettings = () => {
+    navigate(`/profile/${user?.id}`, { state: { defaultTab: 'settings' } });
+  };
+
   const goToFavorites = () => {
     navigate("/favorites");
   };
@@ -120,7 +124,7 @@ const UserMenu = () => {
             <Bell className="mr-2 h-4 w-4" />
             <span>Notifications</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={goToProfile}>
+          <DropdownMenuItem onClick={goToSettings}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>

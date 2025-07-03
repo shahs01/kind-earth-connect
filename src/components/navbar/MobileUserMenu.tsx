@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,16 @@ interface MobileUserMenuProps {
 const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
   const { user, logout } = useAuth();
   const { data: isAdmin } = useAdminCheck();
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleSignOut = async () => {
     await logout();
+    handleLinkClick();
+  };
+
+  const goToSettings = () => {
+    navigate(`/profile/${user?.id}`, { state: { defaultTab: 'settings' } });
     handleLinkClick();
   };
 
@@ -101,14 +107,13 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
             <Bell className="mr-3 h-4 w-4" />
             Notifications
           </Link>
-          <Link
-            to={`/profile/${user?.id}`}
-            className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
-            onClick={handleLinkClick}
+          <button
+            className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors w-full text-left"
+            onClick={goToSettings}
           >
             <Settings className="mr-3 h-4 w-4" />
             Settings
-          </Link>
+          </button>
           
           {isAdmin && (
             <Link
