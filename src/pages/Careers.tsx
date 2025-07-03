@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ResumeSubmissionDialog from "@/components/ResumeSubmissionDialog";
 
 const Careers = () => {
   const jobOpenings = [
@@ -271,9 +272,11 @@ const Careers = () => {
               We're always looking for talented individuals who are passionate about our mission.
               Send us your resume and we'll keep you in mind for future opportunities.
             </p>
-            <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
-              Submit Your Resume
-            </Button>
+            <ResumeSubmissionDialog>
+              <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                Submit Your Resume
+              </Button>
+            </ResumeSubmissionDialog>
           </div>
         </div>
       </main>

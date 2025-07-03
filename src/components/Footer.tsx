@@ -122,6 +122,11 @@ const Footer = () => {
                   Donate Goods
                 </Link>
               </li>
+              <li>
+                <Link to="/careers" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                  Careers
+                </Link>
+              </li>
             </ul>
           </div>
           
