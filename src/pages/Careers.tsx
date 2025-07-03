@@ -4,7 +4,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ResumeSubmissionDialog from "@/components/ResumeSubmissionDialog";
 
 const Careers = () => {
   const jobOpenings = [
@@ -270,13 +269,8 @@ const Careers = () => {
             <h2 className="text-xl font-semibold mb-4">Don't See the Right Fit?</h2>
             <p className="text-gray-700 mb-6">
               We're always looking for talented individuals who are passionate about our mission.
-              Send us your resume and we'll keep you in mind for future opportunities.
+              Submit your resume to <strong>thryvance.ca@gmail.com</strong> and we'll keep you in mind for future opportunities.
             </p>
-            <ResumeSubmissionDialog>
-              <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                Submit Your Resume
-              </Button>
-            </ResumeSubmissionDialog>
           </div>
         </div>
       </main>
