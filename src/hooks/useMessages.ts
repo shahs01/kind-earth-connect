@@ -185,12 +185,8 @@ export function useMessages() {
       
       console.log(`Created ${activeConversationsData.length} active and ${archivedConversationsData.length} archived conversations`);
       
-      if (showArchived) {
-        setArchivedConversations(archivedConversationsData);
-      } else {
-        setConversations(activeConversationsData);
-        setArchivedConversations(archivedConversationsData);
-      }
+      setConversations(activeConversationsData);
+      setArchivedConversations(archivedConversationsData);
     } catch (error) {
       console.error("Error fetching conversations:", error);
       setConnectionError(true);

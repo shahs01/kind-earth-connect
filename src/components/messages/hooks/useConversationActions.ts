@@ -94,6 +94,11 @@ export function useConversationActions({
       const success = await archiveConversation(userId);
       
       if (success) {
+        // Refresh conversations list to update the sidebar
+        if (refreshConversations) {
+          refreshConversations();
+        }
+        
         // Clear messages and navigate back to messages root
         clearMessages();
         navigate('/messages');
