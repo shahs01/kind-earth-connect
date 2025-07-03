@@ -41,6 +41,7 @@ import SponsorProject from "./pages/SponsorProject";
 import DonateGoods from "./pages/DonateGoods";
 import ListNonprofit from "./pages/ListNonprofit";
 import Subscribe from "./pages/Subscribe";
+import JoinCommunity from "./pages/JoinCommunity";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -90,6 +91,7 @@ function App() {
               <Route path="/donate-goods" element={<DonateGoods />} />
               <Route path="/list-nonprofit" element={<ListNonprofit />} />
               <Route path="/subscribe" element={<Subscribe />} />
+              <Route path="/join-community" element={<JoinCommunity />} />
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>

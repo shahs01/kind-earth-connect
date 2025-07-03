@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -252,14 +253,14 @@ const About = () => {
               There are many ways to get involved with Thryvance and support our mission of building thriving communities.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button className="bg-thryvance-green hover:bg-thryvance-green-dark">
-                Join the Community
+              <Button asChild className="bg-thryvance-green hover:bg-thryvance-green-dark">
+                <Link to="/join-community">Join the Community</Link>
               </Button>
-              <Button variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
-                Partner With Us
+              <Button asChild variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
+                <Link to="/partner-with-us">Partner With Us</Link>
               </Button>
-              <Button variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
-                View Open Positions
+              <Button asChild variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
+                <Link to="/careers">View Open Positions</Link>
               </Button>
             </div>
           </div>
