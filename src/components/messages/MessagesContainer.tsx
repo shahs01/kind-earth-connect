@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Routes, Route, useParams } from "react-router-dom";
+import { Routes, Route, useParams, useNavigate } from "react-router-dom";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import ConversationsList from "./ConversationsList";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 const MessagesContainer = () => {
   const { userId } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { loading, conversations, archivedConversations, fetchConversations } = useMessages();
   const [showArchived, setShowArchived] = useState(false);
 
@@ -30,8 +31,7 @@ const MessagesContainer = () => {
   }
 
   const handleBackToConversations = () => {
-    window.history.pushState({}, '', '/messages');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    navigate('/messages');
   };
 
   const toggleArchived = () => {
@@ -84,8 +84,7 @@ const MessagesContainer = () => {
                     selectedUserId={userId}
                     showArchived={showArchived}
                     onSelectConversation={(userId) => {
-                      window.history.pushState({}, '', `/messages/${userId}`);
-                      window.dispatchEvent(new PopStateEvent('popstate'));
+                      navigate(`/messages/${userId}`);
                     }}
                   />
                 )}
@@ -155,8 +154,7 @@ const MessagesContainer = () => {
                   selectedUserId={userId}
                   showArchived={showArchived}
                   onSelectConversation={(userId) => {
-                    window.history.pushState({}, '', `/messages/${userId}`);
-                    window.dispatchEvent(new PopStateEvent('popstate'));
+                    navigate(`/messages/${userId}`);
                   }}
                 />
               )}
