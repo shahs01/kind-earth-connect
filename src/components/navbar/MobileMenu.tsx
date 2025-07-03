@@ -119,9 +119,9 @@ const MobileMenu = ({ isActive, isMenuOpen, toggleMenu }: MobileMenuProps) => {
             Volunteer
           </Link>
           <Link
-            to="/nonprofit-directory"
+            to="/nonprofits"
             className={`block py-2 px-3 rounded-md transition-colors ${
-              isActive("/nonprofit-directory")
+              isActive("/nonprofits")
                 ? "bg-thryvance-green text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}

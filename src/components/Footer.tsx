@@ -51,7 +51,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/nonprofit-directory" className="text-gray-600 hover:text-thryvance-green transition-colors">
+                <Link to="/nonprofits" className="text-gray-600 hover:text-thryvance-green transition-colors">
                   Find Nonprofits
                 </Link>
               </li>
