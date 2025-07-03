@@ -35,6 +35,9 @@ const Profile = () => {
   const [reviewsRefreshTrigger, setReviewsRefreshTrigger] = useState(0);
   const location = useLocation();
   
+  // Handle missing userId - use current user's ID if none provided
+  const effectiveUserId = userId || user?.id;
+  
   useEffect(() => {
     // Check if we have a defaultTab in the location state
     const state = location.state as { defaultTab?: string } | null;
@@ -48,17 +51,17 @@ const Profile = () => {
       setIsLoading(true);
       
       try {
-        if (!userId) {
+        if (!effectiveUserId) {
           console.error("No userId provided");
           return;
         }
         
         // Check if this is the current user's profile
-        setIsOwnProfile(user?.id === userId);
+        setIsOwnProfile(user?.id === effectiveUserId);
         
         // If it's not the user's own profile, fetch the profile data
-        if (user?.id !== userId) {
-          const profileData = await fetchUserProfile(userId);
+        if (user?.id !== effectiveUserId) {
+          const profileData = await fetchUserProfile(effectiveUserId);
           console.log("Fetched profile:", profileData);
           setProfileUser(profileData);
         } else {
@@ -72,17 +75,16 @@ const Profile = () => {
       }
     };
     
-    if (userId && user && !authLoading) {
+    if (effectiveUserId && user && !authLoading) {
       loadProfileData();
     }
-  }, [userId, user, fetchUserProfile, authLoading]);
+  }, [effectiveUserId, user, fetchUserProfile, authLoading]);
 
   const handleReviewSubmitted = () => {
     setReviewsRefreshTrigger(prev => prev + 1);
   };
   
-  // Handle missing userId
-  if (!userId) {
+  if (!effectiveUserId) {
     return <Navigate to="/404" />;
   }
   
@@ -191,7 +193,7 @@ const Profile = () => {
                 
                 {isOwnProfile && (
                   <TabsContent value="posts">
-                    <UserPosts userId={userId} />
+                    <UserPosts userId={effectiveUserId} />
                   </TabsContent>
                 )}
                 
