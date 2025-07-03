@@ -99,7 +99,7 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/messages" element={<Messages />} />
-                <Route path="/messages/:conversationId" element={<Messages />} />
+                <Route path="/messages/:userId" element={<Messages />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/create-posting" element={<CreatePosting />} />
                 <Route path="/edit-posting/:id" element={<EditPosting />} />
