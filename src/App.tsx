@@ -44,6 +44,7 @@ import Subscribe from "./pages/Subscribe";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 console.log('App.tsx: App component loaded');
 
@@ -103,7 +104,9 @@ function App() {
               </Route>
               
               {/* Admin Routes - Separate from other protected routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route element={<AdminProtectedRoute />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+              </Route>
               
               <Route path="*" element={<NotFound />} />
             </Routes>
