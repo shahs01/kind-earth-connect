@@ -445,7 +445,8 @@ export const useSetUserRole = () => {
 
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string, role: 'user' | 'admin' }) => {
-        const { data: existingRole, error: checkError } = await supabase
+      // Enhanced security: Use the secure admin action logging
+      const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
         .select('*')
         .eq('user_id', userId)
@@ -468,16 +469,23 @@ export const useSetUserRole = () => {
         if (error) throw error;
       }
       
-      await supabase.rpc('log_admin_action', {
+      // Use the secure logging function
+      await supabase.rpc('log_admin_action_secure', {
         action_text: `Changed user role to ${role}`,
         target_type_param: 'user',
         target_id_param: userId,
-        details_param: { new_role: role, old_role: existingRole?.role || 'user' }
+        details_param: { 
+          new_role: role, 
+          old_role: existingRole?.role || 'user',
+          target_user_id: userId,
+          timestamp: new Date().toISOString()
+        }
       });
     },
     onSuccess: (_, variables) => {
       toast({ title: "Role updated", description: `User role set to ${variables.role}` });
       queryClient.invalidateQueries({ queryKey: ['adminUserRoles'] });
+      queryClient.invalidateQueries({ queryKey: ['adminCheck'] });
     },
     onError: (error: any) => {
       toast({ title: "Error updating role", description: error.message, variant: "destructive" });
@@ -498,11 +506,15 @@ export const useUpdateUserStatus = () => {
       
       if (error) throw error;
       
-      await supabase.rpc('log_admin_action', {
+      await supabase.rpc('log_admin_action_secure', {
         action_text: `Changed user status to ${status}`,
         target_type_param: 'user',
         target_id_param: userId,
-        details_param: { new_status: status }
+        details_param: { 
+          new_status: status,
+          target_user_id: userId,
+          timestamp: new Date().toISOString()
+        }
       });
     },
     onSuccess: (_, variables) => {
@@ -527,11 +539,15 @@ export const useUpdateSiteSetting = () => {
         .eq('key', key);
       if (error) throw error;
       
-      await supabase.rpc('log_admin_action', {
+      await supabase.rpc('log_admin_action_secure', {
         action_text: `Updated site setting: ${key}`,
         target_type_param: 'setting',
         target_id_param: key,
-        details_param: { new_value: value }
+        details_param: { 
+          new_value: value,
+          setting_key: key,
+          timestamp: new Date().toISOString()
+        }
       });
     },
     onSuccess: (_, variables) => {

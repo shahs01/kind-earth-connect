@@ -45,6 +45,7 @@ import {
 import { Shield, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAuthProfile } from "@/hooks/useAuthProfile";
+import { supabase } from "@/integrations/supabase/client";
 
 // Form validation schema for password change
 const passwordFormSchema = z.object({
@@ -87,6 +88,28 @@ const SecuritySettingsCard = () => {
     setIsLoading(true);
     
     try {
+      // Enhanced security: verify current password first
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.email) {
+        throw new Error("User email not found");
+      }
+
+      // Attempt to sign in with current password to verify it
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.user.email,
+        password: data.currentPassword
+      });
+
+      if (verifyError) {
+        toast({
+          title: "Password verification failed",
+          description: "Current password is incorrect.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       await changePassword(data.currentPassword, data.newPassword);
       
       toast({
@@ -96,8 +119,12 @@ const SecuritySettingsCard = () => {
       
       setIsPasswordDialogOpen(false);
       passwordForm.reset();
-    } catch (error) {
-      // Error is handled in auth context
+    } catch (error: any) {
+      toast({
+        title: "Password change failed",
+        description: error.message || "An error occurred while changing your password.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
