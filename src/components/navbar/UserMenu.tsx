@@ -45,11 +45,11 @@ const UserMenu = () => {
   };
 
   const goToProfile = () => {
-    navigate(`/profile/${user?.id}`);
+    navigate("/profile");
   };
 
   const goToSettings = () => {
-    navigate(`/profile/${user?.id}`, { state: { defaultTab: 'settings' } });
+    navigate("/profile", { state: { defaultTab: 'settings' } });
   };
 
   const goToFavorites = () => {
@@ -65,7 +65,7 @@ const UserMenu = () => {
   };
 
   const goToUserPosts = () => {
-    navigate(`/profile/${user?.id}`, { state: { defaultTab: 'posts' } });
+    navigate("/profile", { state: { defaultTab: 'posts' } });
   };
 
   const goToAdminDashboard = () => {

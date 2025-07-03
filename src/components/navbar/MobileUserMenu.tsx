@@ -34,7 +34,7 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
   };
 
   const goToSettings = () => {
-    navigate(`/profile/${user?.id}`, { state: { defaultTab: 'settings' } });
+    navigate("/profile", { state: { defaultTab: 'settings' } });
     handleLinkClick();
   };
 
@@ -67,7 +67,7 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
       {isExpanded && (
         <div className="pl-4 space-y-2">
           <Link
-            to={`/profile/${user?.id}`}
+            to="/profile"
             className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
             onClick={handleLinkClick}
           >
@@ -91,7 +91,7 @@ const MobileUserMenu = ({ handleLinkClick }: MobileUserMenuProps) => {
             Favorites
           </Link>
           <Link
-            to={`/profile/${user?.id}`}
+            to="/profile"
             state={{ defaultTab: 'posts' }}
             className="flex items-center py-2 px-3 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
             onClick={handleLinkClick}
