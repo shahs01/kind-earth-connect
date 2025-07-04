@@ -153,19 +153,21 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-11 gap-1">
-              <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
-              <TabsTrigger value="users" className="text-xs md:text-sm">Users</TabsTrigger>
-              <TabsTrigger value="posts" className="text-xs md:text-sm">Posts</TabsTrigger>
-              <TabsTrigger value="nonprofits" className="text-xs md:text-sm">Nonprofits</TabsTrigger>
-              <TabsTrigger value="team" className="text-xs md:text-sm">Team</TabsTrigger>
-              <TabsTrigger value="impact" className="text-xs md:text-sm">Impact</TabsTrigger>
-              <TabsTrigger value="content" className="text-xs md:text-sm">Content</TabsTrigger>
-              <TabsTrigger value="about-images" className="text-xs md:text-sm">Images</TabsTrigger>
-              <TabsTrigger value="careers" className="text-xs md:text-sm">Careers</TabsTrigger>
-              <TabsTrigger value="settings" className="text-xs md:text-sm">Settings</TabsTrigger>
-              <TabsTrigger value="audit" className="text-xs md:text-sm">Audit</TabsTrigger>
-            </TabsList>
+            <div className="w-full overflow-x-auto">
+              <TabsList className="inline-flex w-max min-w-full lg:grid lg:w-full lg:grid-cols-11 gap-1 p-1">
+                <TabsTrigger value="overview" className="text-xs md:text-sm whitespace-nowrap">Overview</TabsTrigger>
+                <TabsTrigger value="users" className="text-xs md:text-sm whitespace-nowrap">Users</TabsTrigger>
+                <TabsTrigger value="posts" className="text-xs md:text-sm whitespace-nowrap">Posts</TabsTrigger>
+                <TabsTrigger value="nonprofits" className="text-xs md:text-sm whitespace-nowrap">Nonprofits</TabsTrigger>
+                <TabsTrigger value="team" className="text-xs md:text-sm whitespace-nowrap">Team</TabsTrigger>
+                <TabsTrigger value="impact" className="text-xs md:text-sm whitespace-nowrap">Impact</TabsTrigger>
+                <TabsTrigger value="content" className="text-xs md:text-sm whitespace-nowrap">Content</TabsTrigger>
+                <TabsTrigger value="about-images" className="text-xs md:text-sm whitespace-nowrap">Images</TabsTrigger>
+                <TabsTrigger value="careers" className="text-xs md:text-sm whitespace-nowrap">Careers</TabsTrigger>
+                <TabsTrigger value="settings" className="text-xs md:text-sm whitespace-nowrap">Settings</TabsTrigger>
+                <TabsTrigger value="audit" className="text-xs md:text-sm whitespace-nowrap">Audit</TabsTrigger>
+              </TabsList>
+            </div>
 
             <div className="bg-white rounded-lg shadow p-3 md:p-6">
               {renderTabContent()}
