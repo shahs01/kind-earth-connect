@@ -296,6 +296,54 @@ export type Database = {
         }
         Relationships: []
       }
+      job_opportunities: {
+        Row: {
+          benefits: string | null
+          created_at: string
+          created_by: string | null
+          department: string
+          description: string | null
+          id: string
+          is_active: boolean
+          location: string
+          requirements: string | null
+          title: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          benefits?: string | null
+          created_at?: string
+          created_by?: string | null
+          department: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location: string
+          requirements?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          benefits?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string
+          requirements?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

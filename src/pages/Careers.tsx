@@ -1,53 +1,58 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+
+interface JobOpportunity {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  description: string | null;
+  created_at: string;
+}
 
 const Careers = () => {
-  const jobOpenings = [
-    {
-      id: 1,
-      title: "Community Engagement Manager",
-      department: "Community Operations",
-      location: "Remote",
-      type: "Full-time",
-      posted: "2 weeks ago"
-    },
-    {
-      id: 2,
-      title: "Frontend Developer",
-      department: "Engineering",
-      location: "Hybrid",
-      type: "Full-time",
-      posted: "1 week ago"
-    },
-    {
-      id: 3,
-      title: "Nonprofit Partnerships Coordinator",
-      department: "Partnerships",
-      location: "In-office",
-      type: "Full-time",
-      posted: "3 days ago"
-    },
-    {
-      id: 4,
-      title: "Content Writer",
-      department: "Marketing",
-      location: "Remote",
-      type: "Part-time",
-      posted: "1 month ago"
-    },
-    {
-      id: 5,
-      title: "User Experience Researcher",
-      department: "Product",
-      location: "Remote",
-      type: "Contract",
-      posted: "2 days ago"
+  const [jobOpenings, setJobOpenings] = useState<JobOpportunity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("job_opportunities")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setJobOpenings(data || []);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return "1 week ago";
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+  };
 
   const values = [
     {
@@ -81,128 +86,152 @@ const Careers = () => {
           <div className="bg-white shadow-md rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold mb-6">Current Openings</h2>
             
-            <Tabs defaultValue="all" className="mb-6">
-              <TabsList className="grid grid-cols-4 mb-6">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="engineering">Engineering</TabsTrigger>
-                <TabsTrigger value="operations">Operations</TabsTrigger>
-                <TabsTrigger value="marketing">Marketing</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all">
-                <div className="space-y-4">
-                  {jobOpenings.map(job => (
-                    <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{job.title}</h3>
-                          <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+            {loading ? (
+              <div className="text-center py-8">
+                <p>Loading job opportunities...</p>
+              </div>
+            ) : jobOpenings.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No job opportunities available at the moment. Check back soon!</p>
+              </div>
+            ) : (
+              <>
+                <Tabs defaultValue="all" className="mb-6">
+                  <TabsList className="grid grid-cols-4 mb-6">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="engineering">Engineering</TabsTrigger>
+                    <TabsTrigger value="operations">Operations</TabsTrigger>
+                    <TabsTrigger value="marketing">Marketing</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="all">
+                    <div className="space-y-4">
+                      {jobOpenings.map(job => (
+                        <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{job.title}</h3>
+                              <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                              {job.description && (
+                                <p className="text-sm text-gray-600 mt-2">{job.description}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">Posted {formatDate(job.created_at)}</span>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center">
+                            <Button 
+                              variant="outline" 
+                              className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
+                            >
+                              View Details
+                            </Button>
+                            <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
+                              Apply Now
+                            </Button>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">Posted {job.posted}</span>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center">
-                        <Button 
-                          variant="outline" 
-                          className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
-                        >
-                          View Details
-                        </Button>
-                        <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
-                          Apply Now
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="engineering">
-                <div className="space-y-4">
-                  {jobOpenings.filter(job => job.department === "Engineering").map(job => (
-                    <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{job.title}</h3>
-                          <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                  </TabsContent>
+                  
+                  <TabsContent value="engineering">
+                    <div className="space-y-4">
+                      {jobOpenings.filter(job => job.department === "Engineering").map(job => (
+                        <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{job.title}</h3>
+                              <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                              {job.description && (
+                                <p className="text-sm text-gray-600 mt-2">{job.description}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">Posted {formatDate(job.created_at)}</span>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center">
+                            <Button 
+                              variant="outline" 
+                              className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
+                            >
+                              View Details
+                            </Button>
+                            <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
+                              Apply Now
+                            </Button>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">Posted {job.posted}</span>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center">
-                        <Button 
-                          variant="outline" 
-                          className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
-                        >
-                          View Details
-                        </Button>
-                        <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
-                          Apply Now
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="operations">
-                <div className="space-y-4">
-                  {jobOpenings.filter(job => job.department === "Community Operations" || job.department === "Partnerships").map(job => (
-                    <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{job.title}</h3>
-                          <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                  </TabsContent>
+                  
+                  <TabsContent value="operations">
+                    <div className="space-y-4">
+                      {jobOpenings.filter(job => job.department === "Community Operations" || job.department === "Partnerships").map(job => (
+                        <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{job.title}</h3>
+                              <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                              {job.description && (
+                                <p className="text-sm text-gray-600 mt-2">{job.description}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">Posted {formatDate(job.created_at)}</span>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center">
+                            <Button 
+                              variant="outline" 
+                              className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
+                            >
+                              View Details
+                            </Button>
+                            <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
+                              Apply Now
+                            </Button>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">Posted {job.posted}</span>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center">
-                        <Button 
-                          variant="outline" 
-                          className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
-                        >
-                          View Details
-                        </Button>
-                        <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
-                          Apply Now
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="marketing">
-                <div className="space-y-4">
-                  {jobOpenings.filter(job => job.department === "Marketing").map(job => (
-                    <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{job.title}</h3>
-                          <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                  </TabsContent>
+                  
+                  <TabsContent value="marketing">
+                    <div className="space-y-4">
+                      {jobOpenings.filter(job => job.department === "Marketing").map(job => (
+                        <div key={job.id} className="border border-gray-200 rounded-lg p-4 hover:border-thryvance-green transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{job.title}</h3>
+                              <p className="text-sm text-gray-500">{job.department} • {job.location} • {job.type}</p>
+                              {job.description && (
+                                <p className="text-sm text-gray-600 mt-2">{job.description}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">Posted {formatDate(job.created_at)}</span>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center">
+                            <Button 
+                              variant="outline" 
+                              className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
+                            >
+                              View Details
+                            </Button>
+                            <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
+                              Apply Now
+                            </Button>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-500">Posted {job.posted}</span>
-                      </div>
-                      <div className="mt-4 flex justify-between items-center">
-                        <Button 
-                          variant="outline" 
-                          className="text-sm border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light"
-                        >
-                          View Details
-                        </Button>
-                        <Button className="text-sm bg-thryvance-green hover:bg-thryvance-green-dark">
-                          Apply Now
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </TabsContent>
+                </Tabs>
+                
+                <div className="text-center">
+                  <Button variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
+                    View All Openings
+                  </Button>
                 </div>
-              </TabsContent>
-            </Tabs>
-            
-            <div className="text-center">
-              <Button variant="outline" className="border-thryvance-green text-thryvance-green hover:bg-thryvance-green-light">
-                View All Openings
-              </Button>
-            </div>
+              </>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">

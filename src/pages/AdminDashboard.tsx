@@ -17,6 +17,7 @@ import AdminAboutImages from "@/components/admin/AdminAboutImages";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminAuditLogs from "@/components/admin/AdminAuditLogs";
 import AdminImpact from "@/components/admin/AdminImpact";
+import AdminCareers from "@/components/admin/AdminCareers";
 
 const AdminDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -131,6 +132,8 @@ const AdminDashboard = () => {
         return <AdminAboutImages />;
       case "settings":
         return <AdminSettings />;
+      case "careers":
+        return <AdminCareers />;
       case "audit":
         return <AdminAuditLogs />;
       default:
@@ -150,20 +153,21 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-10">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="posts">Posts</TabsTrigger>
-              <TabsTrigger value="nonprofits">Nonprofits</TabsTrigger>
-              <TabsTrigger value="team">Team</TabsTrigger>
-              <TabsTrigger value="impact">Impact</TabsTrigger>
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="about-images">About Images</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="audit">Audit</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-11 gap-1">
+              <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
+              <TabsTrigger value="users" className="text-xs md:text-sm">Users</TabsTrigger>
+              <TabsTrigger value="posts" className="text-xs md:text-sm">Posts</TabsTrigger>
+              <TabsTrigger value="nonprofits" className="text-xs md:text-sm">Nonprofits</TabsTrigger>
+              <TabsTrigger value="team" className="text-xs md:text-sm">Team</TabsTrigger>
+              <TabsTrigger value="impact" className="text-xs md:text-sm">Impact</TabsTrigger>
+              <TabsTrigger value="content" className="text-xs md:text-sm">Content</TabsTrigger>
+              <TabsTrigger value="about-images" className="text-xs md:text-sm">Images</TabsTrigger>
+              <TabsTrigger value="careers" className="text-xs md:text-sm">Careers</TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs md:text-sm">Settings</TabsTrigger>
+              <TabsTrigger value="audit" className="text-xs md:text-sm">Audit</TabsTrigger>
             </TabsList>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-3 md:p-6">
               {renderTabContent()}
             </div>
           </Tabs>
